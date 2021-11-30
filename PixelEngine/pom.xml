@@ -60,56 +60,68 @@
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-glfw</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-glfw</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-nuklear</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-nuklear</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-openal</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-openal</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-opengl</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-opengl</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-stb</artifactId>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.lwjgl</groupId>
 			<artifactId>lwjgl-stb</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
+			<scope>compile</scope>
 		</dependency>
 		
 		<dependency>
@@ -123,11 +135,13 @@
 			<groupId>com.github.Mimer29or40</groupId>
 			<artifactId>RyanUtils</artifactId>
 			<version>1.0.1</version>
+			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.github.Mimer29or40</groupId>
 			<artifactId>ROMLUtils</artifactId>
 			<version>1.0.0</version>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 	
