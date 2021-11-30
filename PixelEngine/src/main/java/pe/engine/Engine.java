@@ -3,6 +3,7 @@ package pe.engine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.MemoryUtil;
 import pe.engine.event.Event;
@@ -28,8 +29,6 @@ public abstract class Engine
     
     protected static final Vector2i screenSize = new Vector2i();
     protected static final Vector2i pixelSize  = new Vector2i();
-    protected static final Vector2i viewPos    = new Vector2i();
-    protected static final Vector2i viewSize   = new Vector2i();
     
     protected static boolean windowEnabled = false;
     
@@ -483,6 +482,57 @@ public abstract class Engine
         }
     }
     
+    public static final class Viewport
+    {
+        private static final Vector2i pos  = new Vector2i();
+        private static final Vector2i size = new Vector2i();
+        
+        public static @NotNull Vector2ic pos()
+        {
+            return Viewport.pos;
+        }
+        
+        public static int x()
+        {
+            return Viewport.pos.x;
+        }
+        
+        public static int y()
+        {
+            return Viewport.pos.y;
+        }
+        
+        public static @NotNull Vector2ic size()
+        {
+            return Viewport.size;
+        }
+        
+        public static int width()
+        {
+            return Viewport.size.x;
+        }
+        
+        public static int height()
+        {
+            return Viewport.size.y;
+        }
+        
+        private static void update()
+        {
+            double aspect = (double) (Engine.screenSize.x * Engine.pixelSize.x) / (double) (Engine.screenSize.y * Engine.pixelSize.y);
+            
+            int frameWidth  = Window.get().framebufferWidth();
+            int frameHeight = Window.get().framebufferHeight();
+            
+            Viewport.size.set(frameWidth, (int) (frameWidth / aspect));
+            if (Viewport.size.y > frameHeight) Viewport.size.set((int) (frameHeight * aspect), frameHeight);
+            Viewport.pos.set((frameWidth - Viewport.size.x) >> 1, (frameHeight - Viewport.size.y) >> 1);
+            
+            Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
+            Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
+        }
+    }
+    
     // ----------------------
     // -- Engine Functions --
     // ----------------------
@@ -566,17 +616,7 @@ public abstract class Engine
                                     // Engine.renderer.finish(); // TODO
                                 }
                                 
-                                double aspect = (double) (Engine.screenSize.x * Engine.pixelSize.x) / (double) (Engine.screenSize.y * Engine.pixelSize.y);
-                                
-                                int frameWidth  = Window.get().framebufferWidth();
-                                int frameHeight = Window.get().framebufferHeight();
-                                
-                                Engine.viewSize.set(frameWidth, (int) (frameWidth / aspect));
-                                if (Engine.viewSize.y > frameHeight) Engine.viewSize.set((int) (frameHeight * aspect), frameHeight);
-                                Engine.viewPos.set((frameWidth - Engine.viewSize.x) >> 1, (frameHeight - Engine.viewSize.y) >> 1);
-                                
-                                Engine.pixelSize.x = Math.max(Engine.viewSize.x / Engine.screenSize.x, 1);
-                                Engine.pixelSize.y = Math.max(Engine.viewSize.y / Engine.screenSize.y, 1);
+                                Viewport.update();
                                 
                                 // Draw to Default FrameBuffer
                                 
@@ -739,6 +779,58 @@ public abstract class Engine
     protected static void size(int screenW, int screenH)
     {
         size(screenW, screenH, 4, 4);
+    }
+    
+    // -----------------------
+    // -- Engine Properties --
+    // -----------------------
+    
+    /**
+     * @return The read-only screen size vector in screen pixels. This will be the values passed in to the {@link #size} function.
+     */
+    public static @NotNull Vector2ic screenSize()
+    {
+        return Engine.screenSize;
+    }
+    
+    /**
+     * @return The screen width in screen pixels. This will be the value passed in to the {@link #size} function.
+     */
+    public static int screenWidth()
+    {
+        return Engine.screenSize.x;
+    }
+    
+    /**
+     * @return The screen height in screen pixels. This will be the value passed in to the {@link #size} function.
+     */
+    public static int screenHeight()
+    {
+        return Engine.screenSize.y;
+    }
+    
+    /**
+     * @return The read-only pixel size vector in actual pixels. This will be the values passed in to the {@link #size} function.
+     */
+    public static @NotNull Vector2ic pixelSize()
+    {
+        return Engine.pixelSize;
+    }
+    
+    /**
+     * @return The pixel width in actual pixels. This will be the value passed in to the {@link #size} function.
+     */
+    public static int pixelWidth()
+    {
+        return Engine.pixelSize.x;
+    }
+    
+    /**
+     * @return The pixel height in actual pixels. This will be the value passed in to the {@link #size} function.
+     */
+    public static int pixelHeight()
+    {
+        return Engine.pixelSize.y;
     }
     
     // --------------------

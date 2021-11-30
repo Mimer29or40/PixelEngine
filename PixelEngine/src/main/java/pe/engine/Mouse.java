@@ -696,8 +696,8 @@ public class Mouse
     
     private static void posCallback(long handle, double x, double y)
     {
-        x = (x - Engine.viewPos.x) * (double) Engine.screenSize.x / (double) Engine.viewSize.x;
-        y = (y - Engine.viewPos.y) * (double) Engine.screenSize.y / (double) Engine.viewSize.y;
+        x = (x - Engine.Viewport.x()) * (double) Engine.screenSize.x / (double) Engine.Viewport.width();
+        y = (y - Engine.Viewport.y()) * (double) Engine.screenSize.y / (double) Engine.Viewport.height();
         
         Mouse.INSTANCE._pos.set(x, y);
     }
