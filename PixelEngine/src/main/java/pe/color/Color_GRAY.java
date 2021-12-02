@@ -1,4 +1,4 @@
-package pe.engine.color;
+package pe.color;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,7 +9,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 
 
-public class Color_GRAY_ALPHA extends Color
+public class Color_GRAY extends Color
 {
     // ---------- Static ---------- //
     
@@ -27,20 +27,17 @@ public class Color_GRAY_ALPHA extends Color
      * The struct member offsets.
      */
     public static final int GRAY;
-    public static final int ALPHA;
     
     static
     {
         Layout layout = __struct(
-                __member(1),
                 __member(1)
                                 );
         
         SIZEOF  = layout.getSize();
         ALIGNOF = layout.getAlignment();
         
-        GRAY  = layout.offsetof(0);
-        ALPHA = layout.offsetof(1);
+        GRAY = layout.offsetof(0);
     }
     
     /**
@@ -48,7 +45,7 @@ public class Color_GRAY_ALPHA extends Color
      */
     public static int ngray(long struct)
     {
-        return Color.toInt(UNSAFE.getByte(null, struct + Color_GRAY_ALPHA.GRAY));
+        return Color.toInt(UNSAFE.getByte(null, struct + Color_GRAY.GRAY));
     }
     
     /**
@@ -56,86 +53,70 @@ public class Color_GRAY_ALPHA extends Color
      */
     public static void ngray(long struct, int value)
     {
-        UNSAFE.putByte(null, struct + Color_GRAY_ALPHA.GRAY, Color.toByte(value));
-    }
-    
-    /**
-     * Unsafe version of {@link #a}.
-     */
-    public static int na(long struct)
-    {
-        return Color.toInt(UNSAFE.getByte(null, struct + Color_GRAY_ALPHA.ALPHA));
-    }
-    
-    /**
-     * Unsafe version of {@link #a(int) buttons}.
-     */
-    public static void na(long struct, int value)
-    {
-        UNSAFE.putByte(null, struct + Color_GRAY_ALPHA.ALPHA, Color.toByte(value));
+        UNSAFE.putByte(null, struct + Color_GRAY.GRAY, Color.toByte(value));
     }
     
     // ---------- Creation ---------- //
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance allocated with {@link BufferUtils}.
+     * Returns a new {@link Color_GRAY} instance allocated with {@link BufferUtils}.
      */
-    public static @NotNull Color_GRAY_ALPHA create()
+    public static @NotNull Color_GRAY create()
     {
-        ByteBuffer container = BufferUtils.createByteBuffer(Color_GRAY_ALPHA.SIZEOF);
-        return wrap(Color_GRAY_ALPHA.class, MemoryUtil.memAddress(container), container);
+        ByteBuffer container = BufferUtils.createByteBuffer(Color_GRAY.SIZEOF);
+        return wrap(Color_GRAY.class, MemoryUtil.memAddress(container), container);
     }
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance for the specified memory address.
+     * Returns a new {@link Color_GRAY} instance for the specified memory address.
      */
-    public static @NotNull Color_GRAY_ALPHA create(long address)
+    public static @NotNull Color_GRAY create(long address)
     {
-        return wrap(Color_GRAY_ALPHA.class, address);
+        return wrap(Color_GRAY.class, address);
     }
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance for the specified memory address or {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
+     * Returns a new {@link Color_GRAY} instance for the specified memory address or {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
      */
-    public static @Nullable Color_GRAY_ALPHA createSafe(long address)
+    public static @Nullable Color_GRAY createSafe(long address)
     {
         return address == MemoryUtil.NULL ? null : create(address);
     }
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
+     * Returns a new {@link Color_GRAY} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
      */
-    public static @NotNull Color_GRAY_ALPHA malloc()
+    public static @NotNull Color_GRAY malloc()
     {
-        return wrap(Color_GRAY_ALPHA.class, MemoryUtil.nmemAllocChecked(Color_GRAY_ALPHA.SIZEOF));
+        return wrap(Color_GRAY.class, MemoryUtil.nmemAllocChecked(Color_GRAY.SIZEOF));
     }
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance allocated on the specified {@link MemoryStack}.
+     * Returns a new {@link Color_GRAY} instance allocated on the specified {@link MemoryStack}.
      *
      * @param stack the stack from which to allocate
      */
-    public static @NotNull Color_GRAY_ALPHA malloc(@NotNull MemoryStack stack)
+    public static @NotNull Color_GRAY malloc(@NotNull MemoryStack stack)
     {
-        return wrap(Color_GRAY_ALPHA.class, stack.nmalloc(Color_GRAY_ALPHA.ALIGNOF, Color_GRAY_ALPHA.SIZEOF));
+        return wrap(Color_GRAY.class, stack.nmalloc(Color_GRAY.ALIGNOF, Color_GRAY.SIZEOF));
     }
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
+     * Returns a new {@link Color_GRAY} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
      */
-    public static @NotNull Color_GRAY_ALPHA calloc()
+    public static @NotNull Color_GRAY calloc()
     {
-        return wrap(Color_GRAY_ALPHA.class, MemoryUtil.nmemCallocChecked(1, Color_GRAY_ALPHA.SIZEOF));
+        return wrap(Color_GRAY.class, MemoryUtil.nmemCallocChecked(1, Color_GRAY.SIZEOF));
     }
     
     /**
-     * Returns a new {@link Color_GRAY_ALPHA} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
+     * Returns a new {@link Color_GRAY} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
      *
      * @param stack the stack from which to allocate
      */
-    public static @NotNull Color_GRAY_ALPHA calloc(@NotNull MemoryStack stack)
+    public static @NotNull Color_GRAY calloc(@NotNull MemoryStack stack)
     {
-        return wrap(Color_GRAY_ALPHA.class, stack.ncalloc(Color_GRAY_ALPHA.ALIGNOF, 1, Color_GRAY_ALPHA.SIZEOF));
+        return wrap(Color_GRAY.class, stack.ncalloc(Color_GRAY.ALIGNOF, 1, Color_GRAY.SIZEOF));
     }
     
     /**
@@ -143,9 +124,9 @@ public class Color_GRAY_ALPHA extends Color
      *
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer create(int capacity)
+    public static @NotNull Color_GRAY.Buffer create(int capacity)
     {
-        ByteBuffer container = __create(capacity, Color_GRAY_ALPHA.SIZEOF);
+        ByteBuffer container = __create(capacity, Color_GRAY.SIZEOF);
         return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining(), container);
     }
     
@@ -155,15 +136,15 @@ public class Color_GRAY_ALPHA extends Color
      * @param address  the memory address
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer create(long address, int capacity)
+    public static @NotNull Color_GRAY.Buffer create(long address, int capacity)
     {
-        return wrap(Buffer.class, address, capacity * Color_GRAY_ALPHA.SIZEOF);
+        return wrap(Buffer.class, address, capacity * Color_GRAY.SIZEOF);
     }
     
     /**
      * Returns a new {@link Buffer} instance for the specified memory address or {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
      */
-    public static @Nullable Color_GRAY_ALPHA.Buffer createSafe(long address, int capacity)
+    public static @Nullable Color_GRAY.Buffer createSafe(long address, int capacity)
     {
         return address == MemoryUtil.NULL ? null : create(address, capacity);
     }
@@ -173,9 +154,9 @@ public class Color_GRAY_ALPHA extends Color
      *
      * @param container The data buffer to wrap.
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer wrap(@NotNull ByteBuffer container)
+    public static @NotNull Color_GRAY.Buffer wrap(@NotNull ByteBuffer container)
     {
-        return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining() / Color_GRAY_ALPHA.SIZEOF);
+        return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining() / Color_GRAY.SIZEOF);
     }
     
     /**
@@ -183,7 +164,7 @@ public class Color_GRAY_ALPHA extends Color
      *
      * @param container The data buffer to wrap.
      */
-    public static @Nullable Color_GRAY_ALPHA.Buffer wrapSafe(@Nullable ByteBuffer container)
+    public static @Nullable Color_GRAY.Buffer wrapSafe(@Nullable ByteBuffer container)
     {
         return container == null ? null : wrap(container);
     }
@@ -193,9 +174,9 @@ public class Color_GRAY_ALPHA extends Color
      *
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer malloc(int capacity)
+    public static @NotNull Color_GRAY.Buffer malloc(int capacity)
     {
-        return wrap(Buffer.class, MemoryUtil.nmemAllocChecked(__checkMalloc(capacity, Color_GRAY_ALPHA.SIZEOF)), capacity);
+        return wrap(Buffer.class, MemoryUtil.nmemAllocChecked(__checkMalloc(capacity, Color_GRAY.SIZEOF)), capacity);
     }
     
     /**
@@ -204,9 +185,9 @@ public class Color_GRAY_ALPHA extends Color
      * @param stack    the stack from which to allocate
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer malloc(int capacity, @NotNull MemoryStack stack)
+    public static @NotNull Color_GRAY.Buffer malloc(int capacity, @NotNull MemoryStack stack)
     {
-        return wrap(Buffer.class, stack.nmalloc(Color_GRAY_ALPHA.ALIGNOF, capacity * Color_GRAY_ALPHA.SIZEOF), capacity);
+        return wrap(Buffer.class, stack.nmalloc(Color_GRAY.ALIGNOF, capacity * Color_GRAY.SIZEOF), capacity);
     }
     
     /**
@@ -214,9 +195,9 @@ public class Color_GRAY_ALPHA extends Color
      *
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer calloc(int capacity)
+    public static @NotNull Color_GRAY.Buffer calloc(int capacity)
     {
-        return wrap(Buffer.class, MemoryUtil.nmemCallocChecked(capacity, Color_GRAY_ALPHA.SIZEOF), capacity);
+        return wrap(Buffer.class, MemoryUtil.nmemCallocChecked(capacity, Color_GRAY.SIZEOF), capacity);
     }
     
     /**
@@ -225,12 +206,12 @@ public class Color_GRAY_ALPHA extends Color
      * @param stack    the stack from which to allocate
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_GRAY_ALPHA.Buffer calloc(int capacity, @NotNull MemoryStack stack)
+    public static @NotNull Color_GRAY.Buffer calloc(int capacity, @NotNull MemoryStack stack)
     {
-        return wrap(Buffer.class, stack.ncalloc(Color_GRAY_ALPHA.ALIGNOF, capacity, Color_GRAY_ALPHA.SIZEOF), capacity);
+        return wrap(Buffer.class, stack.ncalloc(Color_GRAY.ALIGNOF, capacity, Color_GRAY.SIZEOF), capacity);
     }
     
-    public static @NotNull Color_GRAY_ALPHA.Buffer realloc(@Nullable Color.Buffer ptr, int capacity)
+    public static @NotNull Color_GRAY.Buffer realloc(@Nullable Color.Buffer ptr, int capacity)
     {
         ByteBuffer newPtr = MemoryUtil.memRealloc(ptr != null ? ptr.toBuffer() : null, ptr != null ? capacity * ptr.sizeof() : capacity);
         return wrap(Buffer.class, MemoryUtil.memAddress(newPtr), capacity, newPtr);
@@ -238,21 +219,21 @@ public class Color_GRAY_ALPHA extends Color
     
     // ---------- Instance ---------- //
     
-    public Color_GRAY_ALPHA(@NotNull ByteBuffer container)
+    public Color_GRAY(@NotNull ByteBuffer container)
     {
-        super(MemoryUtil.memAddress(container), __checkContainer(container, Color_GRAY_ALPHA.SIZEOF));
+        super(MemoryUtil.memAddress(container), __checkContainer(container, Color_GRAY.SIZEOF));
     }
     
     @Override
     public int sizeof()
     {
-        return Color_GRAY_ALPHA.SIZEOF;
+        return Color_GRAY.SIZEOF;
     }
     
     @Override
     public @NotNull ColorFormat format()
     {
-        return ColorFormat.GRAY_ALPHA;
+        return ColorFormat.GRAY;
     }
     
     @Override
@@ -276,7 +257,7 @@ public class Color_GRAY_ALPHA extends Color
     @Override
     public int a()
     {
-        return na(address());
+        return 0xFF;
     }
     
     @Override
@@ -303,7 +284,6 @@ public class Color_GRAY_ALPHA extends Color
     @Override
     public @NotNull Color a(int value)
     {
-        na(address(), value);
         return this;
     }
     
@@ -311,7 +291,6 @@ public class Color_GRAY_ALPHA extends Color
     public @NotNull Color set(int r, int g, int b, int a)
     {
         ngray(address(), Color.toGray(r, g, b));
-        na(address(), a);
         return this;
     }
     
@@ -319,7 +298,6 @@ public class Color_GRAY_ALPHA extends Color
     public @NotNull Color set(double r, double g, double b, double a)
     {
         ngray(address(), Color.toGray(r, g, b));
-        na(address(), (int) (a * 255));
         return this;
     }
     
@@ -339,11 +317,11 @@ public class Color_GRAY_ALPHA extends Color
     
     public static class Buffer extends Color.Buffer
     {
-        private static final Color_GRAY_ALPHA ELEMENT_FACTORY = Color_GRAY_ALPHA.create(-1L);
+        private static final Color_GRAY ELEMENT_FACTORY = Color_GRAY.create(-1L);
         
         public Buffer(@NotNull ByteBuffer container)
         {
-            super(container, container.remaining() / Color_GRAY_ALPHA.SIZEOF);
+            super(container, container.remaining() / Color_GRAY.SIZEOF);
         }
         
         public Buffer(long address, int capacity)

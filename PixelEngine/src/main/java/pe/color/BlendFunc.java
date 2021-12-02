@@ -1,4 +1,4 @@
-package pe.engine.color;
+package pe.color;
 
 public enum BlendFunc
 {

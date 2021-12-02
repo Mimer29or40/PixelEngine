@@ -1,4 +1,4 @@
-package pe.engine.color;
+package pe.color;
 
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;

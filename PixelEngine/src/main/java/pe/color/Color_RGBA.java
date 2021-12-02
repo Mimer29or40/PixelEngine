@@ -1,4 +1,4 @@
-package pe.engine.color;
+package pe.color;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,7 +9,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 
 
-public class Color_RGB extends Color
+public class Color_RGBA extends Color
 {
     // ---------- Static ---------- //
     
@@ -29,10 +29,12 @@ public class Color_RGB extends Color
     public static final int RED;
     public static final int GREEN;
     public static final int BLUE;
+    public static final int ALPHA;
     
     static
     {
         Layout layout = __struct(
+                __member(1),
                 __member(1),
                 __member(1),
                 __member(1)
@@ -44,6 +46,7 @@ public class Color_RGB extends Color
         RED   = layout.offsetof(0);
         GREEN = layout.offsetof(1);
         BLUE  = layout.offsetof(2);
+        ALPHA = layout.offsetof(3);
     }
     
     /**
@@ -51,7 +54,7 @@ public class Color_RGB extends Color
      */
     public static int nr(long struct)
     {
-        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGB.RED));
+        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGBA.RED));
     }
     
     /**
@@ -59,7 +62,7 @@ public class Color_RGB extends Color
      */
     public static void nr(long struct, int value)
     {
-        UNSAFE.putByte(null, struct + Color_RGB.RED, Color.toByte(value));
+        UNSAFE.putByte(null, struct + Color_RGBA.RED, Color.toByte(value));
     }
     
     /**
@@ -67,7 +70,7 @@ public class Color_RGB extends Color
      */
     public static int ng(long struct)
     {
-        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGB.GREEN));
+        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGBA.GREEN));
     }
     
     /**
@@ -75,7 +78,7 @@ public class Color_RGB extends Color
      */
     public static void ng(long struct, int value)
     {
-        UNSAFE.putByte(null, struct + Color_RGB.GREEN, Color.toByte(value));
+        UNSAFE.putByte(null, struct + Color_RGBA.GREEN, Color.toByte(value));
     }
     
     /**
@@ -83,7 +86,7 @@ public class Color_RGB extends Color
      */
     public static int nb(long struct)
     {
-        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGB.BLUE));
+        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGBA.BLUE));
     }
     
     /**
@@ -91,70 +94,86 @@ public class Color_RGB extends Color
      */
     public static void nb(long struct, int value)
     {
-        UNSAFE.putByte(null, struct + Color_RGB.BLUE, Color.toByte(value));
+        UNSAFE.putByte(null, struct + Color_RGBA.BLUE, Color.toByte(value));
+    }
+    
+    /**
+     * Unsafe version of {@link #a}.
+     */
+    public static int na(long struct)
+    {
+        return Color.toInt(UNSAFE.getByte(null, struct + Color_RGBA.ALPHA));
+    }
+    
+    /**
+     * Unsafe version of {@link #a(int) buttons}.
+     */
+    public static void na(long struct, int value)
+    {
+        UNSAFE.putByte(null, struct + Color_RGBA.ALPHA, Color.toByte(value));
     }
     
     // ---------- Creation ---------- //
     
     /**
-     * Returns a new {@link Color_RGB} instance allocated with {@link BufferUtils}.
+     * Returns a new {@link Color_RGBA} instance allocated with {@link BufferUtils}.
      */
-    public static @NotNull Color_RGB create()
+    public static @NotNull Color_RGBA create()
     {
-        ByteBuffer container = BufferUtils.createByteBuffer(Color_RGB.SIZEOF);
-        return wrap(Color_RGB.class, MemoryUtil.memAddress(container), container);
+        ByteBuffer container = BufferUtils.createByteBuffer(Color_RGBA.SIZEOF);
+        return wrap(Color_RGBA.class, MemoryUtil.memAddress(container), container);
     }
     
     /**
-     * Returns a new {@link Color_RGB} instance for the specified memory address.
+     * Returns a new {@link Color_RGBA} instance for the specified memory address.
      */
-    public static @NotNull Color_RGB create(long address)
+    public static @NotNull Color_RGBA create(long address)
     {
-        return wrap(Color_RGB.class, address);
+        return wrap(Color_RGBA.class, address);
     }
     
     /**
-     * Returns a new {@link Color_RGB} instance for the specified memory address or {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
+     * Returns a new {@link Color_RGBA} instance for the specified memory address or {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
      */
-    public static @Nullable Color_RGB createSafe(long address)
+    public static @Nullable Color_RGBA createSafe(long address)
     {
         return address == MemoryUtil.NULL ? null : create(address);
     }
     
     /**
-     * Returns a new {@link Color_RGB} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
+     * Returns a new {@link Color_RGBA} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
      */
-    public static @NotNull Color_RGB malloc()
+    public static @NotNull Color_RGBA malloc()
     {
-        return wrap(Color_RGB.class, MemoryUtil.nmemAllocChecked(Color_RGB.SIZEOF));
+        return wrap(Color_RGBA.class, MemoryUtil.nmemAllocChecked(Color_RGBA.SIZEOF));
     }
     
     /**
-     * Returns a new {@link Color_RGB} instance allocated on the specified {@link MemoryStack}.
+     * Returns a new {@link Color_RGBA} instance allocated on the specified {@link MemoryStack}.
      *
      * @param stack the stack from which to allocate
      */
-    public static @NotNull Color_RGB malloc(@NotNull MemoryStack stack)
+    public static @NotNull Color_RGBA malloc(@NotNull MemoryStack stack)
     {
-        return wrap(Color_RGB.class, stack.nmalloc(Color_RGB.ALIGNOF, Color_RGB.SIZEOF));
+        return wrap(Color_RGBA.class, stack.nmalloc(Color_RGBA.ALIGNOF, Color_RGBA.SIZEOF));
     }
     
     /**
-     * Returns a new {@link Color_RGB} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
+     * Returns a new {@link Color_RGBA} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
      */
-    public static @NotNull Color_RGB calloc()
+    public static @NotNull Color_RGBA calloc()
     {
-        return wrap(Color_RGB.class, MemoryUtil.nmemCallocChecked(1, Color_RGB.SIZEOF));
+        return wrap(Color_RGBA.class, MemoryUtil.nmemCallocChecked(1, Color_RGBA.SIZEOF));
     }
     
     /**
-     * Returns a new {@link Color_RGB} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
+     * Returns a new {@link Color_RGBA} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
      *
      * @param stack the stack from which to allocate
      */
-    public static @NotNull Color_RGB calloc(@NotNull MemoryStack stack)
+    public static @NotNull Color_RGBA calloc(@NotNull MemoryStack stack)
     {
-        return wrap(Color_RGB.class, stack.ncalloc(Color_RGB.ALIGNOF, 1, Color_RGB.SIZEOF));
+        return wrap(Color_RGBA.class, stack.ncalloc(Color_RGBA.ALIGNOF, 1, Color_RGBA.SIZEOF));
     }
     
     /**
@@ -162,9 +181,9 @@ public class Color_RGB extends Color
      *
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_RGB.Buffer create(int capacity)
+    public static @NotNull Color_RGBA.Buffer create(int capacity)
     {
-        ByteBuffer container = __create(capacity, Color_RGB.SIZEOF);
+        ByteBuffer container = __create(capacity, Color_RGBA.SIZEOF);
         return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining(), container);
     }
     
@@ -174,15 +193,15 @@ public class Color_RGB extends Color
      * @param address  the memory address
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_RGB.Buffer create(long address, int capacity)
+    public static @NotNull Color_RGBA.Buffer create(long address, int capacity)
     {
-        return wrap(Buffer.class, address, capacity * Color_RGB.SIZEOF);
+        return wrap(Buffer.class, address, capacity * Color_RGBA.SIZEOF);
     }
     
     /**
      * Returns a new {@link Buffer} instance for the specified memory address or {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
      */
-    public static @Nullable Color_RGB.Buffer createSafe(long address, int capacity)
+    public static @Nullable Color_RGBA.Buffer createSafe(long address, int capacity)
     {
         return address == MemoryUtil.NULL ? null : create(address, capacity);
     }
@@ -192,9 +211,9 @@ public class Color_RGB extends Color
      *
      * @param container The data buffer to wrap.
      */
-    public static @NotNull Color_RGB.Buffer wrap(@NotNull ByteBuffer container)
+    public static @NotNull Color_RGBA.Buffer wrap(@NotNull ByteBuffer container)
     {
-        return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining() / Color_RGB.SIZEOF);
+        return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining() / Color_RGBA.SIZEOF);
     }
     
     /**
@@ -202,7 +221,7 @@ public class Color_RGB extends Color
      *
      * @param container The data buffer to wrap.
      */
-    public static @Nullable Color_RGB.Buffer wrapSafe(@Nullable ByteBuffer container)
+    public static @Nullable Color_RGBA.Buffer wrapSafe(@Nullable ByteBuffer container)
     {
         return container == null ? null : wrap(container);
     }
@@ -212,9 +231,9 @@ public class Color_RGB extends Color
      *
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_RGB.Buffer malloc(int capacity)
+    public static @NotNull Color_RGBA.Buffer malloc(int capacity)
     {
-        return wrap(Buffer.class, MemoryUtil.nmemAllocChecked(__checkMalloc(capacity, Color_RGB.SIZEOF)), capacity);
+        return wrap(Buffer.class, MemoryUtil.nmemAllocChecked(__checkMalloc(capacity, Color_RGBA.SIZEOF)), capacity);
     }
     
     /**
@@ -223,9 +242,9 @@ public class Color_RGB extends Color
      * @param stack    the stack from which to allocate
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_RGB.Buffer malloc(int capacity, @NotNull MemoryStack stack)
+    public static @NotNull Color_RGBA.Buffer malloc(int capacity, @NotNull MemoryStack stack)
     {
-        return wrap(Buffer.class, stack.nmalloc(Color_RGB.ALIGNOF, capacity * Color_RGB.SIZEOF), capacity);
+        return wrap(Buffer.class, stack.nmalloc(Color_RGBA.ALIGNOF, capacity * Color_RGBA.SIZEOF), capacity);
     }
     
     /**
@@ -233,9 +252,9 @@ public class Color_RGB extends Color
      *
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_RGB.Buffer calloc(int capacity)
+    public static @NotNull Color_RGBA.Buffer calloc(int capacity)
     {
-        return wrap(Buffer.class, MemoryUtil.nmemCallocChecked(capacity, Color_RGB.SIZEOF), capacity);
+        return wrap(Buffer.class, MemoryUtil.nmemCallocChecked(capacity, Color_RGBA.SIZEOF), capacity);
     }
     
     /**
@@ -244,12 +263,12 @@ public class Color_RGB extends Color
      * @param stack    the stack from which to allocate
      * @param capacity the buffer capacity
      */
-    public static @NotNull Color_RGB.Buffer calloc(int capacity, @NotNull MemoryStack stack)
+    public static @NotNull Color_RGBA.Buffer calloc(int capacity, @NotNull MemoryStack stack)
     {
-        return wrap(Buffer.class, stack.ncalloc(Color_RGB.ALIGNOF, capacity, Color_RGB.SIZEOF), capacity);
+        return wrap(Buffer.class, stack.ncalloc(Color_RGBA.ALIGNOF, capacity, Color_RGBA.SIZEOF), capacity);
     }
     
-    public static @NotNull Color_RGB.Buffer realloc(@Nullable Color.Buffer ptr, int capacity)
+    public static @NotNull Color_RGBA.Buffer realloc(@Nullable Color.Buffer ptr, int capacity)
     {
         ByteBuffer newPtr = MemoryUtil.memRealloc(ptr != null ? ptr.toBuffer() : null, ptr != null ? capacity * ptr.sizeof() : capacity);
         return wrap(Buffer.class, MemoryUtil.memAddress(newPtr), capacity, newPtr);
@@ -257,21 +276,21 @@ public class Color_RGB extends Color
     
     // ---------- Instance ---------- //
     
-    public Color_RGB(@NotNull ByteBuffer container)
+    public Color_RGBA(@NotNull ByteBuffer container)
     {
-        super(MemoryUtil.memAddress(container), __checkContainer(container, Color_RGB.SIZEOF));
+        super(MemoryUtil.memAddress(container), __checkContainer(container, Color_RGBA.SIZEOF));
     }
     
     @Override
     public int sizeof()
     {
-        return Color_RGB.SIZEOF;
+        return Color_RGBA.SIZEOF;
     }
     
     @Override
     public @NotNull ColorFormat format()
     {
-        return ColorFormat.RGB;
+        return ColorFormat.RGBA;
     }
     
     @Override
@@ -295,7 +314,7 @@ public class Color_RGB extends Color
     @Override
     public int a()
     {
-        return 0xFF;
+        return na(address());
     }
     
     @Override
@@ -322,6 +341,7 @@ public class Color_RGB extends Color
     @Override
     public @NotNull Color a(int value)
     {
+        na(address(), value);
         return this;
     }
     
@@ -329,11 +349,11 @@ public class Color_RGB extends Color
     
     public static class Buffer extends Color.Buffer
     {
-        private static final Color_RGB ELEMENT_FACTORY = Color_RGB.create(-1L);
+        private static final Color_RGBA ELEMENT_FACTORY = Color_RGBA.create(-1L);
         
         public Buffer(@NotNull ByteBuffer container)
         {
-            super(container, container.remaining() / Color_RGB.SIZEOF);
+            super(container, container.remaining() / Color_RGBA.SIZEOF);
         }
         
         public Buffer(long address, int capacity)
