@@ -3,7 +3,6 @@ package pe.engine.color;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
 import org.joml.Vector4d;
-import pe.engine.render.BlendMode;
 
 public interface Colorc
 {

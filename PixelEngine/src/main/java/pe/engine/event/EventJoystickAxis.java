@@ -15,9 +15,9 @@ public interface EventJoystickAxis extends EventJoystick
     
     final class _EventJoystickAxis extends AbstractEventJoystick implements EventJoystickAxis
     {
-        private final Joystick.Axis   axis;
-        private final double value;
-        private final double delta;
+        private final Joystick.Axis axis;
+        private final double        value;
+        private final double        delta;
         
         private _EventJoystickAxis(long time, Joystick joystick, Joystick.Axis axis, double value, double delta)
         {

@@ -165,7 +165,7 @@ public class Joystick
         setupCallbackEmulation();
     }
     
-    // -------------------- Internal Objects -------------------- //
+    // -------------------- Instance Objects -------------------- //
     
     protected final int jid;
     
