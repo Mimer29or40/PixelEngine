@@ -333,9 +333,9 @@ public class Color_RGB extends Color
         
         public Buffer(@NotNull ByteBuffer container)
         {
-            super(container, container.remaining() / SIZEOF);
+            super(container, container.remaining() / Color_RGB.SIZEOF);
         }
-    
+        
         public Buffer(long address, int capacity)
         {
             super(address, capacity);
@@ -344,7 +344,7 @@ public class Color_RGB extends Color
         @Override
         protected @NotNull Color getElementFactory()
         {
-            return Color_RGB.Buffer.ELEMENT_FACTORY;
+            return Buffer.ELEMENT_FACTORY;
         }
         
         @Override

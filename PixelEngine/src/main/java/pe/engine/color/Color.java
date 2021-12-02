@@ -17,77 +17,77 @@ public abstract class Color extends Struct implements NativeResource, Colorc
 {
     // ---------- Static ---------- //
     
-    public static final Colorc WHITE      = Color.create(ColorFormat.RGBA).set(255, 255, 255, 255);
-    public static final Colorc LIGHT_GRAY = Color.create(ColorFormat.RGBA).set(191, 191, 191, 255);
-    public static final Colorc GRAY       = Color.create(ColorFormat.RGBA).set(127, 127, 127, 255);
-    public static final Colorc DARK_GRAY  = Color.create(ColorFormat.RGBA).set(063, 063, 063, 255);
-    public static final Colorc BLACK      = Color.create(ColorFormat.RGBA).set(000, 000, 000, 255);
+    public static final Colorc WHITE      = createColor(255, 255, 255, 255);
+    public static final Colorc LIGHT_GRAY = createColor(191, 191, 191, 255);
+    public static final Colorc GRAY       = createColor(127, 127, 127, 255);
+    public static final Colorc DARK_GRAY  = createColor(063, 063, 063, 255);
+    public static final Colorc BLACK      = createColor(000, 000, 000, 255);
     
     public static final Colorc LIGHT_GREY = LIGHT_GRAY;
     public static final Colorc GREY       = GRAY;
     public static final Colorc DARK_GREY  = DARK_GRAY;
     
-    public static final Colorc LIGHTEST_RED = Color.create(ColorFormat.RGBA).set(255, 191, 191, 255);
-    public static final Colorc LIGHTER_RED  = Color.create(ColorFormat.RGBA).set(255, 127, 127, 255);
-    public static final Colorc LIGHT_RED    = Color.create(ColorFormat.RGBA).set(255, 063, 063, 255);
-    public static final Colorc RED          = Color.create(ColorFormat.RGBA).set(255, 000, 000, 255);
-    public static final Colorc DARK_RED     = Color.create(ColorFormat.RGBA).set(191, 000, 000, 255);
-    public static final Colorc DARKER_RED   = Color.create(ColorFormat.RGBA).set(127, 000, 000, 255);
-    public static final Colorc DARKEST_RED  = Color.create(ColorFormat.RGBA).set(063, 000, 000, 255);
+    public static final Colorc LIGHTEST_RED = createColor(255, 191, 191, 255);
+    public static final Colorc LIGHTER_RED  = createColor(255, 127, 127, 255);
+    public static final Colorc LIGHT_RED    = createColor(255, 063, 063, 255);
+    public static final Colorc RED          = createColor(255, 000, 000, 255);
+    public static final Colorc DARK_RED     = createColor(191, 000, 000, 255);
+    public static final Colorc DARKER_RED   = createColor(127, 000, 000, 255);
+    public static final Colorc DARKEST_RED  = createColor(063, 000, 000, 255);
     
-    public static final Colorc LIGHTEST_YELLOW = Color.create(ColorFormat.RGBA).set(255, 255, 191, 255);
-    public static final Colorc LIGHTER_YELLOW  = Color.create(ColorFormat.RGBA).set(255, 255, 127, 255);
-    public static final Colorc LIGHT_YELLOW    = Color.create(ColorFormat.RGBA).set(255, 255, 063, 255);
-    public static final Colorc YELLOW          = Color.create(ColorFormat.RGBA).set(255, 255, 000, 255);
-    public static final Colorc DARK_YELLOW     = Color.create(ColorFormat.RGBA).set(191, 191, 000, 255);
-    public static final Colorc DARKER_YELLOW   = Color.create(ColorFormat.RGBA).set(127, 127, 000, 255);
-    public static final Colorc DARKEST_YELLOW  = Color.create(ColorFormat.RGBA).set(063, 063, 000, 255);
+    public static final Colorc LIGHTEST_YELLOW = createColor(255, 255, 191, 255);
+    public static final Colorc LIGHTER_YELLOW  = createColor(255, 255, 127, 255);
+    public static final Colorc LIGHT_YELLOW    = createColor(255, 255, 063, 255);
+    public static final Colorc YELLOW          = createColor(255, 255, 000, 255);
+    public static final Colorc DARK_YELLOW     = createColor(191, 191, 000, 255);
+    public static final Colorc DARKER_YELLOW   = createColor(127, 127, 000, 255);
+    public static final Colorc DARKEST_YELLOW  = createColor(063, 063, 000, 255);
     
-    public static final Colorc LIGHTEST_GREEN = Color.create(ColorFormat.RGBA).set(191, 255, 191, 255);
-    public static final Colorc LIGHTER_GREEN  = Color.create(ColorFormat.RGBA).set(127, 255, 127, 255);
-    public static final Colorc LIGHT_GREEN    = Color.create(ColorFormat.RGBA).set(063, 255, 063, 255);
-    public static final Colorc GREEN          = Color.create(ColorFormat.RGBA).set(000, 255, 000, 255);
-    public static final Colorc DARK_GREEN     = Color.create(ColorFormat.RGBA).set(000, 191, 000, 255);
-    public static final Colorc DARKER_GREEN   = Color.create(ColorFormat.RGBA).set(000, 127, 000, 255);
-    public static final Colorc DARKEST_GREEN  = Color.create(ColorFormat.RGBA).set(000, 063, 000, 255);
+    public static final Colorc LIGHTEST_GREEN = createColor(191, 255, 191, 255);
+    public static final Colorc LIGHTER_GREEN  = createColor(127, 255, 127, 255);
+    public static final Colorc LIGHT_GREEN    = createColor(063, 255, 063, 255);
+    public static final Colorc GREEN          = createColor(000, 255, 000, 255);
+    public static final Colorc DARK_GREEN     = createColor(000, 191, 000, 255);
+    public static final Colorc DARKER_GREEN   = createColor(000, 127, 000, 255);
+    public static final Colorc DARKEST_GREEN  = createColor(000, 063, 000, 255);
     
-    public static final Colorc LIGHTEST_CYAN = Color.create(ColorFormat.RGBA).set(191, 255, 255, 255);
-    public static final Colorc LIGHTER_CYAN  = Color.create(ColorFormat.RGBA).set(127, 255, 255, 255);
-    public static final Colorc LIGHT_CYAN    = Color.create(ColorFormat.RGBA).set(063, 255, 255, 255);
-    public static final Colorc CYAN          = Color.create(ColorFormat.RGBA).set(000, 255, 255, 255);
-    public static final Colorc DARK_CYAN     = Color.create(ColorFormat.RGBA).set(000, 191, 191, 255);
-    public static final Colorc DARKER_CYAN   = Color.create(ColorFormat.RGBA).set(000, 127, 127, 255);
-    public static final Colorc DARKEST_CYAN  = Color.create(ColorFormat.RGBA).set(000, 063, 063, 255);
+    public static final Colorc LIGHTEST_CYAN = createColor(191, 255, 255, 255);
+    public static final Colorc LIGHTER_CYAN  = createColor(127, 255, 255, 255);
+    public static final Colorc LIGHT_CYAN    = createColor(063, 255, 255, 255);
+    public static final Colorc CYAN          = createColor(000, 255, 255, 255);
+    public static final Colorc DARK_CYAN     = createColor(000, 191, 191, 255);
+    public static final Colorc DARKER_CYAN   = createColor(000, 127, 127, 255);
+    public static final Colorc DARKEST_CYAN  = createColor(000, 063, 063, 255);
     
-    public static final Colorc LIGHTEST_BLUE = Color.create(ColorFormat.RGBA).set(191, 191, 255, 255);
-    public static final Colorc LIGHTER_BLUE  = Color.create(ColorFormat.RGBA).set(127, 127, 255, 255);
-    public static final Colorc LIGHT_BLUE    = Color.create(ColorFormat.RGBA).set(063, 063, 255, 255);
-    public static final Colorc BLUE          = Color.create(ColorFormat.RGBA).set(000, 000, 255, 255);
-    public static final Colorc DARK_BLUE     = Color.create(ColorFormat.RGBA).set(000, 000, 191, 255);
-    public static final Colorc DARKER_BLUE   = Color.create(ColorFormat.RGBA).set(000, 000, 127, 255);
-    public static final Colorc DARKEST_BLUE  = Color.create(ColorFormat.RGBA).set(000, 000, 063, 255);
+    public static final Colorc LIGHTEST_BLUE = createColor(191, 191, 255, 255);
+    public static final Colorc LIGHTER_BLUE  = createColor(127, 127, 255, 255);
+    public static final Colorc LIGHT_BLUE    = createColor(063, 063, 255, 255);
+    public static final Colorc BLUE          = createColor(000, 000, 255, 255);
+    public static final Colorc DARK_BLUE     = createColor(000, 000, 191, 255);
+    public static final Colorc DARKER_BLUE   = createColor(000, 000, 127, 255);
+    public static final Colorc DARKEST_BLUE  = createColor(000, 000, 063, 255);
     
-    public static final Colorc LIGHTEST_MAGENTA = Color.create(ColorFormat.RGBA).set(255, 191, 255, 255);
-    public static final Colorc LIGHTER_MAGENTA  = Color.create(ColorFormat.RGBA).set(255, 127, 255, 255);
-    public static final Colorc LIGHT_MAGENTA    = Color.create(ColorFormat.RGBA).set(255, 063, 255, 255);
-    public static final Colorc MAGENTA          = Color.create(ColorFormat.RGBA).set(255, 000, 255, 255);
-    public static final Colorc DARK_MAGENTA     = Color.create(ColorFormat.RGBA).set(191, 000, 191, 255);
-    public static final Colorc DARKER_MAGENTA   = Color.create(ColorFormat.RGBA).set(127, 000, 127, 255);
-    public static final Colorc DARKEST_MAGENTA  = Color.create(ColorFormat.RGBA).set(063, 000, 063, 255);
+    public static final Colorc LIGHTEST_MAGENTA = createColor(255, 191, 255, 255);
+    public static final Colorc LIGHTER_MAGENTA  = createColor(255, 127, 255, 255);
+    public static final Colorc LIGHT_MAGENTA    = createColor(255, 063, 255, 255);
+    public static final Colorc MAGENTA          = createColor(255, 000, 255, 255);
+    public static final Colorc DARK_MAGENTA     = createColor(191, 000, 191, 255);
+    public static final Colorc DARKER_MAGENTA   = createColor(127, 000, 127, 255);
+    public static final Colorc DARKEST_MAGENTA  = createColor(063, 000, 063, 255);
     
-    public static final Colorc BLANK = Color.create(ColorFormat.RGBA).set(000, 000, 000, 000);
+    public static final Colorc BLANK = createColor(000, 000, 000, 000);
     
-    public static final Colorc RAY_WHITE       = Color.create(ColorFormat.RGBA).set(245, 245, 245, 255);
-    public static final Colorc BACKGROUND_GRAY = Color.create(ColorFormat.RGBA).set(051, 051, 051, 255);
+    public static final Colorc RAY_WHITE       = createColor(245, 245, 245, 255);
+    public static final Colorc BACKGROUND_GRAY = createColor(051, 051, 051, 255);
     
     // 0.299R + 0.587G + 0.114B
-    public static final double R_TO_GRAY_F = 0.299;
-    public static final double G_TO_GRAY_F = 0.587;
-    public static final double B_TO_GRAY_F = 0.114;
+    private static final double R_TO_GRAY_F = 0.299;
+    private static final double G_TO_GRAY_F = 0.587;
+    private static final double B_TO_GRAY_F = 0.114;
     
-    public static final int R_TO_GRAY = (int) Math.round(R_TO_GRAY_F * 255);
-    public static final int G_TO_GRAY = (int) Math.round(G_TO_GRAY_F * 255);
-    public static final int B_TO_GRAY = (int) Math.round(B_TO_GRAY_F * 255);
+    private static final int R_TO_GRAY = (int) Math.round(R_TO_GRAY_F * 255);
+    private static final int G_TO_GRAY = (int) Math.round(G_TO_GRAY_F * 255);
+    private static final int B_TO_GRAY = (int) Math.round(B_TO_GRAY_F * 255);
     
     public static int toGray(int r, int g, int b)
     {
@@ -109,6 +109,11 @@ public abstract class Color extends Struct implements NativeResource, Colorc
     protected static int toInt(byte value)
     {
         return value & 0xFF;
+    }
+    
+    private static Colorc createColor(int r, int g, int b, int a)
+    {
+        return Color_RGBA.create().set(r, g, b, a);
     }
     
     // ---------- Creation ---------- //

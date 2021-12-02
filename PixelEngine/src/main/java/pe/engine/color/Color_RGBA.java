@@ -36,6 +36,7 @@ public class Color_RGBA extends Color
         Layout layout = __struct(
                 __member(1),
                 __member(1),
+                __member(1),
                 __member(1)
                                 );
         
@@ -352,9 +353,9 @@ public class Color_RGBA extends Color
         
         public Buffer(@NotNull ByteBuffer container)
         {
-            super(container, container.remaining() / SIZEOF);
+            super(container, container.remaining() / Color_RGBA.SIZEOF);
         }
-    
+        
         public Buffer(long address, int capacity)
         {
             super(address, capacity);
@@ -363,7 +364,7 @@ public class Color_RGBA extends Color
         @Override
         protected @NotNull Color getElementFactory()
         {
-            return Color_RGBA.Buffer.ELEMENT_FACTORY;
+            return Buffer.ELEMENT_FACTORY;
         }
         
         @Override

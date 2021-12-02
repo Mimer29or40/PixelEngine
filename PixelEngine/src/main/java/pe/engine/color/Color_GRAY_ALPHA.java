@@ -316,9 +316,23 @@ public class Color_GRAY_ALPHA extends Color
     }
     
     @Override
+    public @NotNull Color set(double r, double g, double b, double a)
+    {
+        ngray(address(), Color.toGray(r, g, b));
+        na(address(), (int) (a * 255));
+        return this;
+    }
+    
+    @Override
     public boolean equals(int r, int g, int b, int a)
     {
         return r() == Color.toGray(r, g, b) && a() == a;
+    }
+    
+    @Override
+    public boolean equals(double r, double g, double b, double a)
+    {
+        return r() == Color.toGray(r, g, b) && Double.compare(af(), a) == 0;
     }
     
     // ---------- Buffer ---------- //
@@ -329,9 +343,9 @@ public class Color_GRAY_ALPHA extends Color
         
         public Buffer(@NotNull ByteBuffer container)
         {
-            super(container, container.remaining() / SIZEOF);
+            super(container, container.remaining() / Color_GRAY_ALPHA.SIZEOF);
         }
-    
+        
         public Buffer(long address, int capacity)
         {
             super(address, capacity);
@@ -340,7 +354,7 @@ public class Color_GRAY_ALPHA extends Color
         @Override
         protected @NotNull Color getElementFactory()
         {
-            return Color_GRAY_ALPHA.Buffer.ELEMENT_FACTORY;
+            return Buffer.ELEMENT_FACTORY;
         }
         
         @Override

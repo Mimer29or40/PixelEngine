@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.Struct;
 
 import java.nio.ByteBuffer;
 
@@ -31,9 +30,9 @@ public class Color_GRAY extends Color
     
     static
     {
-        Struct.Layout layout = __struct(
+        Layout layout = __struct(
                 __member(1)
-                                       );
+                                );
         
         SIZEOF  = layout.getSize();
         ALIGNOF = layout.getAlignment();
@@ -296,9 +295,22 @@ public class Color_GRAY extends Color
     }
     
     @Override
+    public @NotNull Color set(double r, double g, double b, double a)
+    {
+        ngray(address(), Color.toGray(r, g, b));
+        return this;
+    }
+    
+    @Override
     public boolean equals(int r, int g, int b, int a)
     {
         return r() == Color.toGray(r, g, b) && a() == a;
+    }
+    
+    @Override
+    public boolean equals(double r, double g, double b, double a)
+    {
+        return r() == Color.toGray(r, g, b) && Double.compare(af(), a) == 0;
     }
     
     // ---------- Buffer ---------- //
@@ -309,9 +321,9 @@ public class Color_GRAY extends Color
         
         public Buffer(@NotNull ByteBuffer container)
         {
-            super(container, container.remaining() / SIZEOF);
+            super(container, container.remaining() / Color_GRAY.SIZEOF);
         }
-    
+        
         public Buffer(long address, int capacity)
         {
             super(address, capacity);
@@ -320,7 +332,7 @@ public class Color_GRAY extends Color
         @Override
         protected @NotNull Color getElementFactory()
         {
-            return Color_GRAY.Buffer.ELEMENT_FACTORY;
+            return Buffer.ELEMENT_FACTORY;
         }
         
         @Override
