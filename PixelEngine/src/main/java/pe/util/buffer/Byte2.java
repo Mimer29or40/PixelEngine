@@ -6,13 +6,11 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.system.*;
 
 import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-
-import static org.lwjgl.system.MemoryStack.stackGet;
-import static org.lwjgl.system.MemoryUtil.*;
 
 public class Byte2 extends Struct implements NativeResource
 {
+    // ---------- Static ---------- //
+    
     /**
      * The struct size in bytes.
      */
@@ -43,15 +41,223 @@ public class Byte2 extends Struct implements NativeResource
         Y = layout.offsetof(1);
     }
     
-    protected Byte2(long address, @Nullable ByteBuffer container)
+    protected static byte toByte(int value)
     {
-        super(address, container);
+        if (value < 0) value = 0;
+        if (value > 255) value = 255;
+        return (byte) value;
+    }
+    
+    protected static int toInt(byte value)
+    {
+        return value & 0xFF;
+    }
+    
+    /**
+     * Unsafe version of {@link #x}.
+     */
+    public static int nx(long struct)
+    {
+        return toInt(UNSAFE.getByte(null, struct + Byte2.X));
+    }
+    
+    /**
+     * Unsafe version of {@link #x(int) buttons}.
+     */
+    public static void nx(long struct, int value)
+    {
+        UNSAFE.putByte(null, struct + Byte2.X, toByte(value));
+    }
+    
+    /**
+     * Unsafe version of {@link #y}.
+     */
+    public static int ny(long struct)
+    {
+        return toInt(UNSAFE.getByte(null, struct + Byte2.Y));
+    }
+    
+    /**
+     * Unsafe version of {@link #y(int) buttons}.
+     */
+    public static void ny(long struct, int value)
+    {
+        UNSAFE.putByte(null, struct + Byte2.Y, toByte(value));
+    }
+    
+    // ---------- Creation ---------- //
+    
+    /**
+     * Returns a new {@link Byte2} instance allocated with {@link BufferUtils}.
+     */
+    public static @NotNull Byte2 create()
+    {
+        ByteBuffer container = BufferUtils.createByteBuffer(Byte2.SIZEOF);
+        return wrap(Byte2.class, MemoryUtil.memAddress(container), container);
+    }
+    
+    /**
+     * Returns a new {@link Byte2} instance for the specified memory address.
+     */
+    public static @NotNull Byte2 create(long address)
+    {
+        return wrap(Byte2.class, address);
+    }
+    
+    /**
+     * Returns a new {@link Byte2} instance for the specified memory address, but returns {@code null} if {@code address} is {@link MemoryUtil#NULL NULL}.
+     */
+    public static @Nullable Byte2 createSafe(long address)
+    {
+        return address == MemoryUtil.NULL ? null : create(address);
+    }
+    
+    /**
+     * Returns a new {@link Byte2} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
+     */
+    public static @NotNull Byte2 malloc()
+    {
+        return wrap(Byte2.class, MemoryUtil.nmemAllocChecked(Byte2.SIZEOF));
+    }
+    
+    /**
+     * Returns a new {@link Byte2} instance allocated on the specified {@link MemoryStack}.
+     *
+     * @param stack the stack from which to allocate
+     */
+    public static @NotNull Byte2 malloc(@NotNull MemoryStack stack)
+    {
+        return wrap(Byte2.class, stack.nmalloc(Byte2.ALIGNOF, Byte2.SIZEOF));
+    }
+    
+    /**
+     * Returns a new {@link Byte2} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
+     */
+    public static @NotNull Byte2 calloc()
+    {
+        return wrap(Byte2.class, MemoryUtil.nmemCallocChecked(1, Byte2.SIZEOF));
+    }
+    
+    /**
+     * Returns a new {@link Byte2} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
+     *
+     * @param stack the stack from which to allocate
+     */
+    public static @NotNull Byte2 calloc(@NotNull MemoryStack stack)
+    {
+        return wrap(Byte2.class, stack.ncalloc(Byte2.ALIGNOF, 1, Byte2.SIZEOF));
+    }
+    
+    /**
+     * Returns a new {@link Buffer} instance allocated with {@link BufferUtils}.
+     *
+     * @param capacity the buffer capacity
+     */
+    public static @NotNull Byte2.Buffer create(int capacity)
+    {
+        ByteBuffer container = __create(capacity, Byte2.SIZEOF);
+        return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining(), container);
+    }
+    
+    /**
+     * Create a {@link Buffer} instance at the specified memory.
+     *
+     * @param address  the memory address
+     * @param capacity the buffer capacity
+     */
+    public static @NotNull Byte2.Buffer create(long address, int capacity)
+    {
+        return wrap(Buffer.class, address, capacity * Byte2.SIZEOF);
+    }
+    
+    /**
+     * Create a {@link Buffer} instance at the specified memory, but returns {@code null} if {@code address} is {@code MemoryUtil#NULL NULL}.
+     */
+    public static @Nullable Byte2.Buffer createSafe(long address, int capacity)
+    {
+        return address == MemoryUtil.NULL ? null : create(address, capacity);
+    }
+    
+    /**
+     * Wraps a {@link ByteBuffer} instance in a Buffer
+     *
+     * @param container The data buffer to wrap.
+     */
+    public static @NotNull Byte2.Buffer wrap(@NotNull ByteBuffer container)
+    {
+        return wrap(Buffer.class, MemoryUtil.memAddress(container), container.remaining() / Byte2.SIZEOF);
+    }
+    
+    /**
+     * Wraps a {@link ByteBuffer} instance in a Buffer
+     *
+     * @param container The data buffer to wrap.
+     */
+    public static @Nullable Byte2.Buffer wrapSafe(@Nullable ByteBuffer container)
+    {
+        return container == null ? null : wrap(container);
+    }
+    
+    /**
+     * Returns a new {@link Buffer} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
+     *
+     * @param capacity the buffer capacity
+     */
+    public static @NotNull Byte2.Buffer malloc(int capacity)
+    {
+        return wrap(Buffer.class, MemoryUtil.nmemAllocChecked(__checkMalloc(capacity, Byte2.SIZEOF)), capacity);
+    }
+    
+    /**
+     * Returns a new {@link Buffer} instance allocated on the specified {@link MemoryStack}.
+     *
+     * @param stack    the stack from which to allocate
+     * @param capacity the buffer capacity
+     */
+    public static @NotNull Byte2.Buffer malloc(int capacity, @NotNull MemoryStack stack)
+    {
+        return wrap(Buffer.class, stack.nmalloc(Byte2.ALIGNOF, capacity * Byte2.SIZEOF), capacity);
+    }
+    
+    /**
+     * Returns a new {@link Buffer} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
+     *
+     * @param capacity the buffer capacity
+     */
+    public static @NotNull Byte2.Buffer calloc(int capacity)
+    {
+        return wrap(Buffer.class, MemoryUtil.nmemCallocChecked(capacity, Byte2.SIZEOF), capacity);
+    }
+    
+    /**
+     * Returns a new {@link Buffer} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
+     *
+     * @param stack    the stack from which to allocate
+     * @param capacity the buffer capacity
+     */
+    public static @NotNull Byte2.Buffer calloc(int capacity, @NotNull MemoryStack stack)
+    {
+        return wrap(Buffer.class, stack.ncalloc(Byte2.ALIGNOF, capacity, Byte2.SIZEOF), capacity);
+    }
+    
+    public static @NotNull Byte2.Buffer realloc(@Nullable Byte2.Buffer ptr, int capacity)
+    {
+        ByteBuffer old    = MemoryUtil.memByteBufferSafe(MemoryUtil.memAddressSafe(ptr), capacity * Byte2.SIZEOF);
+        ByteBuffer newPtr = MemoryUtil.memRealloc(old, capacity * Byte2.SIZEOF);
+        return wrap(Buffer.class, MemoryUtil.memAddress(newPtr), capacity, newPtr);
+    }
+    
+    // ---------- Instance ---------- //
+    
+    public Byte2(@NotNull ByteBuffer container)
+    {
+        super(MemoryUtil.memAddress(container), __checkContainer(container, Byte2.SIZEOF));
     }
     
     @Override
     public @NotNull String toString()
     {
-        return "Byte2{" + "x=" + x() + ", y=" + y() + '}';
+        return "Int4{" + "x=" + x() + ", y=" + y() + '}';
     }
     
     /**
@@ -115,261 +321,7 @@ public class Byte2 extends Struct implements NativeResource
         return x(x).y(y);
     }
     
-    // -----------------------------------
-    
-    /**
-     * Unsafe version of {@link #x}.
-     */
-    public static int nx(long struct)
-    {
-        return UNSAFE.getByte(null, struct + Byte2.X);
-    }
-    
-    /**
-     * Unsafe version of {@link #y}.
-     */
-    public static int ny(long struct)
-    {
-        return UNSAFE.getByte(null, struct + Byte2.Y);
-    }
-    
-    /**
-     * Unsafe version of {@link #x(int) buttons}.
-     */
-    public static void nx(long struct, int value)
-    {
-        UNSAFE.putByte(null, struct + Byte2.X, (byte) (value & 0xFF));
-    }
-    
-    /**
-     * Unsafe version of {@link #y(int) buttons}.
-     */
-    public static void ny(long struct, int value)
-    {
-        UNSAFE.putByte(null, struct + Byte2.Y, (byte) (value & 0xFF));
-    }
-    
-    // --------------------------------------
-    
-    /**
-     * Returns a new {@code Float2} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
-     */
-    public static @NotNull Byte2 malloc()
-    {
-        return wrap(Byte2.class, nmemAllocChecked(Byte2.SIZEOF));
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
-     */
-    public static @NotNull Byte2 calloc()
-    {
-        return wrap(Byte2.class, nmemCallocChecked(1, Byte2.SIZEOF));
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance allocated with {@link BufferUtils}.
-     */
-    public static @NotNull Byte2 create()
-    {
-        ByteBuffer container = __create(1, Byte2.SIZEOF);
-        return wrap(Byte2.class, memAddress(container), container);
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance for the specified memory address.
-     */
-    public static @NotNull Byte2 create(long address)
-    {
-        return wrap(Byte2.class, address);
-    }
-    
-    /**
-     * Like {@link #create(long) create}, but returns {@code null} if {@code address} is {@code NULL}.
-     */
-    public static @Nullable Byte2 createSafe(long address)
-    {
-        return address == NULL ? null : create(address);
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance allocated on the thread-local {@link MemoryStack}.
-     */
-    public static @NotNull Byte2 mallocStack()
-    {
-        return mallocStack(stackGet());
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance allocated on the thread-local {@link MemoryStack} and initializes all its bits to zero.
-     */
-    public static @NotNull Byte2 callocStack()
-    {
-        return callocStack(stackGet());
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance allocated on the specified {@link MemoryStack}.
-     *
-     * @param stack the stack from which to allocate
-     */
-    public static @NotNull Byte2 mallocStack(MemoryStack stack)
-    {
-        return wrap(Byte2.class, stack.nmalloc(Byte2.ALIGNOF, Byte2.SIZEOF));
-    }
-    
-    /**
-     * Returns a new {@code Float2} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
-     *
-     * @param stack the stack from which to allocate
-     */
-    public static @NotNull Byte2 callocStack(MemoryStack stack)
-    {
-        return wrap(Byte2.class, stack.ncalloc(Byte2.ALIGNOF, 1, Byte2.SIZEOF));
-    }
-    
-    // -----------------------------------
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated with {@link MemoryUtil#memAlloc memAlloc}. The instance must be explicitly freed.
-     *
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer malloc(int capacity)
-    {
-        return wrap(Buffer.class, nmemAllocChecked(__checkMalloc(capacity, Byte2.SIZEOF)), capacity);
-    }
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated with {@link MemoryUtil#memCalloc memCalloc}. The instance must be explicitly freed.
-     *
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer calloc(int capacity)
-    {
-        return wrap(Buffer.class, nmemCallocChecked(capacity, Byte2.SIZEOF), capacity);
-    }
-    
-    public static @NotNull Byte2.Buffer realloc(@Nullable Byte2.Buffer ptr, int capacity)
-    {
-        ByteBuffer old    = MemoryUtil.memByteBufferSafe(MemoryUtil.memAddressSafe(ptr), capacity * Byte2.SIZEOF);
-        ByteBuffer newPtr = MemoryUtil.memRealloc(old, capacity * Byte2.SIZEOF);
-        return wrap(Buffer.class, memAddress(newPtr), capacity, newPtr);
-    }
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated with {@link BufferUtils}.
-     *
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer create(int capacity)
-    {
-        ByteBuffer container = __create(capacity, Byte2.SIZEOF);
-        return wrap(Buffer.class, memAddress(container), container.remaining(), container);
-    }
-    
-    /**
-     * Create a {@link Buffer} instance at the specified memory.
-     *
-     * @param address  the memory address
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer create(long address, int capacity)
-    {
-        return wrap(Buffer.class, address, capacity * Byte2.SIZEOF);
-    }
-    
-    /**
-     * Like {@link #create(long, int) create}, but returns {@code null} if {@code address} is {@code NULL}.
-     */
-    public static @Nullable Byte2.Buffer createSafe(long address, int capacity)
-    {
-        return address == NULL ? null : create(address, capacity);
-    }
-    
-    /**
-     * Wraps a {@link ByteBuffer} instance in a Buffer
-     *
-     * @param container The data buffer to wrap.
-     */
-    public static @NotNull Byte2.Buffer wrap(@NotNull ByteBuffer container)
-    {
-        return wrap(Buffer.class, memAddress(container), container.remaining() / Byte2.SIZEOF);
-    }
-    
-    /**
-     * Wraps a {@link ByteBuffer} instance in a Buffer
-     *
-     * @param container The data buffer to wrap.
-     */
-    public static @Nullable Byte2.Buffer wrapSafe(@Nullable ByteBuffer container)
-    {
-        return container == null ? null : wrap(container);
-    }
-    
-    /**
-     * Wraps a {@link FloatBuffer} instance in a Buffer
-     *
-     * @param container The data buffer to wrap.
-     */
-    public static @NotNull Byte2.Buffer wrap(@NotNull FloatBuffer container)
-    {
-        return wrap(Buffer.class, memAddress(container), container.remaining());
-    }
-    
-    /**
-     * Wraps a {@link FloatBuffer} instance in a Buffer
-     *
-     * @param container The data buffer to wrap.
-     */
-    public static @Nullable Byte2.Buffer wrapSafe(@Nullable FloatBuffer container)
-    {
-        return container == null ? null : wrap(container);
-    }
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated on the thread-local {@link MemoryStack}.
-     *
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer mallocStack(int capacity)
-    {
-        return mallocStack(capacity, stackGet());
-    }
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated on the thread-local {@link MemoryStack} and initializes all its bits to zero.
-     *
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer callocStack(int capacity)
-    {
-        return callocStack(capacity, stackGet());
-    }
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated on the specified {@link MemoryStack}.
-     *
-     * @param stack    the stack from which to allocate
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer mallocStack(int capacity, MemoryStack stack)
-    {
-        return wrap(Buffer.class, stack.nmalloc(Byte2.ALIGNOF, capacity * Byte2.SIZEOF), capacity);
-    }
-    
-    /**
-     * Returns a new {@link Buffer} instance allocated on the specified {@link MemoryStack} and initializes all its bits to zero.
-     *
-     * @param stack    the stack from which to allocate
-     * @param capacity the buffer capacity
-     */
-    public static @NotNull Byte2.Buffer callocStack(int capacity, MemoryStack stack)
-    {
-        return wrap(Buffer.class, stack.ncalloc(Byte2.ALIGNOF, capacity, Byte2.SIZEOF), capacity);
-    }
-    
-    // -----------------------------------
+    // ---------- Buffer ---------- //
     
     public static class Buffer extends StructBuffer<Byte2, Buffer>
     {
