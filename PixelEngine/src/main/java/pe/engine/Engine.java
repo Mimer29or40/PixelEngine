@@ -4,9 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
+import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.MemoryUtil;
 import pe.engine.event.Event;
+import pe.engine.render.GLBatch;
+import pe.engine.render.GLFramebuffer;
+import pe.engine.render.GLState;
+import pe.engine.render.MatrixMode;
 import pe.util.Random;
 import rutils.Logger;
 import rutils.group.Pair;
@@ -302,7 +307,7 @@ public abstract class Engine
         }
         
         @SuppressWarnings("unchecked")
-        public static <E extends Event> Set<E> get(Class<E> eventType)
+        public static <E extends Event> List<E> get(Class<E> eventType)
         {
             List<E> events = new ArrayList<>();
             for (Event event : Events.events)
@@ -310,7 +315,7 @@ public abstract class Engine
                 Class<? extends Event> eventClass = event.getClass();
                 if (eventType.isAssignableFrom(eventClass)) events.add((E) event);
             }
-            return Set.copyOf(events);
+            return Collections.unmodifiableList(events);
         }
     }
     
@@ -530,6 +535,8 @@ public abstract class Engine
             
             Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
             Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
+    
+            GL33.glViewport(Viewport.x(), Viewport.y(), Viewport.width(), Viewport.height()); // TODO - Remove this
         }
     }
     
@@ -588,15 +595,18 @@ public abstract class Engine
                                 
                                 // Debug.handleEvents();
                                 
+                                Viewport.update();
+                                
+                                GLFramebuffer.bind(null);
+                                
                                 if (!Time.paused)
                                 {
+                                    // TODO - Bind RenderTarget Here
+                                    
                                     // Engine.renderer.start(); // TODO
                                     
-                                    // GL.Matrix.mode(MatrixMode.TRANSFORM);
-                                    // GL.Matrix.loadIdentity();
-                                    //
-                                    // GL.Matrix.mode(MatrixMode.MODEL_VIEW);
-                                    // GL.Matrix.loadIdentity();
+                                    GLBatch.get().matrix.mode(MatrixMode.MODEL);
+                                    GLBatch.get().matrix.loadIdentity();
                                     
                                     // Engine.renderer.push(); // TODO
                                     Extensions.preDraw();
@@ -610,15 +620,13 @@ public abstract class Engine
                                     Extensions.postDraw();
                                     // Engine.renderer.pop(); // TODO
                                     
-                                    // GL.disable(GL.DEPTH_TEST);
-                                    // GL.drawRenderBatch(); // Update and draw internal render batch
+                                    // GLState.disable(GLState.DEPTH_TEST);
+                                    // GLState.drawRenderBatch(); // Update and draw internal render batch
                                     
                                     // Engine.renderer.finish(); // TODO
                                 }
                                 
-                                Viewport.update();
-                                
-                                // Draw to Default FrameBuffer
+                                // TODO - Draw to Default FrameBuffer
                                 
                                 // Debug.draw();
                                 
@@ -635,8 +643,8 @@ public abstract class Engine
                             // {
                             //     String fileName = Engine.screenshot + (!Engine.screenshot.endsWith(".png") ? ".png" : "");
                             //
-                            //     int w = Engine.viewSize.x;
-                            //     int h = Engine.viewSize.y;
+                            //     int w = Engine.viewSize.left;
+                            //     int h = Engine.viewSize.bottom;
                             //     int c = 3;
                             //
                             //     int stride = w * c;
@@ -681,8 +689,8 @@ public abstract class Engine
                         // Renderer.destroy(); // TODO
                         // Layers.destroy();
                         // Debug.destroy();
-                        //
-                        // GL.unload();
+                        
+                        GLState.destroy();
                         
                         Window.get().unmakeCurrent();
                         
@@ -765,7 +773,7 @@ public abstract class Engine
         // Engine.LOGGER.finer("Initializing OpenGL Context");
         Window.get().makeCurrent();
         
-        // GL.load();
+        GLState.setup();
         
         // Renderer.init(); // TODO
         // Layers.init();
