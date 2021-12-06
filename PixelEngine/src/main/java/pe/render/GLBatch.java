@@ -71,9 +71,6 @@ public class GLBatch
     
     private int id;
     
-    public final MatrixStack  matrix;
-    public final TextureStack texture;
-    
     private final int elementsCount; // Number of elements in the buffer (QUADS)
     
     private final Float3.Buffer pos;  // (XYZ)  (shader-location = 0)
@@ -92,14 +89,23 @@ public class GLBatch
     
     private boolean hasBegun;
     
-    private final Matrix4d mvp = new Matrix4d();
+    private Matrix4d currentMatrix;
+    
+    private final Matrix4d projection = new Matrix4d();
+    private final Matrix4d view       = new Matrix4d();
+    private final Matrix4d model      = new Matrix4d();
+    private final Matrix4d mvp        = new Matrix4d();
+    
+    private       int        matrixIndex;
+    private final Matrix4d[] matrixStack;
+    
+    private       int         textureIndex;
+    private final String[]    textureNames;
+    private final GLTexture[] textureActive;
     
     public GLBatch()
     {
         this.id = ++GLBatch.index;
-        
-        this.matrix  = new MatrixStack(GLState.MAX_MATRIX_STACK_SIZE);
-        this.texture = new TextureStack(GLState.MAX_ACTIVE_TEXTURES);
         
         this.elementsCount = GLState.DEFAULT_BATCH_BUFFER_ELEMENTS;
         
@@ -137,11 +143,19 @@ public class GLBatch
         
         this.currentDraw = 0;
         this.drawCalls   = new DrawCall[GLState.DEFAULT_BATCH_DRAWCALLS];
-        for (int i = 0; i < GLState.DEFAULT_BATCH_DRAWCALLS; i++) this.drawCalls[i] = new DrawCall();
+        for (int i = 0; i < this.drawCalls.length; i++) this.drawCalls[i] = new DrawCall();
         
         this.currentDepth = 0.99995;
         
         this.hasBegun = false;
+        
+        this.matrixIndex = 0;
+        this.matrixStack = new Matrix4d[GLState.MAX_MATRIX_STACK_SIZE];
+        for (int i = 0; i < this.matrixStack.length; i++) this.matrixStack[i] = new Matrix4d();
+        
+        this.textureIndex  = 0;
+        this.textureNames  = new String[GLState.MAX_ACTIVE_TEXTURES];
+        this.textureActive = new GLTexture[GLState.MAX_ACTIVE_TEXTURES];
         
         GLBatch.LOGGER.fine("Created", this);
     }
@@ -345,16 +359,17 @@ public class GLBatch
             // GL.Uniform.int1(GLProgram.MAP_DIFFUSE, 0); // Active default sampler2D: texture0 // TODO - Is this needed?
             
             // Create modelView-projection matrix and upload to shader
-            this.mvp.set(this.matrix.projection);
-            this.mvp.mul(this.matrix.view);
-            this.mvp.mul(this.matrix.model);
-            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_PROJECTION, false, this.matrix.projection);
-            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_VIEW, false, this.matrix.view);
-            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MODEL, false, this.matrix.model);
+            this.mvp.set(this.projection);
+            this.mvp.mul(this.view);
+            this.mvp.mul(this.model);
+            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_PROJECTION, false, this.projection);
+            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_VIEW, false, this.view);
+            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MODEL, false, this.model);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MVP, false, this.mvp);
             
             GLBuffer.bind(this.vertexArray.indexBuffer()); // TODO - Is this needed?
             
+            activate();
             GL33.glActiveTexture(GL33.GL_TEXTURE0);
             
             for (int i = 0, offset = 0; i <= this.currentDraw; i++)
@@ -392,6 +407,8 @@ public class GLBatch
                 offset += drawCall.vertexCount + drawCall.alignment;
             }
             
+            deactivate();
+            GL33.glActiveTexture(GL33.GL_TEXTURE0);
             GLBuffer.bind((GLBufferElementArray) null); // TODO - Is this needed?
         }
         
@@ -415,14 +432,6 @@ public class GLBatch
         this.currentDepth = 0.99995;
     }
     
-    /**
-     * Increments the current DrawCall if data has been put in it. Otherwise,
-     * just reset it to a known state.
-     * <p>
-     * If data has been put in it, then it is aligned to a multiple of 4.
-     * <p>
-     * If no more DrawCalls are available, then force a draw.
-     */
     private void incDrawCall()
     {
         DrawCall drawCall = this.drawCalls[this.currentDraw];
@@ -459,375 +468,342 @@ public class GLBatch
         drawCall.reset();
     }
     
-    public static final class MatrixStack
+    /**
+     * Set the current matrix mode.
+     *
+     * @param mode the matrix mode. One of:<ul>
+     *             <li>{@link MatrixMode#PROJECTION PROJECTION}</li>
+     *             <li>{@link MatrixMode#VIEW VIEW}</li>
+     *             <li>{@link MatrixMode#MODEL MODEL}</li>
+     *             </ul>
+     */
+    public void matrixMode(@NotNull MatrixMode mode)
     {
-        private Matrix4d current;
+        GLBatch.LOGGER.finest("Setting MatrixStack Mode:", mode);
         
-        private final Matrix4d projection = new Matrix4d();
-        private final Matrix4d view       = new Matrix4d();
-        private final Matrix4d model      = new Matrix4d();
+        this.currentMatrix = switch (mode)
+                {
+                    case PROJECTION -> this.projection;
+                    case VIEW -> this.view;
+                    case MODEL -> this.model;
+                };
+    }
+    
+    /**
+     * @return A read-only view out the currently selected matrix
+     */
+    public @NotNull Matrix4dc getMatrix()
+    {
+        return this.currentMatrix;
+    }
+    
+    /**
+     * Sets the current matrix to a 4 &times; 4 matrix in column-major order.
+     * <p>
+     * The matrix is stored as 16 consecutive values, i.e. as:
+     * <table class=striped>
+     * <tr><td>a1</td><td>a5</td><td>a9</td><td>a13</td></tr>
+     * <tr><td>a2</td><td>a6</td><td>a10</td><td>a14</td></tr>
+     * <tr><td>a3</td><td>a7</td><td>a11</td><td>a15</td></tr>
+     * <tr><td>a4</td><td>a8</td><td>a12</td><td>a16</td></tr>
+     * </table>
+     * <p>
+     * This differs from the standard row-major ordering for matrix elements.
+     * If the standard ordering is used, all of the subsequent transformation
+     * equations are transposed, and the columns representing vectors become
+     * rows.
+     *
+     * @param mat matrix data
+     */
+    public void setMatrix(@NotNull Matrix4fc mat)
+    {
+        GLBatch.LOGGER.finest("Setting:", mat);
         
-        private       int        index;
-        private final Matrix4d[] stack;
+        this.currentMatrix.set(mat);
+    }
+    
+    /**
+     * Sets the current matrix to a 4 &times; 4 matrix in column-major order.
+     * <p>
+     * The matrix is stored as 16 consecutive values, i.e. as:
+     * <table class=striped>
+     * <tr><td>a1</td><td>a5</td><td>a9</td><td>a13</td></tr>
+     * <tr><td>a2</td><td>a6</td><td>a10</td><td>a14</td></tr>
+     * <tr><td>a3</td><td>a7</td><td>a11</td><td>a15</td></tr>
+     * <tr><td>a4</td><td>a8</td><td>a12</td><td>a16</td></tr>
+     * </table>
+     * <p>
+     * This differs from the standard row-major ordering for matrix elements.
+     * If the standard ordering is used, all of the subsequent transformation
+     * equations are transposed, and the columns representing vectors become
+     * rows.
+     *
+     * @param mat matrix data
+     */
+    public void setMatrix(@NotNull Matrix4dc mat)
+    {
+        GLBatch.LOGGER.finest("Setting:", mat);
         
-        private MatrixStack(int size)
+        this.currentMatrix.set(mat);
+    }
+    
+    /**
+     * Sets the current matrix to the identity matrix.
+     * <p>
+     * Calling this function is equivalent to calling {@link #setMatrix} with the following matrix:
+     * <table class=striped>
+     * <tr><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+     * <tr><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+     * <tr><td>0</td><td>0</td><td>1</td><td>0</td></tr>
+     * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+     * </table>
+     */
+    public void loadIdentity()
+    {
+        GLBatch.LOGGER.finest("Setting Identity");
+        
+        this.currentMatrix.identity();
+    }
+    
+    /**
+     * Multiplies the current matrix with a 4 &times; 4 matrix in column-major
+     * order. See {@link #setMatrix} for details.
+     *
+     * @param mat the matrix data
+     */
+    public void mulMatrix(@NotNull Matrix4fc mat)
+    {
+        GLBatch.LOGGER.finest("Multiplying:", mat);
+        
+        this.currentMatrix.mul((Matrix4f) mat);
+    }
+    
+    /**
+     * Multiplies the current matrix with a 4 &times; 4 matrix in column-major
+     * order. See {@link #setMatrix} for details.
+     *
+     * @param mat the matrix data
+     */
+    public void mulMatrix(@NotNull Matrix4dc mat)
+    {
+        GLBatch.LOGGER.finest("Multiplying:", mat);
+        
+        this.currentMatrix.mul(mat);
+    }
+    
+    /**
+     * Manipulates the current matrix with a translation matrix along the left-,
+     * bottom- and z- axes.
+     * <p>
+     * Calling this function is equivalent to calling
+     * {@link #mulMatrix} with the following matrix:
+     * <table class=striped>
+     * <tr><td>1</td><td>0</td><td>0</td><td>left</td></tr>
+     * <tr><td>0</td><td>1</td><td>0</td><td>bottom</td></tr>
+     * <tr><td>0</td><td>0</td><td>1</td><td>z</td></tr>
+     * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+     * </table>
+     *
+     * @param x the left-axis translation
+     * @param y the bottom-axis translation
+     * @param z the z-axis translation
+     */
+    public void translate(double x, double y, double z)
+    {
+        GLBatch.LOGGER.finest("Translating: (%s, %s, %s)", x, y, z);
+        
+        this.currentMatrix.translate(x, y, z);
+    }
+    
+    /**
+     * Manipulates the current matrix with a rotation matrix.
+     * <p>
+     * {@code angle} gives an angle of rotation in degrees; the coordinates of
+     * a vector v are given by <code>v = (left bottom z)<sup>T</sup></code>. The
+     * computed matrix is a counter-clockwise rotation about the line through
+     * the origin with the specified axis when that axis is pointing up (i.e.
+     * the right-hand rule determines the sense of the rotation angle). The
+     * matrix is thus
+     * <table class=striped>
+     * <tr><td colspan=3 rowspan=3><b>R</b></td><td>0</td></tr>
+     * <tr><td>0</td></tr>
+     * <tr><td>0</td></tr>
+     * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+     * </table>
+     * <p>
+     * Let <code>u = v / ||v|| = (left' bottom' z')<sup>T</sup></code>. If <b>S</b> =
+     * <table class=striped>
+     * <tr><td>0</td><td>-z'</td><td>bottom'</td></tr>
+     * <tr><td>z'</td><td>0</td><td>-left'</td></tr>
+     * <tr><td>-bottom'</td><td>left'</td><td>0</td></tr>
+     * </table>
+     * <p>
+     * then <code><b>R</b> = uu<sup>T</sup> + cos(angle)(I - uu<sup>T</sup>) + sin(angle)<b>S</b></code>
+     *
+     * @param angleDeg the angle of rotation in degrees
+     * @param x        the left coordinate of the rotation vector
+     * @param y        the bottom coordinate of the rotation vector
+     * @param z        the z coordinate of the rotation vector
+     */
+    public void rotate(double angleDeg, double x, double y, double z)
+    {
+        GLBatch.LOGGER.finest("Rotating: Angle=%s (%s, %s, %s)", angleDeg, x, y, z);
+        
+        this.currentMatrix.rotate(Math.toRadians(angleDeg), x, y, z);
+    }
+    
+    /**
+     * Manipulates the current matrix with a general scaling matrix along the
+     * left-, bottom- and z- axes.
+     * <p>
+     * Calling this function is equivalent to calling
+     * {@link #mulMatrix} with the following matrix:
+     * <table class=striped>
+     * <tr><td>left</td><td>0</td><td>0</td><td>0</td></tr>
+     * <tr><td>0</td><td>bottom</td><td>0</td><td>0</td></tr>
+     * <tr><td>0</td><td>0</td><td>z</td><td>0</td></tr>
+     * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+     * </table>
+     *
+     * @param x the left-axis scaling factor
+     * @param y the bottom-axis scaling factor
+     * @param z the z-axis scaling factor
+     */
+    public void scale(double x, double y, double z)
+    {
+        GLBatch.LOGGER.finest("Scaling: (%s, %s, %s)", x, y, z);
+        
+        this.currentMatrix.scale(x, y, z);
+    }
+    
+    /**
+     * Manipulates the current matrix with a matrix that produces parallel
+     * projection, in such a way that the coordinates
+     * <code>(lb &ndash; n)<sup>T</sup></code> and
+     * <code>(rt &ndash; n)<sup>T</sup></code> specify the points on the near
+     * clipping plane that are mapped to the lower left and upper right corners
+     * of the window, respectively (assuming that the eye is located at
+     * <code>(0 0 0)<sup>T</sup></code>). {@code f} gives the distance from the
+     * eye to the far clipping plane.
+     * <p>
+     * Calling this function is equivalent to calling
+     * {@link #mulMatrix} with the following matrix:
+     * <table class=striped>
+     * <tr><td>2 / (r - l)</td><td>0</td><td>0</td><td>- (r + l) / (r - l)</td></tr>
+     * <tr><td>0</td><td>2 / (t - b)</td><td>0</td><td>- (t + b) / (t - b)</td></tr>
+     * <tr><td>0</td><td>0</td><td>- 2 / (f - n)</td><td>- (f + n) / (f - n)</td></tr>
+     * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
+     * </table>
+     *
+     * @param l the left frustum plane
+     * @param r the right frustum plane
+     * @param b the bottom frustum plane
+     * @param t the bottom frustum plane
+     * @param n the near frustum plane
+     * @param f the far frustum plane
+     */
+    public void ortho(double l, double r, double b, double t, double n, double f)
+    {
+        GLBatch.LOGGER.finest("Ortho: l=%s, r=%s, b=%s, t=%s, n=%s, f=%s", l, r, b, t, n, f);
+        
+        this.currentMatrix.ortho(l, r, b, t, n, f);
+    }
+    
+    /**
+     * Manipulates the current matrix with a matrix that produces perspective
+     * projection, in such a way that the coordinates
+     * <code>(lb &ndash; n)<sup>T</sup></code> and
+     * <code>(rt &ndash; n)<sup>T</sup></code> specify the points on the near
+     * clipping plane that are mapped to the lower left and upper right corners
+     * of the window, respectively (assuming that the eye is located at
+     * <code>(0 0 0)<sup>T</sup></code>). {@code f} gives the distance from the
+     * eye to the far clipping plane.
+     * <p>
+     * Calling this function is equivalent to calling
+     * {@link #mulMatrix} with the following matrix:
+     * <table class=striped>
+     * <tr><td>2n / (r - l)</td><td>0</td><td>(r + l) / (r - l)</td><td>0</td></tr>
+     * <tr><td>0</td><td>2n / (t - b)</td><td>(t + b) / (t - b)</td><td>0</td></tr>
+     * <tr><td>0</td><td>0</td><td>- (f + n) / (f - n)</td><td>- (2fn) / (f - n)</td></tr>
+     * <tr><td>0</td><td>0</td><td>-1</td><td>0</td></tr>
+     * </table>
+     *
+     * @param l the left frustum plane
+     * @param r the right frustum plane
+     * @param b the bottom frustum plane
+     * @param t the bottom frustum plane
+     * @param n the near frustum plane
+     * @param f the far frustum plane
+     */
+    public void frustum(double l, double r, double b, double t, double n, double f)
+    {
+        GLBatch.LOGGER.finest("Frustum: l=%s, r=%s, b=%s, t=%s, n=%s, f=%s", l, r, b, t, n, f);
+        
+        this.currentMatrix.frustum(l, r, b, t, n, f);
+    }
+    
+    /**
+     * Pushes the current matrix stack down by one, duplicating the current
+     * matrix in both the bottom of the stack and the entry below it.
+     */
+    public void pushMatrix()
+    {
+        GLBatch.LOGGER.finest("Pushing Stack");
+        
+        this.matrixStack[this.matrixIndex++].set(this.currentMatrix);
+    }
+    
+    /**
+     * Pops the bottom entry off the current matrix stack, replacing the current
+     * matrix with the matrix that was the second entry in the stack.
+     */
+    public void popMatrix()
+    {
+        GLBatch.LOGGER.finest("Popping Stack");
+        
+        this.currentMatrix.set(this.matrixStack[--this.matrixIndex]);
+    }
+    
+    public void addTexture(@NotNull String name, @NotNull GLTexture texture)
+    {
+        GLBatch.LOGGER.finest("Adding Texture to Batch: %s=%s", name, texture);
+        
+        if (this.textureIndex + 1 > this.textureNames.length) throw new IllegalStateException("Active Texture Limit Exceeded: " + this.textureNames.length);
+        
+        this.textureNames[this.textureIndex]  = name;
+        this.textureActive[this.textureIndex] = texture;
+        
+        this.textureIndex++;
+    }
+    
+    private void activate()
+    {
+        GLBatch.LOGGER.finest("Activating Textures");
+        
+        for (int i = 0; i < this.textureIndex; i++)
         {
-            this.index = 0;
-            this.stack = new Matrix4d[size];
-            for (int i = 0; i < size; i++) this.stack[i] = new Matrix4d();
-        }
-        
-        /**
-         * Set the current matrix mode.
-         *
-         * @param mode the matrix mode. One of:<ul>
-         *             <li>{@link MatrixMode#PROJECTION PROJECTION}</li>
-         *             <li>{@link MatrixMode#VIEW VIEW}</li>
-         *             <li>{@link MatrixMode#MODEL MODEL}</li>
-         *             </ul>
-         */
-        public void mode(@NotNull MatrixMode mode)
-        {
-            GLBatch.LOGGER.finest("Setting MatrixStack Mode:", mode);
-            
-            this.current = switch (mode)
-                    {
-                        case PROJECTION -> this.projection;
-                        case VIEW -> this.view;
-                        case MODEL -> this.model;
-                    };
-        }
-        
-        /**
-         * @return A read-only view out the currently selected matrix
-         */
-        public @NotNull Matrix4dc get()
-        {
-            return this.current;
-        }
-        
-        /**
-         * Sets the current matrix to a 4 &times; 4 matrix in column-major order.
-         * <p>
-         * The matrix is stored as 16 consecutive values, i.e. as:
-         * <table class=striped>
-         * <tr><td>a1</td><td>a5</td><td>a9</td><td>a13</td></tr>
-         * <tr><td>a2</td><td>a6</td><td>a10</td><td>a14</td></tr>
-         * <tr><td>a3</td><td>a7</td><td>a11</td><td>a15</td></tr>
-         * <tr><td>a4</td><td>a8</td><td>a12</td><td>a16</td></tr>
-         * </table>
-         * <p>
-         * This differs from the standard row-major ordering for matrix elements.
-         * If the standard ordering is used, all of the subsequent transformation
-         * equations are transposed, and the columns representing vectors become
-         * rows.
-         *
-         * @param mat matrix data
-         */
-        public void set(@NotNull Matrix4fc mat)
-        {
-            GLBatch.LOGGER.finest("Setting:", mat);
-            
-            this.current.set(mat);
-        }
-        
-        /**
-         * Sets the current matrix to a 4 &times; 4 matrix in column-major order.
-         * <p>
-         * The matrix is stored as 16 consecutive values, i.e. as:
-         * <table class=striped>
-         * <tr><td>a1</td><td>a5</td><td>a9</td><td>a13</td></tr>
-         * <tr><td>a2</td><td>a6</td><td>a10</td><td>a14</td></tr>
-         * <tr><td>a3</td><td>a7</td><td>a11</td><td>a15</td></tr>
-         * <tr><td>a4</td><td>a8</td><td>a12</td><td>a16</td></tr>
-         * </table>
-         * <p>
-         * This differs from the standard row-major ordering for matrix elements.
-         * If the standard ordering is used, all of the subsequent transformation
-         * equations are transposed, and the columns representing vectors become
-         * rows.
-         *
-         * @param mat matrix data
-         */
-        public void set(@NotNull Matrix4dc mat)
-        {
-            GLBatch.LOGGER.finest("Setting:", mat);
-            
-            this.current.set(mat);
-        }
-        
-        /**
-         * Sets the current matrix to the identity matrix.
-         * <p>
-         * Calling this function is equivalent to calling {@link #set} with the following matrix:
-         * <table class=striped>
-         * <tr><td>1</td><td>0</td><td>0</td><td>0</td></tr>
-         * <tr><td>0</td><td>1</td><td>0</td><td>0</td></tr>
-         * <tr><td>0</td><td>0</td><td>1</td><td>0</td></tr>
-         * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
-         * </table>
-         */
-        public void loadIdentity()
-        {
-            GLBatch.LOGGER.finest("Setting Identity");
-            
-            this.current.identity();
-        }
-        
-        /**
-         * Multiplies the current matrix with a 4 &times; 4 matrix in column-major
-         * order. See {@link #set} for details.
-         *
-         * @param mat the matrix data
-         */
-        public void mul(@NotNull Matrix4fc mat)
-        {
-            GLBatch.LOGGER.finest("Multiplying:", mat);
-            
-            this.current.mul((Matrix4f) mat);
-        }
-        
-        /**
-         * Multiplies the current matrix with a 4 &times; 4 matrix in column-major
-         * order. See {@link #set} for details.
-         *
-         * @param mat the matrix data
-         */
-        public void mul(@NotNull Matrix4dc mat)
-        {
-            GLBatch.LOGGER.finest("Multiplying:", mat);
-            
-            this.current.mul(mat);
-        }
-        
-        /**
-         * Manipulates the current matrix with a translation matrix along the left-,
-         * bottom- and z- axes.
-         * <p>
-         * Calling this function is equivalent to calling
-         * {@link #mul} with the following matrix:
-         * <table class=striped>
-         * <tr><td>1</td><td>0</td><td>0</td><td>left</td></tr>
-         * <tr><td>0</td><td>1</td><td>0</td><td>bottom</td></tr>
-         * <tr><td>0</td><td>0</td><td>1</td><td>z</td></tr>
-         * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
-         * </table>
-         *
-         * @param x the left-axis translation
-         * @param y the bottom-axis translation
-         * @param z the z-axis translation
-         */
-        public void translate(double x, double y, double z)
-        {
-            GLBatch.LOGGER.finest("Translating: (%s, %s, %s)", x, y, z);
-            
-            this.current.translate(x, y, z);
-        }
-        
-        /**
-         * Manipulates the current matrix with a rotation matrix.
-         * <p>
-         * {@code angle} gives an angle of rotation in degrees; the coordinates of
-         * a vector v are given by <code>v = (left bottom z)<sup>T</sup></code>. The
-         * computed matrix is a counter-clockwise rotation about the line through
-         * the origin with the specified axis when that axis is pointing up (i.e.
-         * the right-hand rule determines the sense of the rotation angle). The
-         * matrix is thus
-         * <table class=striped>
-         * <tr><td colspan=3 rowspan=3><b>R</b></td><td>0</td></tr>
-         * <tr><td>0</td></tr>
-         * <tr><td>0</td></tr>
-         * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
-         * </table>
-         * <p>
-         * Let <code>u = v / ||v|| = (left' bottom' z')<sup>T</sup></code>. If <b>S</b> =
-         * <table class=striped>
-         * <tr><td>0</td><td>-z'</td><td>bottom'</td></tr>
-         * <tr><td>z'</td><td>0</td><td>-left'</td></tr>
-         * <tr><td>-bottom'</td><td>left'</td><td>0</td></tr>
-         * </table>
-         * <p>
-         * then <code><b>R</b> = uu<sup>T</sup> + cos(angle)(I - uu<sup>T</sup>) + sin(angle)<b>S</b></code>
-         *
-         * @param angleDeg the angle of rotation in degrees
-         * @param x        the left coordinate of the rotation vector
-         * @param y        the bottom coordinate of the rotation vector
-         * @param z        the z coordinate of the rotation vector
-         */
-        public void rotate(double angleDeg, double x, double y, double z)
-        {
-            GLBatch.LOGGER.finest("Rotating: Angle=%s (%s, %s, %s)", angleDeg, x, y, z);
-            
-            this.current.rotate(Math.toRadians(angleDeg), x, y, z);
-        }
-        
-        /**
-         * Manipulates the current matrix with a general scaling matrix along the
-         * left-, bottom- and z- axes.
-         * <p>
-         * Calling this function is equivalent to calling
-         * {@link #mul} with the following matrix:
-         * <table class=striped>
-         * <tr><td>left</td><td>0</td><td>0</td><td>0</td></tr>
-         * <tr><td>0</td><td>bottom</td><td>0</td><td>0</td></tr>
-         * <tr><td>0</td><td>0</td><td>z</td><td>0</td></tr>
-         * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
-         * </table>
-         *
-         * @param x the left-axis scaling factor
-         * @param y the bottom-axis scaling factor
-         * @param z the z-axis scaling factor
-         */
-        public void scale(double x, double y, double z)
-        {
-            GLBatch.LOGGER.finest("Scaling: (%s, %s, %s)", x, y, z);
-            
-            this.current.scale(x, y, z);
-        }
-        
-        /**
-         * Manipulates the current matrix with a matrix that produces parallel
-         * projection, in such a way that the coordinates
-         * <code>(lb &ndash; n)<sup>T</sup></code> and
-         * <code>(rt &ndash; n)<sup>T</sup></code> specify the points on the near
-         * clipping plane that are mapped to the lower left and upper right corners
-         * of the window, respectively (assuming that the eye is located at
-         * <code>(0 0 0)<sup>T</sup></code>). {@code f} gives the distance from the
-         * eye to the far clipping plane.
-         * <p>
-         * Calling this function is equivalent to calling
-         * {@link #mul} with the following matrix:
-         * <table class=striped>
-         * <tr><td>2 / (r - l)</td><td>0</td><td>0</td><td>- (r + l) / (r - l)</td></tr>
-         * <tr><td>0</td><td>2 / (t - b)</td><td>0</td><td>- (t + b) / (t - b)</td></tr>
-         * <tr><td>0</td><td>0</td><td>- 2 / (f - n)</td><td>- (f + n) / (f - n)</td></tr>
-         * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
-         * </table>
-         *
-         * @param l the left frustum plane
-         * @param r the right frustum plane
-         * @param b the bottom frustum plane
-         * @param t the bottom frustum plane
-         * @param n the near frustum plane
-         * @param f the far frustum plane
-         */
-        public void ortho(double l, double r, double b, double t, double n, double f)
-        {
-            GLBatch.LOGGER.finest("Ortho: l=%s, r=%s, b=%s, t=%s, n=%s, f=%s", l, r, b, t, n, f);
-            
-            this.current.ortho(l, r, b, t, n, f);
-        }
-        
-        /**
-         * Manipulates the current matrix with a matrix that produces perspective
-         * projection, in such a way that the coordinates
-         * <code>(lb &ndash; n)<sup>T</sup></code> and
-         * <code>(rt &ndash; n)<sup>T</sup></code> specify the points on the near
-         * clipping plane that are mapped to the lower left and upper right corners
-         * of the window, respectively (assuming that the eye is located at
-         * <code>(0 0 0)<sup>T</sup></code>). {@code f} gives the distance from the
-         * eye to the far clipping plane.
-         * <p>
-         * Calling this function is equivalent to calling
-         * {@link #mul} with the following matrix:
-         * <table class=striped>
-         * <tr><td>2n / (r - l)</td><td>0</td><td>(r + l) / (r - l)</td><td>0</td></tr>
-         * <tr><td>0</td><td>2n / (t - b)</td><td>(t + b) / (t - b)</td><td>0</td></tr>
-         * <tr><td>0</td><td>0</td><td>- (f + n) / (f - n)</td><td>- (2fn) / (f - n)</td></tr>
-         * <tr><td>0</td><td>0</td><td>-1</td><td>0</td></tr>
-         * </table>
-         *
-         * @param l the left frustum plane
-         * @param r the right frustum plane
-         * @param b the bottom frustum plane
-         * @param t the bottom frustum plane
-         * @param n the near frustum plane
-         * @param f the far frustum plane
-         */
-        public void frustum(double l, double r, double b, double t, double n, double f)
-        {
-            GLBatch.LOGGER.finest("Frustum: l=%s, r=%s, b=%s, t=%s, n=%s, f=%s", l, r, b, t, n, f);
-            
-            this.current.frustum(l, r, b, t, n, f);
-        }
-        
-        /**
-         * Pushes the current matrix stack down by one, duplicating the current
-         * matrix in both the bottom of the stack and the entry below it.
-         */
-        public void push()
-        {
-            GLBatch.LOGGER.finest("Pushing Stack");
-            
-            this.stack[this.index++].set(this.current);
-        }
-        
-        /**
-         * Pops the bottom entry off the current matrix stack, replacing the current
-         * matrix with the matrix that was the second entry in the stack.
-         */
-        public void pop()
-        {
-            GLBatch.LOGGER.finest("Popping Stack");
-            
-            this.current.set(this.stack[--this.index]);
+            GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
+            GL33.glBindTexture(GLTexture.getTextureTypeInt(this.textureActive[i].type()), this.textureActive[i].id());
+            GLProgram.Uniform.int1(this.textureNames[i], i + 1);
         }
     }
     
-    public static final class TextureStack
+    private void deactivate()
     {
-        private       int         index;
-        private final String[]    names;
-        private final GLTexture[] active;
+        GLBatch.LOGGER.finest("Deactivating Textures");
         
-        private TextureStack(int size)
+        for (int i = 0; i < this.textureIndex; i++)
         {
-            this.index  = 0;
-            this.names  = new String[size];
-            this.active = new GLTexture[size];
+            GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
+            GL33.glBindTexture(GLTexture.getTextureTypeInt(this.textureActive[i].type()), 0);
+            
+            this.textureNames[i]  = null;
+            this.textureActive[i] = null;
         }
-        
-        public void addTexture(@NotNull String name, @NotNull GLTexture texture)
-        {
-            GLBatch.LOGGER.finest("Adding Texture to Batch: %s=%s", name, texture);
-            
-            if (this.index + 1 > this.names.length) throw new IllegalStateException("Active Texture Limit Exceeded: " + this.names.length);
-            
-            this.names[this.index]  = name;
-            this.active[this.index] = texture;
-            
-            this.index++;
-        }
-        
-        private void activate()
-        {
-            GLBatch.LOGGER.finest("Activating Textures");
-            
-            for (int i = 0; i < this.index; i++)
-            {
-                GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
-                GL33.glBindTexture(GLTexture.getTextureTypeInt(this.active[i].type()), this.active[i].id());
-                GLProgram.Uniform.int1(this.names[i], i + 1);
-            }
-        }
-        
-        private void deactivate()
-        {
-            GLBatch.LOGGER.finest("Deactivating Textures");
-            
-            for (int i = 0; i < this.index; i++)
-            {
-                GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
-                GL33.glBindTexture(GLTexture.getTextureTypeInt(this.active[i].type()), 0);
-                
-                this.names[i]  = null;
-                this.active[i] = null;
-            }
-            this.index = 0;
-        }
+        this.textureIndex = 0;
     }
     
-    public static final class DrawCall
+    private static final class DrawCall
     {
         private DrawMode mode;
         

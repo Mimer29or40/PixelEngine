@@ -132,16 +132,16 @@ public class GLState
         int b = Engine.screenHeight() >> 1;
         int t = -b;
         
-        GLBatch.get().matrix.mode(MatrixMode.PROJECTION);
-        GLBatch.get().matrix.loadIdentity();
-        GLBatch.get().matrix.ortho(l, r, b, t, 1.0, -1.0);
+        GLBatch.get().matrixMode(MatrixMode.PROJECTION);
+        GLBatch.get().loadIdentity();
+        GLBatch.get().ortho(l, r, b, t, 1.0, -1.0);
         
-        GLBatch.get().matrix.mode(MatrixMode.VIEW);
-        GLBatch.get().matrix.loadIdentity();
-        GLBatch.get().matrix.translate(l, t, 0.0);
+        GLBatch.get().matrixMode(MatrixMode.VIEW);
+        GLBatch.get().loadIdentity();
+        GLBatch.get().translate(l, t, 0.0);
         
-        GLBatch.get().matrix.mode(MatrixMode.MODEL);
-        GLBatch.get().matrix.loadIdentity();
+        GLBatch.get().matrixMode(MatrixMode.MODEL);
+        GLBatch.get().loadIdentity();
     }
     
     /**
