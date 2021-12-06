@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.*;
-import pe.color.Color_GRAY;
 
 import java.nio.ByteBuffer;
 

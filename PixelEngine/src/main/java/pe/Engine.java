@@ -2,20 +2,26 @@ package pe;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4d;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.APIUtil;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import pe.color.Color;
+import pe.color.ColorFormat;
+import pe.color.Colorc;
+import pe.draw.*;
 import pe.event.Event;
-import pe.render.GLBatch;
-import pe.render.GLFramebuffer;
-import pe.render.GLState;
-import pe.render.MatrixMode;
+import pe.render.*;
 import pe.util.Random;
 import rutils.Logger;
 import rutils.group.Pair;
+import rutils.group.Triple;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -23,6 +29,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.function.Supplier;
 
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.stb.STBEasyFont.*;
 
 public abstract class Engine
 {
@@ -535,8 +542,294 @@ public abstract class Engine
             
             Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
             Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
-    
+            
             GL33.glViewport(Viewport.x(), Viewport.y(), Viewport.width(), Viewport.height()); // TODO - Remove this
+        }
+    }
+    
+    public static final class Debug
+    {
+        private static boolean enabled;
+        
+        private static GLProgram     program;
+        private static GLVertexArray vertexArray;
+        private static Matrix4d      pv;
+        
+        private static Color textColor;
+        private static Color backColor;
+        
+        private static final List<Triple<Integer, Integer, String>> lines = new ArrayList<>();
+        
+        private static String notification;
+        private static long   notificationTime;
+        
+        private static void setup()
+        {
+            Debug.enabled = true;
+            
+            String vert = """
+                          #version 330
+                          
+                          layout(location = 0) in vec3 aPos;
+                          layout(location = 1) in vec4 aCol;
+                          
+                          uniform mat4 pv;
+                          
+                          out vec4 color;
+                          
+                          void main(void) {
+                              color = aCol;
+                              gl_Position = pv * vec4(aPos, 1.0);
+                          }
+                          """;
+            String frag = """
+                          #version 330
+                          
+                          in vec4 color;
+                          
+                          out vec4 FragColor;
+                          
+                          void main(void) {
+                              FragColor = color;
+                          }
+                          """;
+            Debug.program = GLProgram.loadFromCode(vert, null, frag);
+            
+            int elementsCount = 1024;
+            
+            IntBuffer indices = MemoryUtil.memCallocInt(elementsCount * 6); // 6 int per quad (indices)
+            for (int i = 0; i < elementsCount; ++i)
+            {
+                indices.put(4 * i);
+                indices.put(4 * i + 1);
+                indices.put(4 * i + 2);
+                indices.put(4 * i);
+                indices.put(4 * i + 2);
+                indices.put(4 * i + 3);
+            }
+            indices.flip();
+            
+            Debug.vertexArray = GLVertexArray.builder()
+                                             .buffer(elementsCount, Usage.DYNAMIC_DRAW,
+                                                     new GLAttribute(GLType.FLOAT, 3, false),
+                                                     new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
+                                             // .indexBuffer(indices, Usage.STATIC_DRAW)
+                                             .build();
+            MemoryUtil.memFree(indices);
+            
+            Debug.pv = new Matrix4d();
+            
+            Debug.textColor = Color.create(ColorFormat.RGBA).set(255, 255, 255, 255);
+            Debug.backColor = Color.create(ColorFormat.RGBA).set(255, 255, 255, 0x54);
+        }
+        
+        private static void destroy()
+        {
+            Debug.program.delete();
+            Debug.vertexArray.delete();
+            
+            Debug.textColor.free();
+            Debug.backColor.free();
+        }
+        
+        private static void handleEvents()
+        {
+            if (Keyboard.get().down(Keyboard.Key.F11) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
+            {
+                Debug.enabled = !Debug.enabled;
+                Debug.notification(Debug.enabled ? "Debug Mode: On" : "Debug Mode: Off");
+            }
+            if (Keyboard.get().down(Keyboard.Key.F12) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
+            {
+                Time.paused = !Time.paused;
+                Debug.notification(Time.paused ? "Engine Paused" : "Engine Unpaused");
+            }
+        }
+        
+        private static void draw()
+        {
+            if (Debug.notification != null && Time.current - Debug.notificationTime < Time.notificationDur)
+            {
+                int x = (Viewport.size.x - textWidth(Debug.notification)) >> 1;
+                int y = (Viewport.size.y - textHeight(Debug.notification)) >> 1;
+                
+                drawText(x, y, Debug.notification);
+            }
+            if (Debug.enabled)
+            {
+                String line;
+                drawText(0, 0, line = String.format("Frame: %s", Time.totalFrameCount));
+                drawText(0, textHeight(line), String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D));
+            }
+            if (!Debug.lines.isEmpty())
+            {
+                int fbWidth  = Window.get().framebufferWidth();
+                int fbHeight = Window.get().framebufferHeight();
+                
+                GL33.glViewport(0, 0, fbWidth, fbHeight);
+                
+                GLProgram.bind(Debug.program);
+                GLProgram.Uniform.mat4("pv", Debug.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
+                
+                GLVertexArray.bind(Debug.vertexArray);
+                GLState.winding(Winding.CW);
+                GLState.depthMode(DepthMode.ALWAYS);
+                
+                try (MemoryStack stack = MemoryStack.stackPush())
+                {
+                    ByteBuffer buffer = stack.malloc((int) Debug.vertexArray.buffer(0).size());
+                    
+                    ByteBuffer textColor = Debug.textColor.toBuffer();
+                    ByteBuffer backColor = Debug.backColor.toBuffer();
+                    for (Triple<Integer, Integer, String> line : Debug.lines)
+                    {
+                        float x1 = line.a;
+                        float y1 = line.b;
+                        float x2 = line.a + Debug.textWidth(line.c) + 2;
+                        float y2 = line.b + Debug.textHeight(line.c);
+                        
+                        buffer.putFloat(x1);
+                        buffer.putFloat(y1);
+                        buffer.putFloat(0F);
+                        buffer.put(backColor.clear());
+                        buffer.putFloat(x2);
+                        buffer.putFloat(y1);
+                        buffer.putFloat(0F);
+                        buffer.put(backColor.clear());
+                        buffer.putFloat(x2);
+                        buffer.putFloat(y2);
+                        buffer.putFloat(0F);
+                        buffer.put(backColor.clear());
+                        buffer.putFloat(x1);
+                        buffer.putFloat(y2);
+                        buffer.putFloat(0F);
+                        buffer.put(backColor.clear());
+                        
+                        int quads = stb_easy_font_print(line.a + 2, line.b + 2, line.c, textColor, buffer);
+                        
+                        Debug.vertexArray.buffer(0).set(buffer.clear());
+                        Debug.vertexArray.draw(DrawMode.QUADS, 4 + quads * 4);
+                    }
+                }
+                
+                Debug.lines.clear();
+            }
+        }
+        
+        /**
+         * @return {@code true} if debug mode is enabled
+         */
+        public static boolean enabled()
+        {
+            return Debug.enabled;
+        }
+        
+        /**
+         * Sets the color of the text when rendering debug text.
+         *
+         * @param color The new color.
+         */
+        public static void textColor(Colorc color)
+        {
+            Debug.textColor.set(color);
+        }
+        
+        /**
+         * Sets the color of the background when rendering debug text.
+         *
+         * @param color The new color.
+         */
+        public static void backColor(Colorc color)
+        {
+            Debug.backColor.set(color);
+        }
+        
+        /**
+         * Draws Debug text to the screen. The coordinates passed in will not be affected by any transformations.
+         *
+         * @param x    The x coordinate of the top left point if the text.
+         * @param y    The y coordinate of the top left point if the text.
+         * @param text The text to render.
+         */
+        public static void drawText(int x, int y, String text)
+        {
+            Debug.lines.add(new Triple<>(x, y, text));
+        }
+        
+        public static void notification(String notification)
+        {
+            Debug.notification     = notification;
+            Debug.notificationTime = Time.nanosecondsActual();
+        }
+        
+        /**
+         * Gets the width in pixels of the provided text.
+         *
+         * @param text The text
+         * @return The width in pixels
+         */
+        public static int textWidth(String text)
+        {
+            return stb_easy_font_width(text);
+        }
+        
+        /**
+         * Gets the height in pixels of the provided text.
+         *
+         * @param text The text
+         * @return The height in pixels
+         */
+        public static int textHeight(String text)
+        {
+            return stb_easy_font_height(text);
+        }
+        
+        // /**
+        //  * @return The Engine's Profiler instance.
+        //  */
+        // public static Profiler profiler()
+        // {
+        //     return Debug.profiler;
+        // }
+    }
+    
+    public static final class Draw
+    {
+        private static final DrawPoint2D    DRAW_POINT_2D    = new DrawPoint2D();
+        private static final DrawLine2D     DRAW_LINE_2D     = new DrawLine2D();
+        private static final DrawLines2D    DRAW_LINES_2D    = new DrawLines2D();
+        private static final DrawTriangle2D DRAW_TRIANGLE_2D = new DrawTriangle2D();
+        private static final FillTriangle2D FILL_TRIANGLE_2D = new FillTriangle2D();
+        
+        public static void clearBackground(Colorc color)
+        {
+            GLState.clearColor(color.rf(), color.gf(), color.bf(), color.af());
+            GLState.clearScreenBuffers();
+        }
+        
+        public static DrawPoint2D point2D()
+        {
+            return Draw.DRAW_POINT_2D;
+        }
+        
+        public static DrawLine2D line2D()
+        {
+            return Draw.DRAW_LINE_2D;
+        }
+        
+        public static DrawLines2D lines2D()
+        {
+            return Draw.DRAW_LINES_2D;
+        }
+        
+        public static DrawTriangle2D drawTriangle2D()
+        {
+            return Draw.DRAW_TRIANGLE_2D;
+        }
+        
+        public static FillTriangle2D fillTriangle2D()
+        {
+            return Draw.FILL_TRIANGLE_2D;
         }
     }
     
@@ -593,20 +886,21 @@ public abstract class Engine
                                 
                                 Extensions.postEvents();
                                 
-                                // Debug.handleEvents();
+                                Debug.handleEvents();
                                 
                                 Viewport.update();
                                 
                                 GLFramebuffer.bind(null);
+                                GLProgram.bind(null);
+                                GLTexture.bind(null);
+                                
+                                GLState.defaultState();
                                 
                                 if (!Time.paused)
                                 {
                                     // TODO - Bind RenderTarget Here
                                     
                                     // Engine.renderer.start(); // TODO
-                                    
-                                    GLBatch.get().matrix.mode(MatrixMode.MODEL);
-                                    GLBatch.get().matrix.loadIdentity();
                                     
                                     // Engine.renderer.push(); // TODO
                                     Extensions.preDraw();
@@ -624,11 +918,13 @@ public abstract class Engine
                                     // GLState.drawRenderBatch(); // Update and draw internal render batch
                                     
                                     // Engine.renderer.finish(); // TODO
+                                    
+                                    GLBatch.get().draw();
                                 }
                                 
                                 // TODO - Draw to Default FrameBuffer
                                 
-                                // Debug.draw();
+                                Debug.draw();
                                 
                                 Window.get().swap();
                                 
@@ -688,7 +984,7 @@ public abstract class Engine
                         
                         // Renderer.destroy(); // TODO
                         // Layers.destroy();
-                        // Debug.destroy();
+                        Debug.destroy();
                         
                         GLState.destroy();
                         
@@ -777,7 +1073,7 @@ public abstract class Engine
         
         // Renderer.init(); // TODO
         // Layers.init();
-        // Debug.init();
+        Debug.setup();
         
         // Engine.renderer = new Renderer(Layers.layers[0]); // TODO
         

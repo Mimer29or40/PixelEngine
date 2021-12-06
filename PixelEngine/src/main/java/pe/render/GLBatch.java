@@ -139,7 +139,7 @@ public class GLBatch
         this.drawCalls   = new DrawCall[GLState.DEFAULT_BATCH_DRAWCALLS];
         for (int i = 0; i < GLState.DEFAULT_BATCH_DRAWCALLS; i++) this.drawCalls[i] = new DrawCall();
         
-        this.currentDepth = -1.0;
+        this.currentDepth = 0.99995;
         
         this.hasBegun = false;
         
@@ -245,11 +245,7 @@ public class GLBatch
         // NOTE: Depth increment is dependant on rlOrtho(): z-near and z-far values,
         // as well as depth buffer bit-depth (16bit or 24bit or 32bit)
         // Correct increment formula would be: depthInc = (zFar - zNear)/pow(2, bits)
-        this.currentDepth += 0.00005;
-        
-        // Verify internal buffers limits
-        // NOTE: This check is combined with usage of rlCheckRenderBatchLimit()
-        if (bufferFull(4)) draw();
+        this.currentDepth -= 0.00005;
     }
     
     public void vertex(double x, double y, double z)
@@ -321,9 +317,9 @@ public class GLBatch
         this.tex2.put(u, v);
     }
     
-    public boolean bufferFull(int vertexCount)
+    public void checkBuffer(int vertexCount)
     {
-        return this.pos.position() + vertexCount >= this.elementsCount * 4;
+        if (this.pos.position() + vertexCount >= this.elementsCount * 4) draw();
     }
     
     public void draw()
@@ -416,7 +412,7 @@ public class GLBatch
         for (DrawCall drawCall : this.drawCalls) drawCall.reset();
         
         // Reset Depth
-        this.currentDepth = -1.0;
+        this.currentDepth = 0.99995;
     }
     
     /**
@@ -445,7 +441,7 @@ public class GLBatch
             
             if (drawCall.alignment > 0)
             {
-                if (bufferFull(drawCall.alignment)) draw();
+                checkBuffer(drawCall.alignment);
                 
                 this.pos.position(this.pos.position() + drawCall.alignment);
                 this.tex1.position(this.tex1.position() + drawCall.alignment);

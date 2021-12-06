@@ -30,8 +30,8 @@ public class GLTexture
         {
             // 1 pixel RGBA (4 bytes)
             ByteBuffer pixels = stack.bytes((byte) 255, (byte) 255, (byte) 255, (byte) 255);
-            GLTexture.defaultTexture = new GLTexture(Type.TEXTURE_2D);
-            GLTexture.defaultTexture.width = 1;
+            GLTexture.defaultTexture        = new GLTexture(Type.TEXTURE_2D);
+            GLTexture.defaultTexture.width  = 1;
             GLTexture.defaultTexture.height = 1;
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, GLTexture.defaultTexture.id);
             GL33.glTexImage2D(getTextureTypeInt(GLTexture.defaultTexture.type), 0, GL33.GL_RGBA, 1, 1, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels));
@@ -41,7 +41,7 @@ public class GLTexture
     static void destroy()
     {
         GLTexture.LOGGER.fine("Destroy");
-    
+        
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
         GLTexture.current = null;
         

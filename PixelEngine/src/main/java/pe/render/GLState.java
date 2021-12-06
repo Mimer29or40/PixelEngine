@@ -3,8 +3,8 @@ package pe.render;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
-import pe.color.BlendMode;
 import pe.Engine;
+import pe.color.BlendMode;
 import rutils.Logger;
 
 import java.util.EnumSet;
@@ -56,29 +56,7 @@ public class GLState
     {
         GLState.LOGGER.fine("Setup");
         
-        depthClamp(true);
-        lineSmooth(false);
-        textureCubeMapSeamless(true);
-        
-        wireframe(false);
-        
-        blendMode(BlendMode.DEFAULT);
-        depthMode(DepthMode.DEFAULT);
-        stencilMode(StencilMode.DEFAULT);
-        scissorMode(ScissorMode.DEFAULT);
-        
-        colorMask(true, true, true, true);
-        depthMask(true);
-        stencilMask(0xFF);
-        
-        clearColor(0.0, 0.0, 0.0, 1.0);
-        clearDepth(1.0);
-        clearStencil(0x00);
-        
         clearScreenBuffers(EnumSet.allOf(ScreenBuffer.class));
-        
-        cullFace(CullFace.DEFAULT);
-        winding(Winding.DEFAULT);
         
         GLShader.setup();
         GLProgram.setup();
@@ -101,22 +79,8 @@ public class GLState
         GLBatch.setup();
         GLBatch.bind(null);
         
-        int r = Engine.screenWidth() >> 1;
-        int l = -r;
-        int b = Engine.screenHeight() >> 1;
-        int t = -b;
-    
-        GLBatch.get().matrix.mode(MatrixMode.PROJECTION);
-        GLBatch.get().matrix.loadIdentity();
-        GLBatch.get().matrix.ortho(l, r, b, t, 1.0, -1.0);
-    
-        GLBatch.get().matrix.mode(MatrixMode.VIEW);
-        GLBatch.get().matrix.loadIdentity();
-        GLBatch.get().matrix.translate(l, t, 0.0);
-    
-        GLBatch.get().matrix.mode(MatrixMode.MODEL);
-        GLBatch.get().matrix.loadIdentity();
-    
+        defaultState();
+        
         // TODO - Setup Uniform Buffer for default things
         // TODO - Setup Default Uniform values
     }
@@ -137,6 +101,47 @@ public class GLState
         GLFramebuffer.destroy();
         
         GLBatch.destroy();
+    }
+    
+    public static void defaultState()
+    {
+        depthClamp(true);
+        lineSmooth(false);
+        textureCubeMapSeamless(true);
+        
+        wireframe(false);
+        
+        blendMode(BlendMode.DEFAULT);
+        depthMode(DepthMode.DEFAULT);
+        stencilMode(StencilMode.DEFAULT);
+        scissorMode(ScissorMode.DEFAULT);
+        
+        colorMask(true, true, true, true);
+        depthMask(true);
+        stencilMask(0xFF);
+        
+        clearColor(0.0, 0.0, 0.0, 1.0);
+        clearDepth(1.0);
+        clearStencil(0x00);
+        
+        cullFace(CullFace.DEFAULT);
+        winding(Winding.DEFAULT);
+        
+        int r = Engine.screenWidth() >> 1;
+        int l = -r;
+        int b = Engine.screenHeight() >> 1;
+        int t = -b;
+        
+        GLBatch.get().matrix.mode(MatrixMode.PROJECTION);
+        GLBatch.get().matrix.loadIdentity();
+        GLBatch.get().matrix.ortho(l, r, b, t, 1.0, -1.0);
+        
+        GLBatch.get().matrix.mode(MatrixMode.VIEW);
+        GLBatch.get().matrix.loadIdentity();
+        GLBatch.get().matrix.translate(l, t, 0.0);
+        
+        GLBatch.get().matrix.mode(MatrixMode.MODEL);
+        GLBatch.get().matrix.loadIdentity();
     }
     
     /**
