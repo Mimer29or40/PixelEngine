@@ -27,6 +27,6 @@ public record GLAttribute(@NotNull GLType type, int count, boolean normalized)
     
     public int size()
     {
-        return this.type.bytes() * this.count;
+        return this.type.bytes * this.count;
     }
 }

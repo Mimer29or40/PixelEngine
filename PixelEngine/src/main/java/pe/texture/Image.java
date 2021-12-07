@@ -72,13 +72,7 @@ public class Image
                     
                     ByteBuffer _data = stbi_load_from_memory(fileData, w, h, c, 0);
                     
-                    format = switch (c.get())
-                            {
-                                case 2 -> ColorFormat.GRAY_ALPHA;
-                                case 3 -> ColorFormat.RGB;
-                                case 4 -> ColorFormat.RGBA;
-                                default -> ColorFormat.GRAY;
-                            };
+                    format = ColorFormat.get(c.get());
                     
                     data = Color.wrapSafe(format, _data);
                     
@@ -157,13 +151,7 @@ public class Image
                     
                     ByteBuffer data = stbi_load_gif_from_memory(fileData, delays, width, height, frames, channels, 0);
                     
-                    ColorFormat format = switch (channels.get())
-                            {
-                                case 1 -> ColorFormat.GRAY;
-                                case 2 -> ColorFormat.GRAY_ALPHA;
-                                case 3 -> ColorFormat.RGB;
-                                default -> ColorFormat.RGBA;
-                            };
+                    ColorFormat format = ColorFormat.get(channels.get());
                     
                     frameCount[0] = frames.get();
                     return new Image(Color.wrapSafe(format, data), width.get(), height.get(), 1, format);
@@ -663,28 +651,20 @@ public class Image
     {
         if (this.data == null) return false;
         
-        int channels = switch (this.format)
-                {
-                    case GRAY -> 1;
-                    case GRAY_ALPHA -> 2;
-                    case RGB -> 3;
-                    default -> 4;
-                };
-        
         String extension = getExtension(fileName);
         
         ByteBuffer buffer = this.data.toBuffer();
-        buffer.limit(this.width * this.height * channels);
+        buffer.limit(this.width * this.height * this.format.sizeof);
         
-        boolean success = export(extension, fileName, this.width, this.height, channels, this.mipmaps, this.format, buffer);
+        boolean success = export(extension, fileName, this.width, this.height, this.format.sizeof, this.mipmaps, this.format, buffer);
         
         if (withMipmaps)
         {
-            int nextMip = this.width * this.height * channels;
+            int nextMip = this.width * this.height * this.format.sizeof;
             
             int mipWidth  = this.width >> 1;
             int mipHeight = this.height >> 1;
-            int mipSize   = mipWidth * mipHeight * channels;
+            int mipSize   = mipWidth * mipHeight * this.format.sizeof;
             
             String mipFileBase = fileName.substring(0, fileName.length() - ".png".length());
             
@@ -694,7 +674,7 @@ public class Image
                 buffer.position(nextMip);
                 buffer.limit(nextMip + mipSize);
                 
-                boolean mipSuccess = export(extension, mipFileName, mipWidth, mipHeight, channels, 1, this.format, buffer);
+                boolean mipSuccess = export(extension, mipFileName, mipWidth, mipHeight, this.format.sizeof, 1, this.format, buffer);
                 
                 success = mipSuccess && success;
                 nextMip += mipSize;
@@ -702,7 +682,7 @@ public class Image
                 if ((mipWidth >>= 1) < 1) mipWidth = 1;
                 if ((mipHeight >>= 1) < 1) mipHeight = 1;
                 
-                mipSize = mipWidth * mipHeight * channels;
+                mipSize = mipWidth * mipHeight * this.format.sizeof;
             }
         }
         
@@ -792,14 +772,14 @@ public class Image
             long srcPtr = this.data.address0();
             long dstPtr = newData.address0();
             
-            long bytesPerLine = Integer.toUnsignedLong(width * this.format.sizeof());
+            long bytesPerLine = Integer.toUnsignedLong(width * this.format.sizeof);
             for (int j = 0; j < height; j++)
             {
                 int srcIdx = (j + y) * this.width + x;
                 int dstIdx = j * width;
                 
-                long src = srcPtr + Integer.toUnsignedLong(srcIdx * this.format.sizeof());
-                long dst = dstPtr + Integer.toUnsignedLong(dstIdx * this.format.sizeof());
+                long src = srcPtr + Integer.toUnsignedLong(srcIdx * this.format.sizeof);
+                long dst = dstPtr + Integer.toUnsignedLong(dstIdx * this.format.sizeof);
                 
                 MemoryUtil.memCopy(src, dst, bytesPerLine);
             }
@@ -858,7 +838,7 @@ public class Image
             int mipWidth  = this.width;  // Base image width
             int mipHeight = this.height; // Base image height
             
-            int mipSize = mipWidth * mipHeight * this.format.sizeof(); // Image data size (in bytes)
+            int mipSize = mipWidth * mipHeight * this.format.sizeof; // Image data size (in bytes)
             
             // Count mipmap levels required
             while (mipWidth != 1 || mipHeight != 1)
@@ -873,7 +853,7 @@ public class Image
                 Image.LOGGER.fine("Next mipmap level: %s x %s - current size %s", mipWidth, mipHeight, mipSize);
                 
                 mipCount++;
-                mipSize += mipWidth * mipHeight * this.format.sizeof(); // Add mipmap size (in bytes)
+                mipSize += mipWidth * mipHeight * this.format.sizeof; // Add mipmap size (in bytes)
             }
             
             if (this.mipmaps < mipCount)
@@ -890,11 +870,11 @@ public class Image
                 }
                 
                 // Pointer to allocated memory point where store next mipmap level data
-                long nextMip = this.data.address() + (long) this.width * this.height * this.format.sizeof();
+                long nextMip = this.data.address() + (long) this.width * this.height * this.format.sizeof;
                 
                 mipWidth  = this.width >> 1;
                 mipHeight = this.height >> 1;
-                mipSize   = mipWidth * mipHeight * this.format.sizeof();
+                mipSize   = mipWidth * mipHeight * this.format.sizeof;
                 Image imCopy = copy();
                 
                 for (int i = 1; i < mipCount; i++)
@@ -911,7 +891,7 @@ public class Image
                     if ((mipWidth >>= 1) < 1) mipWidth = 1;
                     if ((mipHeight >>= 1) < 1) mipHeight = 1;
                     
-                    mipSize = mipWidth * mipHeight * this.format.sizeof();
+                    mipSize = mipWidth * mipHeight * this.format.sizeof;
                 }
                 
                 imCopy.delete();
@@ -1061,7 +1041,7 @@ public class Image
             long srcPtr = pixels.address();
             long dstPtr = output.address();
             
-            int sizeof = ColorFormat.RGBA.sizeof();
+            int sizeof = ColorFormat.RGBA.sizeof;
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -1132,7 +1112,7 @@ public class Image
             int dstX = Math.max(0, intersectX - x);
             int dstY = Math.max(0, intersectY - y);
             
-            int  sizeof  = ColorFormat.RGBA.sizeof();
+            int  sizeof  = ColorFormat.RGBA.sizeof;
             long rowSize = Integer.toUnsignedLong(intersectW) * sizeof;
             for (int j = 0; j < intersectH; j++)
             {
@@ -1176,11 +1156,11 @@ public class Image
             long srcPtr = this.data.address();
             long dstPtr = output.address();
             
-            long bytesPerLine = Integer.toUnsignedLong(width) * this.format.sizeof();
+            long bytesPerLine = Integer.toUnsignedLong(width) * this.format.sizeof;
             for (int j = 0; j < height; j++)
             {
-                long src = srcPtr + Integer.toUnsignedLong((j + y) * this.width + x) * this.format.sizeof();
-                long dst = dstPtr + Integer.toUnsignedLong(j * width) * this.format.sizeof();
+                long src = srcPtr + Integer.toUnsignedLong((j + y) * this.width + x) * this.format.sizeof;
+                long dst = dstPtr + Integer.toUnsignedLong(j * width) * this.format.sizeof;
                 MemoryUtil.memCopy(src, dst, bytesPerLine);
             }
             
@@ -1383,10 +1363,10 @@ public class Image
             long srcPtr = this.data.address();
             long dstPtr = output.address();
             
-            long bytesPerLine = Integer.toUnsignedLong(this.width) * this.format.sizeof();
+            long bytesPerLine = Integer.toUnsignedLong(this.width) * this.format.sizeof;
             for (int i = this.height - 1, offsetSize = 0; i >= 0; i--)
             {
-                long src = srcPtr + Integer.toUnsignedLong(i * this.width) * this.format.sizeof();
+                long src = srcPtr + Integer.toUnsignedLong(i * this.width) * this.format.sizeof;
                 
                 MemoryUtil.memCopy(src, dstPtr + offsetSize, bytesPerLine);
                 offsetSize += bytesPerLine;
@@ -1419,14 +1399,14 @@ public class Image
                 long srcPtr = this.data.address();
                 long dstPtr = output.address();
                 
-                long bytesPerLine = Integer.toUnsignedLong(this.width) * this.format.sizeof();
+                long bytesPerLine = Integer.toUnsignedLong(this.width) * this.format.sizeof;
                 for (int y = 0; y < this.height; y++)
                 {
                     for (int x = 0; x < this.width; x++)
                     {
                         // OPTION 1: Move pixels with memCopy()
-                        long src = Integer.toUnsignedLong(y * this.width + this.width - 1 - x) * this.format.sizeof();
-                        long dst = Integer.toUnsignedLong(y * this.width + x) * this.format.sizeof();
+                        long src = Integer.toUnsignedLong(y * this.width + this.width - 1 - x) * this.format.sizeof;
+                        long dst = Integer.toUnsignedLong(y * this.width + x) * this.format.sizeof;
                         
                         MemoryUtil.memCopy(srcPtr + src, dstPtr + dst, bytesPerLine);
                         
@@ -1482,10 +1462,10 @@ public class Image
             {
                 for (int x = 0; x < this.width; x++)
                 {
-                    long src = Integer.toUnsignedLong(y * this.width + x) * this.format.sizeof();
-                    long dst = Integer.toUnsignedLong(x * this.height + this.height - y - 1) * this.format.sizeof();
+                    long src = Integer.toUnsignedLong(y * this.width + x) * this.format.sizeof;
+                    long dst = Integer.toUnsignedLong(x * this.height + this.height - y - 1) * this.format.sizeof;
                     
-                    MemoryUtil.memCopy(srcPtr + src, dstPtr + dst, this.format.sizeof());
+                    MemoryUtil.memCopy(srcPtr + src, dstPtr + dst, this.format.sizeof);
                 }
             }
             
@@ -1517,10 +1497,10 @@ public class Image
             {
                 for (int x = 0; x < this.width; x++)
                 {
-                    long src = Integer.toUnsignedLong(y * this.width + this.width - x - 1) * this.format.sizeof();
-                    long dst = Integer.toUnsignedLong(x * this.height + y) * this.format.sizeof();
+                    long src = Integer.toUnsignedLong(y * this.width + this.width - x - 1) * this.format.sizeof;
+                    long dst = Integer.toUnsignedLong(x * this.height + y) * this.format.sizeof;
                     
-                    MemoryUtil.memCopy(srcPtr + src, dstPtr + dst, this.format.sizeof());
+                    MemoryUtil.memCopy(srcPtr + src, dstPtr + dst, this.format.sizeof);
                 }
             }
             
@@ -1974,7 +1954,7 @@ public class Image
                 Color.Buffer pixels = Objects.requireNonNull(getColorData());
                 Color.Buffer output = Color.malloc(ColorFormat.RGBA, this.width * this.height);
                 
-                long bytes = Integer.toUnsignedLong(this.width * this.height) * ColorFormat.RGBA.sizeof();
+                long bytes = Integer.toUnsignedLong(this.width * this.height) * ColorFormat.RGBA.sizeof;
                 MemoryUtil.memCopy(pixels.address(), output.address(), bytes);
                 
                 // Apply alpha mask to alpha channel
@@ -2589,12 +2569,12 @@ public class Image
         validateRect(dstX, dstY, dstW, dstH);
         
         // Fast path: Avoid blendMode if source has no alpha to blendMode
-        boolean blendRequired = blendMode != BlendMode.NONE && srcI.format.alpha();
+        boolean blendRequired = blendMode != BlendMode.NONE && srcI.format.alpha;
         
-        int srcBPP    = srcI.format.sizeof();
+        int srcBPP    = srcI.format.sizeof;
         int srcStride = srcI.width * srcBPP;
         
-        int dstBPP    = this.format.sizeof();
+        int dstBPP    = this.format.sizeof;
         int dstStride = this.width * dstBPP;
         
         long srcPtrBase = srcI.data.address() + Integer.toUnsignedLong(srcY * srcI.width + srcX) * srcBPP;

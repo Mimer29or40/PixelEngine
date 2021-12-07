@@ -1,24 +1,28 @@
 package pe.render;
 
+import org.lwjgl.opengl.GL33;
+
 public enum StencilOp
 {
-    ZERO((s, ref) -> 0),
+    ZERO(GL33.GL_ZERO, (s, ref) -> 0),
     
-    KEEP((s, ref) -> s),
-    REPLACE((s, ref) -> ref),
+    KEEP(GL33.GL_KEEP, (s, ref) -> s),
+    REPLACE(GL33.GL_REPLACE, (s, ref) -> ref),
     
-    INCR((s, ref) -> s == 0xFF ? s : s++),
-    DECR((s, ref) -> s == 0x00 ? s : s--),
-    INCR_WRAP((s, ref) -> s == 0xFF ? 0x00 : s++),
-    DECR_WRAP((s, ref) -> s == 0x00 ? 0xFF : s--),
+    INCR(GL33.GL_INCR, (s, ref) -> s == 0xFF ? s : s++),
+    DECR(GL33.GL_DECR, (s, ref) -> s == 0x00 ? s : s--),
+    INCR_WRAP(GL33.GL_INCR_WRAP, (s, ref) -> s == 0xFF ? 0x00 : s++),
+    DECR_WRAP(GL33.GL_DECR_WRAP, (s, ref) -> s == 0x00 ? 0xFF : s--),
     
-    INVERT((s, ref) -> ~s),
+    INVERT(GL33.GL_INVERT, (s, ref) -> ~s),
     ;
     
+    public final  int        ref;
     private final IStencilOp func;
     
-    StencilOp(IStencilOp func)
+    StencilOp(int ref, IStencilOp func)
     {
+        this.ref  = ref;
         this.func = func;
     }
     

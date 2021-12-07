@@ -105,6 +105,9 @@ public class GLState
     
     public static void defaultState()
     {
+        GL33.glPixelStorei(GL33.GL_PACK_ALIGNMENT, 1);
+        GL33.glPixelStorei(GL33.GL_UNPACK_ALIGNMENT, 1);
+        
         depthClamp(true);
         lineSmooth(false);
         textureCubeMapSeamless(true);
@@ -262,44 +265,8 @@ public class GLState
             else
             {
                 GL33.glEnable(GL33.GL_BLEND);
-                
-                int srcFunc = switch (mode.srcFunc())
-                        {
-                            case ZERO -> GL33.GL_ZERO;
-                            case ONE -> GL33.GL_ONE;
-                            case SRC_COLOR -> GL33.GL_SRC_COLOR;
-                            case ONE_MINUS_SRC_COLOR -> GL33.GL_ONE_MINUS_SRC_COLOR;
-                            case SRC_ALPHA -> GL33.GL_SRC_ALPHA;
-                            case ONE_MINUS_SRC_ALPHA -> GL33.GL_ONE_MINUS_SRC_ALPHA;
-                            case DST_COLOR -> GL33.GL_DST_COLOR;
-                            case ONE_MINUS_DST_COLOR -> GL33.GL_ONE_MINUS_DST_COLOR;
-                            case DST_ALPHA -> GL33.GL_DST_ALPHA;
-                            case ONE_MINUS_DST_ALPHA -> GL33.GL_ONE_MINUS_DST_ALPHA;
-                        };
-                int dstFunc = switch (mode.dstFunc())
-                        {
-                            case ZERO -> GL33.GL_ZERO;
-                            case ONE -> GL33.GL_ONE;
-                            case SRC_COLOR -> GL33.GL_SRC_COLOR;
-                            case ONE_MINUS_SRC_COLOR -> GL33.GL_ONE_MINUS_SRC_COLOR;
-                            case SRC_ALPHA -> GL33.GL_SRC_ALPHA;
-                            case ONE_MINUS_SRC_ALPHA -> GL33.GL_ONE_MINUS_SRC_ALPHA;
-                            case DST_COLOR -> GL33.GL_DST_COLOR;
-                            case ONE_MINUS_DST_COLOR -> GL33.GL_ONE_MINUS_DST_COLOR;
-                            case DST_ALPHA -> GL33.GL_DST_ALPHA;
-                            case ONE_MINUS_DST_ALPHA -> GL33.GL_ONE_MINUS_DST_ALPHA;
-                        };
-                GL33.glBlendFunc(srcFunc, dstFunc);
-                
-                int blendEqn = switch (mode.blendEqn())
-                        {
-                            case ADD -> GL33.GL_FUNC_ADD;
-                            case SUBTRACT -> GL33.GL_FUNC_SUBTRACT;
-                            case REVERSE_SUBTRACT -> GL33.GL_FUNC_REVERSE_SUBTRACT;
-                            case MIN -> GL33.GL_MIN;
-                            case MAX -> GL33.GL_MAX;
-                        };
-                GL33.glBlendEquation(blendEqn);
+                GL33.glBlendFunc(mode.srcFunc().ref, mode.dstFunc().ref);
+                GL33.glBlendEquation(mode.blendEqn().ref);
             }
         }
     }
@@ -326,17 +293,7 @@ public class GLState
             else
             {
                 GL33.glEnable(GL33.GL_DEPTH_TEST);
-                switch (mode)
-                {
-                    case NEVER -> GL33.glDepthFunc(GL33.GL_NEVER);
-                    case ALWAYS -> GL33.glDepthFunc(GL33.GL_ALWAYS);
-                    case EQUAL -> GL33.glDepthFunc(GL33.GL_EQUAL);
-                    case NOT_EQUAL -> GL33.glDepthFunc(GL33.GL_NOTEQUAL);
-                    case LESS -> GL33.glDepthFunc(GL33.GL_LESS);
-                    case L_EQUAL -> GL33.glDepthFunc(GL33.GL_LEQUAL);
-                    case G_EQUAL -> GL33.glDepthFunc(GL33.GL_GEQUAL);
-                    case GREATER -> GL33.glDepthFunc(GL33.GL_GREATER);
-                }
+                GL33.glDepthFunc(mode.ref);
             }
         }
     }
@@ -372,56 +329,8 @@ public class GLState
             else
             {
                 GL33.glEnable(GL33.GL_STENCIL_TEST);
-                int func = switch (mode.func())
-                        {
-                            case NEVER -> GL33.GL_NEVER;
-                            case ALWAYS -> GL33.GL_ALWAYS;
-                            case EQUAL -> GL33.GL_EQUAL;
-                            case NOT_EQUAL -> GL33.GL_NOTEQUAL;
-                            case LESS -> GL33.GL_LESS;
-                            case L_EQUAL -> GL33.GL_LEQUAL;
-                            case G_EQUAL -> GL33.GL_GEQUAL;
-                            case GREATER -> GL33.GL_GREATER;
-                        };
-                GL33.glStencilFunc(func, mode.ref(), mode.mask());
-                
-                int sFail = switch (mode.sFail())
-                        {
-                            case ZERO -> GL33.GL_ZERO;
-                            case KEEP -> GL33.GL_KEEP;
-                            case REPLACE -> GL33.GL_REPLACE;
-                            case INCR -> GL33.GL_INCR;
-                            case DECR -> GL33.GL_DECR;
-                            case INCR_WRAP -> GL33.GL_INCR_WRAP;
-                            case DECR_WRAP -> GL33.GL_DECR_WRAP;
-                            case INVERT -> GL33.GL_INVERT;
-                        };
-                
-                int dpFail = switch (mode.dpFail())
-                        {
-                            case ZERO -> GL33.GL_ZERO;
-                            case KEEP -> GL33.GL_KEEP;
-                            case REPLACE -> GL33.GL_REPLACE;
-                            case INCR -> GL33.GL_INCR;
-                            case DECR -> GL33.GL_DECR;
-                            case INCR_WRAP -> GL33.GL_INCR_WRAP;
-                            case DECR_WRAP -> GL33.GL_DECR_WRAP;
-                            case INVERT -> GL33.GL_INVERT;
-                        };
-                
-                int dpPass = switch (mode.dpPass())
-                        {
-                            case ZERO -> GL33.GL_ZERO;
-                            case KEEP -> GL33.GL_KEEP;
-                            case REPLACE -> GL33.GL_REPLACE;
-                            case INCR -> GL33.GL_INCR;
-                            case DECR -> GL33.GL_DECR;
-                            case INCR_WRAP -> GL33.GL_INCR_WRAP;
-                            case DECR_WRAP -> GL33.GL_DECR_WRAP;
-                            case INVERT -> GL33.GL_INVERT;
-                        };
-                
-                GL33.glStencilOp(sFail, dpFail, dpPass);
+                GL33.glStencilFunc(mode.func().ref, mode.ref(), mode.mask());
+                GL33.glStencilOp(mode.sFail().ref, mode.dpFail().ref, mode.dpPass().ref);
             }
         }
     }
@@ -616,7 +525,7 @@ public class GLState
         GLState.LOGGER.finest("Clearing Buffers:", buffers);
         
         int mask = 0;
-        for (ScreenBuffer buffer : buffers) mask |= buffer.bit;
+        for (ScreenBuffer buffer : buffers) mask |= buffer.ref;
         GL33.glClear(mask);
     }
     
@@ -651,12 +560,7 @@ public class GLState
             else
             {
                 GL33.glEnable(GL33.GL_CULL_FACE);
-                switch (cullFace)
-                {
-                    case FRONT -> GL33.glCullFace(GL33.GL_FRONT);
-                    case BACK -> GL33.glCullFace(GL33.GL_BACK);
-                    case FRONT_AND_BACK -> GL33.glCullFace(GL33.GL_FRONT_AND_BACK);
-                }
+                GL33.glCullFace(cullFace.ref);
             }
         }
     }
@@ -684,26 +588,8 @@ public class GLState
         {
             GLState.winding = winding;
             
-            switch (winding)
-            {
-                case CCW -> GL33.glFrontFace(GL33.GL_CCW);
-                case CW -> GL33.glFrontFace(GL33.GL_CW);
-            }
+            GL33.glFrontFace(winding.ref);
         }
     }
     
-    public enum ScreenBuffer
-    {
-        COLOR(GL33.GL_COLOR_BUFFER_BIT),
-        DEPTH(GL33.GL_DEPTH_BUFFER_BIT),
-        STENCIL(GL33.GL_STENCIL_BUFFER_BIT),
-        ;
-        
-        private final int bit;
-        
-        ScreenBuffer(int bit)
-        {
-            this.bit = bit;
-        }
-    }
 }

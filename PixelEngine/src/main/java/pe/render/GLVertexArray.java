@@ -102,19 +102,7 @@ public class GLVertexArray
             {
                 GLAttribute attribute = attributes[j];
                 
-                int typeInt = switch (attribute.type())
-                        {
-                            case BYTE -> GL33.GL_BYTE;
-                            case UNSIGNED_BYTE -> GL33.GL_UNSIGNED_BYTE;
-                            case SHORT -> GL33.GL_SHORT;
-                            case UNSIGNED_SHORT -> GL33.GL_UNSIGNED_SHORT;
-                            case INT -> GL33.GL_INT;
-                            case UNSIGNED_INT -> GL33.GL_UNSIGNED_INT;
-                            case FLOAT -> GL33.GL_FLOAT;
-                            case DOUBLE -> GL33.GL_DOUBLE;
-                        };
-                
-                GL33.glVertexAttribPointer(attributeCount, attribute.count(), typeInt, attribute.normalized(), stride, offset);
+                GL33.glVertexAttribPointer(attributeCount, attribute.count(), attribute.type().ref, attribute.normalized(), stride, offset);
                 GL33.glEnableVertexAttribArray(attributeCount++);
                 offset += attribute.size();
                 
@@ -235,33 +223,17 @@ public class GLVertexArray
     {
         bind(this);
         
-        int modeInt = switch (mode)
-                {
-                    case POINTS -> GL33.GL_POINTS;
-                    case LINE_STRIP -> GL33.GL_LINE_STRIP;
-                    case LINE_STRIP_ADJACENCY -> GL33.GL_LINE_STRIP_ADJACENCY;
-                    case LINE_LOOP -> GL33.GL_LINE_LOOP;
-                    case LINES -> GL33.GL_LINES;
-                    case LINES_ADJACENCY -> GL33.GL_LINES_ADJACENCY;
-                    case TRIANGLE_STRIP -> GL33.GL_TRIANGLE_STRIP;
-                    case TRIANGLE_STRIP_ADJACENCY -> GL33.GL_TRIANGLE_STRIP_ADJACENCY;
-                    case TRIANGLE_FAN -> GL33.GL_TRIANGLE_FAN;
-                    case TRIANGLES -> GL33.GL_TRIANGLES;
-                    case TRIANGLES_ADJACENCY -> GL33.GL_TRIANGLES_ADJACENCY;
-                    case QUADS -> GL33.GL_QUADS;
-                };
-        
         if (this.indexBuffer != null)
         {
             GLVertexArray.LOGGER.finer("Drawing Elements size=%s from %s", count, this);
             
-            GL33.glDrawElements(modeInt, count, GL33.GL_UNSIGNED_INT, Integer.toUnsignedLong(offset));
+            GL33.glDrawElements(mode.ref, count, GL33.GL_UNSIGNED_INT, Integer.toUnsignedLong(offset));
         }
         else
         {
             GLVertexArray.LOGGER.finer("Drawing Arrays size=%s from %s", count, this);
             
-            GL33.glDrawArrays(modeInt, offset, count);
+            GL33.glDrawArrays(mode.ref, offset, count);
             // glDrawArraysInstanced(int mode, int first, int count, int primcount) // TODO
         }
         return this;

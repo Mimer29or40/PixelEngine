@@ -1,21 +1,25 @@
 package pe.render;
 
+import org.lwjgl.opengl.GL33;
+
 import java.util.regex.Pattern;
 
 public enum ShaderType
 {
-    VERTEX(Pattern.compile(".*\\.(?:vert|vs)")),
-    GEOMETRY(Pattern.compile(".*\\.(?:geom|gs)")),
-    FRAGMENT(Pattern.compile(".*\\.(?:frag|fs)")),
-    // COMPUTE(Pattern.compile(".*\\.(?:comp|cs)")),
-    // TESS_CONTROL(Pattern.compile(".*\\.(?:tesc|tc)")),
-    // TESS_EVALUATION(Pattern.compile(".*\\.(?:tese|te)")),
+    VERTEX(GL33.GL_VERTEX_SHADER, Pattern.compile(".*\\.(?:vert|vs)")),
+    GEOMETRY(GL33.GL_GEOMETRY_SHADER, Pattern.compile(".*\\.(?:geom|gs)")),
+    FRAGMENT(GL33.GL_FRAGMENT_SHADER, Pattern.compile(".*\\.(?:frag|fs)")),
+    // COMPUTE(GL33.GL_COMPUTE_SHADER, Pattern.compile(".*\\.(?:comp|cs)")),
+    // TESS_CONTROL(GL33.GL_TESS_CONTROL_SHADER, Pattern.compile(".*\\.(?:tesc|tc)")),
+    // TESS_EVALUATION(GL33.GL_TESS_EVALUATION_SHADER, Pattern.compile(".*\\.(?:tese|te)")),
     ;
     
+    public final  int     ref;
     private final Pattern pattern;
     
-    ShaderType(Pattern pattern)
+    ShaderType(int ref, Pattern pattern)
     {
+        this.ref     = ref;
         this.pattern = pattern;
     }
     

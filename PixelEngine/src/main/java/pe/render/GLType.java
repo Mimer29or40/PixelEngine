@@ -1,39 +1,33 @@
 package pe.render;
 
+import org.lwjgl.opengl.GL33;
+
 public enum GLType
 {
-    BYTE(true, Byte.BYTES),
-    UNSIGNED_BYTE(false, Byte.BYTES),
+    BYTE(GL33.GL_BYTE, true, Byte.BYTES),
+    UNSIGNED_BYTE(GL33.GL_UNSIGNED_BYTE, false, Byte.BYTES),
     
-    SHORT(true, Short.BYTES),
-    UNSIGNED_SHORT(false, Short.BYTES),
+    SHORT(GL33.GL_SHORT, true, Short.BYTES),
+    UNSIGNED_SHORT(GL33.GL_UNSIGNED_SHORT, false, Short.BYTES),
     
-    INT(true, Integer.BYTES),
-    UNSIGNED_INT(false, Integer.BYTES),
+    INT(GL33.GL_INT, true, Integer.BYTES),
+    UNSIGNED_INT(GL33.GL_UNSIGNED_INT, false, Integer.BYTES),
     
-    // UNSIGNED_INT_2_10_10_10_REV(false, 4),
-    // INT_2_10_10_10_REV(true, 4),
+    // UNSIGNED_INT_2_10_10_10_REV(GL33.GL_UNSIGNED_INT_2_10_10_10_REV, false, 4),
+    // INT_2_10_10_10_REV(GL33.GL_INT_2_10_10_10_REV, true, 4),
     
-    FLOAT(true, Float.BYTES),
-    DOUBLE(true, Double.BYTES),
+    FLOAT(GL33.GL_FLOAT, true, Float.BYTES),
+    DOUBLE(GL33.GL_DOUBLE, true, Double.BYTES),
     ;
     
-    private final boolean signed;
-    private final int     bytes;
+    public final int     ref;
+    public final boolean signed;
+    public final int     bytes;
     
-    GLType(boolean signed, int bytes)
+    GLType(int ref, boolean signed, int bytes)
     {
+        this.ref    = ref;
         this.signed = signed;
         this.bytes  = bytes;
-    }
-    
-    public boolean signed()
-    {
-        return signed;
-    }
-    
-    public int bytes()
-    {
-        return bytes;
     }
 }

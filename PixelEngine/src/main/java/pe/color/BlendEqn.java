@@ -1,22 +1,25 @@
 package pe.color;
 
+import org.lwjgl.opengl.GL33;
 import rutils.Math;
 
 public enum BlendEqn
 {
-    ADD(Math::sum),
+    ADD(GL33.GL_FUNC_ADD, Math::sum),
     
-    SUBTRACT(Math::sub),
-    REVERSE_SUBTRACT(Math::revSub),
+    SUBTRACT(GL33.GL_FUNC_SUBTRACT, Math::sub),
+    REVERSE_SUBTRACT(GL33.GL_FUNC_REVERSE_SUBTRACT, Math::revSub),
     
-    MIN(Math::min),
-    MAX(Math::max),
+    MIN(GL33.GL_MIN, Math::min),
+    MAX(GL33.GL_MAX, Math::max),
     ;
     
+    public final  int            ref;
     private final IBlendEquation func;
     
-    BlendEqn(IBlendEquation func)
+    BlendEqn(int ref, IBlendEquation func)
     {
+        this.ref  = ref;
         this.func = func;
     }
     

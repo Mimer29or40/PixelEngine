@@ -118,7 +118,7 @@ public abstract class GLBuffer
         
         bind(this);
         
-        GL33.nglBufferData(this.type, this.size, MemoryUtil.NULL, getUsageInt(usage));
+        GL33.nglBufferData(this.type, this.size, MemoryUtil.NULL, usage.ref);
         
         GLBuffer.LOGGER.fine("Created", this);
     }
@@ -141,7 +141,7 @@ public abstract class GLBuffer
         
         bind(this);
         
-        GL33.nglBufferData(this.type, Integer.toUnsignedLong(data.remaining() * MemUtil.elementSize(data)), MemoryUtil.memAddress(data), getUsageInt(usage));
+        GL33.nglBufferData(this.type, Integer.toUnsignedLong(data.remaining() * MemUtil.elementSize(data)), MemoryUtil.memAddress(data), usage.ref);
         
         GLBuffer.LOGGER.fine("Created", this);
     }
@@ -164,7 +164,7 @@ public abstract class GLBuffer
         
         bind(this);
         
-        GL33.nglBufferData(this.type, Integer.toUnsignedLong(data.remaining() * data.sizeof()), MemoryUtil.memAddress(data), getUsageInt(usage));
+        GL33.nglBufferData(this.type, Integer.toUnsignedLong(data.remaining() * data.sizeof()), MemoryUtil.memAddress(data), usage.ref);
         
         GLBuffer.LOGGER.fine("Created", this);
     }
@@ -493,21 +493,5 @@ public abstract class GLBuffer
         {
             return this.gl;
         }
-    }
-    
-    private static int getUsageInt(Usage usage)
-    {
-        return switch (usage)
-                {
-                    case STREAM_DRAW -> GL33.GL_STREAM_DRAW;
-                    case STREAM_READ -> GL33.GL_STREAM_READ;
-                    case STREAM_COPY -> GL33.GL_STREAM_COPY;
-                    case STATIC_DRAW -> GL33.GL_STATIC_DRAW;
-                    case STATIC_READ -> GL33.GL_STATIC_READ;
-                    case STATIC_COPY -> GL33.GL_STATIC_COPY;
-                    case DYNAMIC_DRAW -> GL33.GL_DYNAMIC_DRAW;
-                    case DYNAMIC_READ -> GL33.GL_DYNAMIC_READ;
-                    case DYNAMIC_COPY -> GL33.GL_DYNAMIC_COPY;
-                };
     }
 }

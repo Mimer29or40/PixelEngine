@@ -30,11 +30,11 @@ public class GLTexture
         {
             // 1 pixel RGBA (4 bytes)
             ByteBuffer pixels = stack.bytes((byte) 255, (byte) 255, (byte) 255, (byte) 255);
-            GLTexture.defaultTexture        = new GLTexture(Type.TEXTURE_2D);
+            GLTexture.defaultTexture        = new GLTexture(GL33.GL_TEXTURE_2D);
             GLTexture.defaultTexture.width  = 1;
             GLTexture.defaultTexture.height = 1;
             GL33.glBindTexture(GL33.GL_TEXTURE_2D, GLTexture.defaultTexture.id);
-            GL33.glTexImage2D(getTextureTypeInt(GLTexture.defaultTexture.type), 0, GL33.GL_RGBA, 1, 1, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels));
+            GL33.glTexImage2D(GLTexture.defaultTexture.type, 0, GL33.GL_RGBA, 1, 1, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels));
         }
     }
     
@@ -66,38 +66,8 @@ public class GLTexture
             GLTexture.current = texture;
             
             GL33.glActiveTexture(GL33.GL_TEXTURE0);
-            GL33.glBindTexture(getTextureTypeInt(texture.type), texture.id());
+            GL33.glBindTexture(texture.type, texture.id);
         }
-    }
-    
-    protected static int getTextureTypeInt(Type type)
-    {
-        return switch (type)
-                {
-                    // case TEXTURE_1D -> GL33.GL_TEXTURE_1D;
-                    case TEXTURE_2D -> GL33.GL_TEXTURE_2D;
-                    // case TEXTURE_3D -> GL33.GL_TEXTURE_3D;
-                    //
-                    // case ARRAY_1D -> GL33.GL_TEXTURE_1D_ARRAY;
-                    // case ARRAY_2D -> GL33.GL_TEXTURE_2D_ARRAY;
-                    //
-                    // case BUFFER -> GL33.GL_TEXTURE_BUFFER;
-                    // case RECTANGLE -> GL33.GL_TEXTURE_RECTANGLE;
-                    //
-                    // case MULTI_SAMPLE_2D -> GL33.GL_TEXTURE_2D_MULTISAMPLE;
-                    // case MULTI_SAMPLE_ARRAY_2D -> GL33.GL_TEXTURE_2D_MULTISAMPLE_ARRAY;
-                    
-                    case CUBE_MAP -> GL33.GL_TEXTURE_CUBE_MAP;
-                    // case CUBE_MAP_POSITIVE_X -> GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-                    // case CUBE_MAP_NEGATIVE_X -> GL33.GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
-                    // case CUBE_MAP_POSITIVE_Y -> GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-                    // case CUBE_MAP_NEGATIVE_Y -> GL33.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-                    // case CUBE_MAP_POSITIVE_Z -> GL33.GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
-                    // case CUBE_MAP_NEGATIVE_Z -> GL33.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
-                    // case CUBE_MAP_ARRAY -> GL33.GL_TEXTURE_CUBE_MAP_ARRAY;
-                    
-                    // case RENDERBUFFER -> GL33.GL_RENDERBUFFER;
-                };
     }
     
     // --------------------
@@ -106,7 +76,7 @@ public class GLTexture
     
     protected int id;
     
-    protected final Type type;
+    protected final int type;
     
     protected int width;
     protected int height;
@@ -115,7 +85,7 @@ public class GLTexture
     
     protected ColorFormat format = ColorFormat.RGBA;
     
-    public GLTexture(Type type)
+    protected GLTexture(int type)
     {
         this.id = GL33.glGenTextures();
         
@@ -145,11 +115,6 @@ public class GLTexture
     public int id()
     {
         return this.id;
-    }
-    
-    public @NotNull Type type()
-    {
-        return this.type;
     }
     
     public int width()
@@ -184,6 +149,11 @@ public class GLTexture
             GL33.glDeleteTextures(this.id);
             
             this.id = 0;
+            
+            this.width  = 0;
+            this.height = 0;
+            
+            this.mipmaps = 1;
         }
     }
     

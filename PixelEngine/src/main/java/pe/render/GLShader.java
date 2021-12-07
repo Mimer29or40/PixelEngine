@@ -158,14 +158,7 @@ public class GLShader
      */
     private GLShader(@NotNull ShaderType type, @NotNull String code)
     {
-        int shaderType = switch (type)
-                {
-                    case VERTEX -> GL33.GL_VERTEX_SHADER;
-                    case GEOMETRY -> GL33.GL_GEOMETRY_SHADER;
-                    case FRAGMENT -> GL33.GL_FRAGMENT_SHADER;
-                };
-        
-        this.id   = GL33.glCreateShader(shaderType);
+        this.id   = GL33.glCreateShader(type.ref);
         this.type = type;
         
         GL33.glShaderSource(this.id, code);

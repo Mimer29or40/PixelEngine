@@ -378,30 +378,13 @@ public class GLBatch
                 
                 GLTexture.bind(drawCall.texture);
                 
-                // this.vertexArray.draw(drawCall.mode, offset, drawCall.vertexCount);
-                //
-                int mode = switch (drawCall.mode)
-                        {
-                            case POINTS -> GL33.GL_POINTS;
-                            case LINE_STRIP -> GL33.GL_LINE_STRIP;
-                            case LINE_STRIP_ADJACENCY -> GL33.GL_LINE_STRIP_ADJACENCY;
-                            case LINE_LOOP -> GL33.GL_LINE_LOOP;
-                            case LINES -> GL33.GL_LINES;
-                            case LINES_ADJACENCY -> GL33.GL_LINES_ADJACENCY;
-                            case TRIANGLE_STRIP -> GL33.GL_TRIANGLE_STRIP;
-                            case TRIANGLE_STRIP_ADJACENCY -> GL33.GL_TRIANGLE_STRIP_ADJACENCY;
-                            case TRIANGLE_FAN -> GL33.GL_TRIANGLE_FAN;
-                            case TRIANGLES, QUADS -> GL33.GL_TRIANGLES;
-                            case TRIANGLES_ADJACENCY -> GL33.GL_TRIANGLES_ADJACENCY;
-                        };
-                
                 if (drawCall.mode == DrawMode.QUADS)
                 {
-                    GL33.glDrawElements(mode, drawCall.vertexCount / 4 * 6, GL33.GL_UNSIGNED_INT, Integer.toUnsignedLong(offset / 4 * 6 * Integer.BYTES));
+                    GL33.glDrawElements(GL33.GL_TRIANGLES, drawCall.vertexCount / 4 * 6, GL33.GL_UNSIGNED_INT, Integer.toUnsignedLong(offset / 4 * 6 * Integer.BYTES));
                 }
                 else
                 {
-                    GL33.glDrawArrays(mode, offset, drawCall.vertexCount);
+                    GL33.glDrawArrays(drawCall.mode.ref, offset, drawCall.vertexCount);
                 }
                 
                 offset += drawCall.vertexCount + drawCall.alignment;
@@ -783,7 +766,7 @@ public class GLBatch
         for (int i = 0; i < this.textureIndex; i++)
         {
             GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
-            GL33.glBindTexture(GLTexture.getTextureTypeInt(this.textureActive[i].type()), this.textureActive[i].id());
+            GL33.glBindTexture(this.textureActive[i].type, this.textureActive[i].id());
             GLProgram.Uniform.int1(this.textureNames[i], i + 1);
         }
     }
@@ -795,7 +778,7 @@ public class GLBatch
         for (int i = 0; i < this.textureIndex; i++)
         {
             GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
-            GL33.glBindTexture(GLTexture.getTextureTypeInt(this.textureActive[i].type()), 0);
+            GL33.glBindTexture(this.textureActive[i].type, 0);
             
             this.textureNames[i]  = null;
             this.textureActive[i] = null;
