@@ -70,12 +70,12 @@ local.properties
 
 .idea/
 .idea_modules/
-/classes/
-/out/
-/build/
+*/classes/
+*/out/
+*/build/
 
 # Linux
 *~
 
-run/
-target/
+*/run/
+*/target/

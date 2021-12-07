@@ -569,14 +569,10 @@ public abstract class Engine
             
             String vert = """
                           #version 330
-                          
                           layout(location = 0) in vec3 aPos;
                           layout(location = 1) in vec4 aCol;
-                          
                           uniform mat4 pv;
-                          
                           out vec4 color;
-                          
                           void main(void) {
                               color = aCol;
                               gl_Position = pv * vec4(aPos, 1.0);
@@ -584,11 +580,8 @@ public abstract class Engine
                           """;
             String frag = """
                           #version 330
-                          
                           in vec4 color;
-                          
                           out vec4 FragColor;
-                          
                           void main(void) {
                               FragColor = color;
                           }
@@ -650,8 +643,8 @@ public abstract class Engine
         {
             if (Debug.notification != null && Time.current - Debug.notificationTime < Time.notificationDur)
             {
-                int x = (Viewport.size.x - textWidth(Debug.notification)) >> 1;
-                int y = (Viewport.size.y - textHeight(Debug.notification)) >> 1;
+                int x = (Window.get().framebufferWidth() - textWidth(Debug.notification)) >> 1;
+                int y = (Window.get().framebufferHeight() - textHeight(Debug.notification)) >> 1;
                 
                 drawText(x, y, Debug.notification);
             }
@@ -795,11 +788,11 @@ public abstract class Engine
     
     public static final class Draw
     {
-        private static final DrawPoint2D    DRAW_POINT_2D    = new DrawPoint2D();
-        private static final DrawLine2D     DRAW_LINE_2D     = new DrawLine2D();
-        private static final DrawLines2D    DRAW_LINES_2D    = new DrawLines2D();
-        private static final DrawTriangle2D DRAW_TRIANGLE_2D = new DrawTriangle2D();
-        private static final FillTriangle2D FILL_TRIANGLE_2D = new FillTriangle2D();
+        private static final Draw2DPoint    DRAW_2D_POINT    = new Draw2DPoint();
+        private static final Draw2DLine     DRAW_2D_LINE     = new Draw2DLine();
+        private static final Draw2DLines    DRAW_2D_LINES    = new Draw2DLines();
+        private static final Draw2DTriangle DRAW_2D_TRIANGLE = new Draw2DTriangle();
+        private static final Fill2DTriangle FILL_2D_TRIANGLE = new Fill2DTriangle();
         
         public static void clearBackground(Colorc color)
         {
@@ -807,29 +800,29 @@ public abstract class Engine
             GLState.clearScreenBuffers();
         }
         
-        public static DrawPoint2D point2D()
+        public static Draw2DPoint point2D()
         {
-            return Draw.DRAW_POINT_2D;
+            return Draw.DRAW_2D_POINT;
         }
         
-        public static DrawLine2D line2D()
+        public static Draw2DLine line2D()
         {
-            return Draw.DRAW_LINE_2D;
+            return Draw.DRAW_2D_LINE;
         }
         
-        public static DrawLines2D lines2D()
+        public static Draw2DLines lines2D()
         {
-            return Draw.DRAW_LINES_2D;
+            return Draw.DRAW_2D_LINES;
         }
         
-        public static DrawTriangle2D drawTriangle2D()
+        public static Draw2DTriangle drawTriangle2D()
         {
-            return Draw.DRAW_TRIANGLE_2D;
+            return Draw.DRAW_2D_TRIANGLE;
         }
         
-        public static FillTriangle2D fillTriangle2D()
+        public static Fill2DTriangle fillTriangle2D()
         {
-            return Draw.FILL_TRIANGLE_2D;
+            return Draw.FILL_2D_TRIANGLE;
         }
     }
     
