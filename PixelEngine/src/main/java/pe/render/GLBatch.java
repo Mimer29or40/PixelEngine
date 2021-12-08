@@ -347,12 +347,9 @@ public class GLBatch
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_COLOR)).set(0, this.col.flip());
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_TEXCOORD2)).set(0, this.tex2.flip());
             
-            // GLBuffer.bind((GLBufferArray) null);
-            
             // GL.bindProgram(null); // TODO - Is this needed?
             //
             // // Setup some default shader values
-            // GL.Uniform.vec4(GLProgram.UNIFORM_COLOR_DIFFUSE, 1.0, 1.0, 1.0, 1.0); // TODO - Is this needed?
             // GL.Uniform.int1(GLProgram.MAP_DIFFUSE, 0); // Active default sampler2D: texture0 // TODO - Is this needed?
             
             // Create modelView-projection matrix and upload to shader
@@ -363,8 +360,6 @@ public class GLBatch
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_VIEW, false, this.view);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MODEL, false, this.model);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MVP, false, this.mvp);
-            
-            // GLBuffer.bind(this.vertexArray.indexBuffer()); // TODO - Is this needed?
             
             activate();
             GL33.glActiveTexture(GL33.GL_TEXTURE0);
@@ -389,7 +384,6 @@ public class GLBatch
             
             deactivate();
             GL33.glActiveTexture(GL33.GL_TEXTURE0);
-            // GLBuffer.bind((GLBufferElementArray) null); // TODO - Is this needed?
             
             // Reset Batch to known state
             

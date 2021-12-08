@@ -11,8 +11,6 @@ public class EngineTest extends Engine
     protected void setup()
     {
         size(100, 100, 4, 4);
-        
-        GLProgram.Uniform.vec4(GLProgram.UNIFORM_COLOR_DIFFUSE, 1.0, 1.0, 1.0, 1.0);
     }
     
     @Override
