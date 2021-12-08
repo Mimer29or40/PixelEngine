@@ -596,7 +596,6 @@ public abstract class Engine
             
             Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
             Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
-            
         }
         
         private static void draw()
@@ -613,7 +612,8 @@ public abstract class Engine
         private static boolean enabled;
         private static boolean wireframe;
         
-        private static int drawnVertices;
+        private static int vertices;
+        private static int draws;
         
         private static GLProgram     program;
         private static GLVertexArray vertexArray;
@@ -722,7 +722,8 @@ public abstract class Engine
                         String.format("Frame: %s", Time.totalFrameCount),
                         String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D),
                         String.format("Wireframe: %s", Debug.wireframe),
-                        String.format("Vertex Count: %s", Debug.drawnVertices),
+                        String.format("Vertex Count: %s", Debug.vertices),
+                        String.format("Draw Calls: %s", Debug.draws),
                         };
                 
                 int x = 0, y = 0;
@@ -973,7 +974,8 @@ public abstract class Engine
                                     GLState.wireframe(Debug.wireframe);
                                     
                                     GLProgram.bind(null);
-                                    GLBatch.bind(null);
+                                    
+                                    GLBatch.get().start();
                                     
                                     // Engine.renderer.start(); // TODO
                                     
@@ -994,7 +996,10 @@ public abstract class Engine
                                     
                                     // Engine.renderer.finish(); // TODO
                                     
-                                    Debug.drawnVertices = GLBatch.get().draw();
+                                    GLBatch.BatchStats stats = GLBatch.get().stop();
+                                    
+                                    Debug.vertices = stats.vertices();
+                                    Debug.draws    = stats.draws();
                                 }
                                 
                                 Viewport.update();
@@ -1013,8 +1018,6 @@ public abstract class Engine
                                 Window.get().swap();
                                 
                                 Time.incFrame();
-                                
-                                // Layers.draw();
                                 
                                 // TODO Profiler End Frame
                             }
@@ -1158,8 +1161,6 @@ public abstract class Engine
         // Renderer.init(); // TODO
         Viewport.setup();
         Debug.setup();
-        
-        // Engine.renderer = new Renderer(Layers.layers[0]); // TODO
         
         Engine.windowEnabled = true;
     }

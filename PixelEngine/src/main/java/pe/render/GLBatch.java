@@ -84,6 +84,7 @@ public class GLBatch
     
     private double currentDepth;
     
+    private boolean hasStart;
     private boolean hasBegun;
     
     private Matrix4d currentMatrix;
@@ -100,7 +101,7 @@ public class GLBatch
     private final String[]    textureNames;
     private final GLTexture[] textureActive;
     
-    private int drawnVertices = 0;
+    private final BatchStats stats;
     
     public GLBatch()
     {
@@ -155,6 +156,8 @@ public class GLBatch
         this.textureIndex  = 0;
         this.textureNames  = new String[GLState.MAX_ACTIVE_TEXTURES];
         this.textureActive = new GLTexture[GLState.MAX_ACTIVE_TEXTURES];
+        
+        this.stats = new BatchStats();
         
         GLBatch.LOGGER.fine("Created", this);
     }
@@ -216,13 +219,37 @@ public class GLBatch
         }
     }
     
+    public void start()
+    {
+        if (this.hasStart) throw new IllegalStateException("Batch was not stopped: " + this);
+        
+        GLBatch.LOGGER.finest("Starting", this);
+        
+        this.hasStart = true;
+        
+        this.stats.reset();
+    }
+    
+    public BatchStats stop()
+    {
+        if (!this.hasStart) throw new IllegalStateException("Batch was not stopped: " + this);
+        
+        GLBatch.LOGGER.finest("Stopping", this);
+        
+        this.hasStart = false;
+    
+        drawInternal();
+        
+        return this.stats;
+    }
+    
     public void begin(@NotNull DrawMode mode)
     {
         if (this.hasBegun) throw new IllegalStateException("Batch was not ended: " + this);
         
         this.hasBegun = true;
         
-        GLBatch.LOGGER.finest("Beginning Mode (%s) %s", mode, this);
+        GLBatch.LOGGER.finest("Beginning Mode (%s): %s", mode, this);
         
         if (this.drawCalls[this.currentDraw].mode != mode)
         {
@@ -234,7 +261,7 @@ public class GLBatch
     
     public void end()
     {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
+        if (!this.hasBegun) throw new IllegalStateException("Batch was not begun: " + this);
         
         this.hasBegun = false;
         
@@ -340,7 +367,7 @@ public class GLBatch
         // Check to see if the vertex array was updated.
         if (this.pos.position() > 0)
         {
-            this.drawnVertices += this.pos.position();
+            this.stats.vertices += this.pos.position();
             
             GLVertexArray.bind(this.vertexArray);
             
@@ -369,6 +396,8 @@ public class GLBatch
             
             for (int i = 0, offset = 0; i <= this.currentDraw; i++)
             {
+                this.stats.draws++;
+                
                 DrawCall drawCall = this.drawCalls[i];
                 
                 GLTexture.bind(drawCall.texture);
@@ -406,17 +435,6 @@ public class GLBatch
             // Reset Depth
             this.currentDepth = 0.99995;
         }
-    }
-    
-    public int draw()
-    {
-        drawInternal();
-        
-        int vertices = this.drawnVertices;
-        
-        this.drawnVertices = 0;
-        
-        return vertices;
     }
     
     private void incDrawCall()
@@ -807,6 +825,33 @@ public class GLBatch
             this.alignment   = 0;
             
             this.texture = null;
+        }
+    }
+    
+    public static final class BatchStats
+    {
+        private int vertices;
+        private int draws;
+        
+        private BatchStats()
+        {
+            reset();
+        }
+        
+        private void reset()
+        {
+            this.vertices = 0;
+            this.draws    = 0;
+        }
+        
+        public int vertices()
+        {
+            return this.vertices;
+        }
+        
+        public int draws()
+        {
+            return this.draws;
         }
     }
 }
