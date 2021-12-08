@@ -366,7 +366,6 @@ public class GLBatch
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MVP, false, this.mvp);
             
             activate();
-            GL33.glActiveTexture(GL33.GL_TEXTURE0);
             
             for (int i = 0, offset = 0; i <= this.currentDraw; i++)
             {
@@ -387,7 +386,6 @@ public class GLBatch
             }
             
             deactivate();
-            GL33.glActiveTexture(GL33.GL_TEXTURE0);
             
             // Reset Batch to known state
             

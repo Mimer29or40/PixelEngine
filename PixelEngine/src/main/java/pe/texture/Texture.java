@@ -13,7 +13,7 @@ import rutils.Logger;
 
 import java.nio.Buffer;
 
-public class Texture2D extends GLTexture
+public class Texture extends GLTexture
 {
     private static final Logger LOGGER = new Logger();
     
@@ -21,9 +21,9 @@ public class Texture2D extends GLTexture
     // ----- Static -----
     // ------------------
     
-    private static @NotNull Texture2D load(long data, int width, int height, int mipmaps, @NotNull ColorFormat format)
+    private static @NotNull Texture load(long data, int width, int height, int mipmaps, @NotNull ColorFormat format)
     {
-        Texture2D texture = new Texture2D();
+        Texture texture = new Texture();
         
         texture.width  = width;
         texture.height = height;
@@ -45,7 +45,7 @@ public class Texture2D extends GLTexture
         {
             int mipSize = mipWidth * mipHeight * format.sizeof;
             
-            Texture2D.LOGGER.finer("Load mipmap level %s (%s x %s), size: %s, offset: %s", i, mipWidth, mipHeight, mipSize, mipOffset);
+            Texture.LOGGER.finer("Load mipmap level %s (%s x %s), size: %s, offset: %s", i, mipWidth, mipHeight, mipSize, mipOffset);
             
             GL33.glTexImage2D(GL33.GL_TEXTURE_2D, i, format.internalFormat, mipWidth, mipHeight, 0, format.format, GL33.GL_UNSIGNED_BYTE, data + mipOffset);
             
@@ -75,34 +75,36 @@ public class Texture2D extends GLTexture
         // Activate Tri-Linear filtering if mipmaps are available
         texture.filter(TextureFilter.DEFAULT, mipmaps > 1 ? TextureFilter.NEAREST_MIPMAP_LINEAR : TextureFilter.DEFAULT);
         
+        Texture.LOGGER.fine("Created", texture);
+        
         return texture;
     }
     
-    public static @NotNull Texture2D load(@Nullable Buffer data, int width, int height, int mipmaps, @NotNull ColorFormat format)
+    public static @NotNull Texture load(@Nullable Buffer data, int width, int height, int mipmaps, @NotNull ColorFormat format)
     {
         return load(data == null ? MemoryUtil.NULL : MemoryUtil.memAddress(data), width, height, mipmaps, format);
     }
     
-    public static @NotNull Texture2D load(@Nullable CustomBuffer<?> data, int width, int height, int mipmaps, @NotNull ColorFormat format)
+    public static @NotNull Texture load(@Nullable CustomBuffer<?> data, int width, int height, int mipmaps, @NotNull ColorFormat format)
     {
         return load(MemoryUtil.memAddressSafe(data), width, height, mipmaps, format);
     }
     
-    public static @NotNull Texture2D load(int width, int height, @NotNull ColorFormat format)
+    public static @NotNull Texture load(int width, int height, @NotNull ColorFormat format)
     {
         return load(MemoryUtil.NULL, width, height, 1, format);
     }
     
-    public static @NotNull Texture2D load(@NotNull Image image)
+    public static @NotNull Texture load(@NotNull Image image)
     {
         return load(MemoryUtil.memAddressSafe(image.data()), image.width(), image.height(), image.mipmaps(), image.format());
     }
     
-    public static @NotNull Texture2D load(@NotNull String filePath)
+    public static @NotNull Texture load(@NotNull String filePath)
     {
         Image image = Image.loadFromFile(filePath);
         
-        Texture2D texture = load(MemoryUtil.memAddressSafe(image.data()), image.width(), image.height(), image.mipmaps(), image.format());
+        Texture texture = load(MemoryUtil.memAddressSafe(image.data()), image.width(), image.height(), image.mipmaps(), image.format());
         
         image.delete();
         
@@ -113,7 +115,7 @@ public class Texture2D extends GLTexture
     // ----- Instance -----
     // --------------------
     
-    protected Texture2D()
+    protected Texture()
     {
         super(GL33.GL_TEXTURE_2D);
     }
@@ -194,7 +196,7 @@ public class Texture2D extends GLTexture
     {
         if (this.format != data.format())
         {
-            Texture2D.LOGGER.warning("Data format (%s) does not match texture (%s)", data.format(), this);
+            Texture.LOGGER.warning("Data format (%s) does not match texture (%s)", data.format(), this);
             return;
         }
         
@@ -220,18 +222,7 @@ public class Texture2D extends GLTexture
      */
     public @NotNull Image toImage()
     {
-        Color.Buffer data = getPixelData();
-        
-        if (data != null)
-        {
-            Texture2D.LOGGER.info("%s Pixel data retrieved successfully", this);
-        }
-        else
-        {
-            Texture2D.LOGGER.warning("%s Failed to retrieve pixel data", this);
-        }
-        
-        return Image.load(data, this.width, this.height, this.mipmaps, this.format);
+        return Image.load(getPixelData(), this.width, this.height, this.mipmaps, this.format);
     }
     
     /**
@@ -254,11 +245,11 @@ public class Texture2D extends GLTexture
             filter(TextureFilter.LINEAR, TextureFilter.LINEAR_MIPMAP_LINEAR); // Activate Tri-Linear filtering for mipmaps
             
             this.mipmaps = 1 + (int) Math.floor(Math.log(Math.max(this.width, this.height)) / Math.log(2));
-            Texture2D.LOGGER.info("Mipmaps Generated (%s): %s", this.mipmaps, this);
+            Texture.LOGGER.info("Mipmaps Generated (%s): %s", this.mipmaps, this);
         }
         else
         {
-            Texture2D.LOGGER.warning("Failed to Generate Mipmaps:", this);
+            Texture.LOGGER.warning("Failed to Generate Mipmaps:", this);
         }
     }
 }

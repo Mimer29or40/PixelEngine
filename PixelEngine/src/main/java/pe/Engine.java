@@ -21,6 +21,7 @@ import rutils.group.Pair;
 import rutils.group.Triple;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -496,8 +497,61 @@ public abstract class Engine
     
     public static final class Viewport
     {
+        private static GLProgram     program;
+        private static GLVertexArray vertexArray;
+        private static GLFramebuffer framebuffer;
+        
         private static final Vector2i pos  = new Vector2i();
         private static final Vector2i size = new Vector2i();
+        
+        private static void setup()
+        {
+            String vert = """
+                          #version 330
+                          layout(location = 0) in vec2 POSITION;
+                          layout(location = 1) in vec2 TEXCOORD;
+                          out vec2 texCoord;
+                          void main(void)
+                          {
+                              texCoord = TEXCOORD;
+                              gl_Position = vec4(POSITION, 0.0, 1.0);
+                          }
+                          """;
+            String frag = """
+                          #version 330
+                          uniform sampler2D tex;
+                          in vec2 texCoord;
+                          out vec4 FragColor;
+                          void main(void)
+                          {
+                              FragColor = texture(tex, texCoord);
+                          }
+                          """;
+            Viewport.program = GLProgram.loadFromCode(vert, null, frag);
+            
+            
+            FloatBuffer vertices = MemoryUtil.memCallocFloat(16).put(new float[] {
+                    -1.0F, +1.0F, 0.0F, 1.0F,
+                    -1.0F, -1.0F, 0.0F, 0.0F,
+                    +1.0F, -1.0F, 1.0F, 0.0F,
+                    +1.0F, +1.0F, 1.0F, 1.0F,
+                    });
+            Viewport.vertexArray = GLVertexArray.builder()
+                                                .buffer(vertices.clear(), Usage.STATIC_DRAW,
+                                                        new GLAttribute(GLType.FLOAT, 2, false),
+                                                        new GLAttribute(GLType.FLOAT, 2, false))
+                                                .build();
+            MemoryUtil.memFree(vertices);
+            
+            Viewport.framebuffer = GLFramebuffer.load(Engine.screenSize.x, Engine.screenSize.y);
+        }
+        
+        private static void destroy()
+        {
+            Viewport.program.delete();
+            Viewport.vertexArray.delete();
+            Viewport.framebuffer.delete();
+        }
         
         public static @NotNull Vector2ic pos()
         {
@@ -543,7 +597,14 @@ public abstract class Engine
             Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
             Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
             
-            GL33.glViewport(Viewport.x(), Viewport.y(), Viewport.width(), Viewport.height()); // TODO - Remove this
+        }
+        
+        private static void draw()
+        {
+            GLProgram.bind(Viewport.program);
+            
+            GLTexture.bind(Viewport.framebuffer.color());
+            Viewport.vertexArray.draw(DrawMode.QUADS, 0, 4);
         }
     }
     
@@ -603,13 +664,12 @@ public abstract class Engine
                 indices.put(4 * i + 2);
                 indices.put(4 * i + 3);
             }
-            indices.flip();
             
             Debug.vertexArray = GLVertexArray.builder()
                                              .buffer(elementsCount, Usage.DYNAMIC_DRAW,
                                                      new GLAttribute(GLType.FLOAT, 3, false),
                                                      new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
-                                             .indexBuffer(indices, Usage.STATIC_DRAW)
+                                             .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
                                              .build();
             MemoryUtil.memFree(indices);
             
@@ -905,21 +965,15 @@ public abstract class Engine
                                 
                                 Debug.handleEvents();
                                 
-                                Viewport.update();
-                                
-                                GLFramebuffer.bind(null);
-                                GLProgram.bind(null);
-                                GLTexture.bind(null);
-                                
-                                GLBatch.bind(null);
-                                
-                                GLState.defaultState();
-                                
                                 if (!Time.paused)
                                 {
+                                    GLFramebuffer.bind(Viewport.framebuffer);
+                                    
+                                    GLState.defaultState();
                                     GLState.wireframe(Debug.wireframe);
                                     
-                                    // TODO - Bind RenderTarget Here
+                                    GLProgram.bind(null);
+                                    GLBatch.bind(null);
                                     
                                     // Engine.renderer.start(); // TODO
                                     
@@ -943,8 +997,16 @@ public abstract class Engine
                                     Debug.drawnVertices = GLBatch.get().draw();
                                 }
                                 
-                                GLState.wireframe(false);
-                                // TODO - Draw to Default FrameBuffer
+                                Viewport.update();
+                                
+                                GLFramebuffer.bind(null);
+                                
+                                GLState.defaultState();
+                                GLState.depthMode(DepthMode.NONE);
+                                
+                                GLState.clearScreenBuffers(EnumSet.of(ScreenBuffer.COLOR));
+                                
+                                Viewport.draw();
                                 
                                 Debug.draw();
                                 
@@ -1005,7 +1067,7 @@ public abstract class Engine
                         Extensions.renderDestroy();
                         
                         // Renderer.destroy(); // TODO
-                        // Layers.destroy();
+                        Viewport.destroy();
                         Debug.destroy();
                         
                         GLState.destroy();
@@ -1094,7 +1156,7 @@ public abstract class Engine
         GLState.setup();
         
         // Renderer.init(); // TODO
-        // Layers.init();
+        Viewport.setup();
         Debug.setup();
         
         // Engine.renderer = new Renderer(Layers.layers[0]); // TODO

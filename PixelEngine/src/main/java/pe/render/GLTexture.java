@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryStack;
 import pe.color.ColorFormat;
-import pe.texture.Texture2D;
+import pe.texture.Texture;
 import rutils.Logger;
 
 import java.nio.ByteBuffer;
@@ -28,7 +28,7 @@ public class GLTexture
         try (MemoryStack stack = MemoryStack.stackPush())
         {
             ByteBuffer pixels = stack.bytes((byte) 255, (byte) 255, (byte) 255, (byte) 255);
-            GLTexture.defaultTexture = Texture2D.load(pixels, 1, 1, 1, ColorFormat.RGBA);
+            GLTexture.defaultTexture = Texture.load(pixels, 1, 1, 1, ColorFormat.RGBA);
         }
     }
     
