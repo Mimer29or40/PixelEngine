@@ -100,6 +100,8 @@ public class GLBatch
     private final String[]    textureNames;
     private final GLTexture[] textureActive;
     
+    private int drawnVertices = 0;
+    
     public GLBatch()
     {
         this.id = ++GLBatch.index;
@@ -330,14 +332,16 @@ public class GLBatch
     
     public void checkBuffer(int vertexCount)
     {
-        if (this.pos.position() + vertexCount >= this.elementsCount * 4) draw();
+        if (this.pos.position() + vertexCount >= this.elementsCount * 4) drawInternal();
     }
     
-    public void draw()
+    private void drawInternal()
     {
         // Check to see if the vertex array was updated.
         if (this.pos.position() > 0)
         {
+            this.drawnVertices += this.pos.position();
+            
             GLVertexArray.bind(this.vertexArray);
             
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_POSITION)).set(0, this.pos.flip());
@@ -406,6 +410,17 @@ public class GLBatch
         }
     }
     
+    public int draw()
+    {
+        drawInternal();
+        
+        int vertices = this.drawnVertices;
+        
+        this.drawnVertices = 0;
+        
+        return vertices;
+    }
+    
     private void incDrawCall()
     {
         DrawCall drawCall = this.drawCalls[this.currentDraw];
@@ -434,7 +449,7 @@ public class GLBatch
                 this.tex2.position(this.tex2.position() + drawCall.alignment);
             }
             
-            if (++this.currentDraw >= this.drawCalls.length) draw();
+            if (++this.currentDraw >= this.drawCalls.length) drawInternal();
             
             drawCall = this.drawCalls[this.currentDraw];
         }

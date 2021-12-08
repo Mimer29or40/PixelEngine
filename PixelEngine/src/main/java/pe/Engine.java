@@ -552,6 +552,8 @@ public abstract class Engine
         private static boolean enabled;
         private static boolean wireframe;
         
+        private static int drawnVertices;
+        
         private static GLProgram     program;
         private static GLVertexArray vertexArray;
         private static Matrix4d      pv;
@@ -656,9 +658,14 @@ public abstract class Engine
             }
             if (Debug.enabled)
             {
+                int x = 0, y = 0;
+                
                 String line;
-                drawText(0, 0, line = String.format("Frame: %s", Time.totalFrameCount));
-                drawText(0, textHeight(line), String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D));
+                
+                drawText(x, y, line = String.format("Frame: %s", Time.totalFrameCount));
+                drawText(x, y += textHeight(line), line = String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D));
+                drawText(x, y += textHeight(line), line = String.format("Wireframe: %s", Debug.wireframe));
+                drawText(x, y += textHeight(line), line = String.format("Vertex Count: %s", Debug.drawnVertices));
             }
             if (!Debug.lines.isEmpty())
             {
@@ -928,7 +935,7 @@ public abstract class Engine
                                     
                                     // Engine.renderer.finish(); // TODO
                                     
-                                    GLBatch.get().draw();
+                                    Debug.drawnVertices = GLBatch.get().draw();
                                 }
                                 
                                 GLState.wireframe(false);
