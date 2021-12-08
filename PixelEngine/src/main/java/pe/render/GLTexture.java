@@ -4,8 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
+import pe.color.Color;
 import pe.color.ColorFormat;
+import pe.texture.Texture2D;
 import rutils.Logger;
 
 import java.nio.ByteBuffer;
@@ -28,13 +29,8 @@ public class GLTexture
         
         try (MemoryStack stack = MemoryStack.stackPush())
         {
-            // 1 pixel RGBA (4 bytes)
             ByteBuffer pixels = stack.bytes((byte) 255, (byte) 255, (byte) 255, (byte) 255);
-            GLTexture.defaultTexture        = new GLTexture(GL33.GL_TEXTURE_2D);
-            GLTexture.defaultTexture.width  = 1;
-            GLTexture.defaultTexture.height = 1;
-            GL33.glBindTexture(GL33.GL_TEXTURE_2D, GLTexture.defaultTexture.id);
-            GL33.glTexImage2D(GLTexture.defaultTexture.type, 0, GL33.GL_RGBA, 1, 1, 0, GL33.GL_RGBA, GL33.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels));
+            GLTexture.defaultTexture = Texture2D.load(pixels, 1, 1, 1, ColorFormat.RGBA);
         }
     }
     
@@ -155,99 +151,5 @@ public class GLTexture
             
             this.mipmaps = 1;
         }
-    }
-    
-    // /**
-    //  * Read texture pixel data.
-    //  * <p>
-    //  * Make sure that it is bound first.
-    //  */
-    // public @Nullable Color.Buffer getPixelData()
-    // {
-    //     int bufferSize = 0;
-    //
-    //     int mipWidth  = this.width;
-    //     int mipHeight = this.height;
-    //
-    //     // Load the different mipmap levels
-    //     for (int i = 0; i < this.mipmaps; i++)
-    //     {
-    //         bufferSize += mipWidth * mipHeight * this.format.sizeOf();
-    //
-    //         mipWidth >>= 1;
-    //         mipHeight >>= 1;
-    //
-    //         if (mipWidth < 1) mipWidth = 1;
-    //         if (mipHeight < 1) mipHeight = 1;
-    //     }
-    //
-    //     GL33.glPixelStorei(GL33.GL_PACK_ALIGNMENT, 1);
-    //
-    //     int glInternalFormat = this.format.internalFormat();
-    //     int glFormat         = this.format.format();
-    //     int glType           = this.format.type();
-    //
-    //     Color.Buffer pixels = Color.malloc(this.format, bufferSize);
-    //
-    //     long ptr = pixels.address();
-    //
-    //     mipWidth  = this.width;
-    //     mipHeight = this.height;
-    //
-    //     // Load the different mipmap levels
-    //     for (int i = 0; i < this.mipmaps; i++)
-    //     {
-    //         int mipSize = mipWidth * mipHeight * this.format.sizeOf();
-    //
-    //         GL33.glGetTexImage(getTextureTypeInt(this.type), i, glFormat, glType, ptr);
-    //
-    //         mipWidth >>= 1;
-    //         mipHeight >>= 1;
-    //         ptr += mipSize;
-    //
-    //         if (mipWidth < 1) mipWidth = 1;
-    //         if (mipHeight < 1) mipHeight = 1;
-    //     }
-    //
-    //     return pixels;
-    // }
-    
-    public enum Type
-    {
-        // TEXTURE_1D,
-        TEXTURE_2D,
-        // TEXTURE_3D,
-        
-        // ARRAY_1D,
-        // ARRAY_2D,
-        
-        // BUFFER,
-        // RECTANGLE,
-        
-        // MULTI_SAMPLE_2D,
-        // MULTI_SAMPLE_ARRAY_2D,
-        
-        CUBE_MAP,
-        // CUBE_MAP_POSITIVE_X,
-        // CUBE_MAP_NEGATIVE_X,
-        // CUBE_MAP_POSITIVE_Y,
-        // CUBE_MAP_NEGATIVE_Y,
-        // CUBE_MAP_POSITIVE_Z,
-        // CUBE_MAP_NEGATIVE_Z,
-        // CUBE_MAP_ARRAY,
-        
-        // RENDERBUFFER,
-        
-        // TEXTURE_1D
-        // TEXTURE_2D
-        // TEXTURE_3D
-        // TEXTURE_1D_ARRAY
-        // TEXTURE_2D_ARRAY
-        // TEXTURE_BUFFER
-        // TEXTURE_RECTANGLE
-        // TEXTURE_CUBE_MAP
-        // TEXTURE_CUBE_MAP_ARRAY
-        // TEXTURE_2D_MULTISAMPLE
-        // TEXTURE_2D_MULTISAMPLE_ARRAY
     }
 }

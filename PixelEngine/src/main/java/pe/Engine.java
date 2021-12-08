@@ -793,8 +793,9 @@ public abstract class Engine
         private static final Draw2DLines    DRAW_2D_LINES    = new Draw2DLines();
         private static final Draw2DTriangle DRAW_2D_TRIANGLE = new Draw2DTriangle();
         private static final Fill2DTriangle FILL_2D_TRIANGLE = new Fill2DTriangle();
+        private static final Draw2DTexture  DRAW_2D_TEXTURE  = new Draw2DTexture();
         
-        public static void clearBackground(Colorc color)
+        public static void clearBackground(@NotNull Colorc color)
         {
             GLState.clearColor(color.rf(), color.gf(), color.bf(), color.af());
             GLState.clearScreenBuffers();
@@ -823,6 +824,11 @@ public abstract class Engine
         public static Fill2DTriangle fillTriangle2D()
         {
             return Draw.FILL_2D_TRIANGLE;
+        }
+        
+        public static Draw2DTexture drawTexture2D()
+        {
+            return Draw.DRAW_2D_TEXTURE;
         }
     }
     

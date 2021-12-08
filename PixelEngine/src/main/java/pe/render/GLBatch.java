@@ -601,12 +601,12 @@ public class GLBatch
     /**
      * Manipulates the current matrix with a rotation matrix.
      * <p>
-     * {@code angle} gives an angle of rotation in degrees; the coordinates of
-     * a vector v are given by <code>v = (left bottom z)<sup>T</sup></code>. The
-     * computed matrix is a counter-clockwise rotation about the line through
-     * the origin with the specified axis when that axis is pointing up (i.e.
-     * the right-hand rule determines the sense of the rotation angle). The
-     * matrix is thus
+     * {@code angle} gives an angle of rotation; the coordinates of a vector v
+     * are given by <code>v = (left bottom z)<sup>T</sup></code>. The computed
+     * matrix is a counter-clockwise rotation about the line through the origin
+     * with the specified axis when that axis is pointing up (i.e. the
+     * right-hand rule determines the sense of the rotation angle). The matrix
+     * is thus
      * <table class=striped>
      * <tr><td colspan=3 rowspan=3><b>R</b></td><td>0</td></tr>
      * <tr><td>0</td></tr>
@@ -623,16 +623,16 @@ public class GLBatch
      * <p>
      * then <code><b>R</b> = uu<sup>T</sup> + cos(angle)(I - uu<sup>T</sup>) + sin(angle)<b>S</b></code>
      *
-     * @param angleDeg the angle of rotation in degrees
-     * @param x        the left coordinate of the rotation vector
-     * @param y        the bottom coordinate of the rotation vector
-     * @param z        the z coordinate of the rotation vector
+     * @param angle the angle of rotation
+     * @param x     the left coordinate of the rotation vector
+     * @param y     the bottom coordinate of the rotation vector
+     * @param z     the z coordinate of the rotation vector
      */
-    public void rotate(double angleDeg, double x, double y, double z)
+    public void rotate(double angle, double x, double y, double z)
     {
-        GLBatch.LOGGER.finest("Rotating: Angle=%s (%s, %s, %s)", angleDeg, x, y, z);
+        GLBatch.LOGGER.finest("Rotating: Angle=%s (%s, %s, %s)", angle, x, y, z);
         
-        this.currentMatrix.rotate(Math.toRadians(angleDeg), x, y, z);
+        this.currentMatrix.rotate(angle, x, y, z);
     }
     
     /**
