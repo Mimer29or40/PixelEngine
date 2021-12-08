@@ -41,16 +41,6 @@ public class GLShader
                     gl_Position = MATRIX_MVP * vec4(POSITION, 1.0);
                 }
                 """;
-        // String vertCode =
-        //         """
-        //         #version 330 core
-        //         layout (location = 0) in vec3 aPos;
-        //
-        //         void main()
-        //         {
-        //             gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-        //         }
-        //         """;
         String fragCode =
                 """
                 #version 330
@@ -65,16 +55,6 @@ public class GLShader
                     finalColor = texelColor * COLOR_DIFFUSE * fragColor;
                 }
                 """;
-        // String fragCode =
-        //         """
-        //         #version 330 core
-        //         out vec4 FragColor;
-        //
-        //         void main()
-        //         {
-        //             FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-        //         }
-        //         """;
         
         GLShader.defaultVert = new GLShader(ShaderType.VERTEX, vertCode);
         GLShader.defaultFrag = new GLShader(ShaderType.FRAGMENT, fragCode);

@@ -22,8 +22,6 @@ public class GLVertexArray
     
     private static final Builder BUILDER = new Builder();
     
-    private static GLVertexArray current;
-    
     static void setup()
     {
         GLVertexArray.LOGGER.fine("Setup");
@@ -34,7 +32,6 @@ public class GLVertexArray
         GLVertexArray.LOGGER.fine("Destroy");
         
         GL33.glBindVertexArray(0);
-        GLVertexArray.current = null;
     }
     
     public static Builder builder()
@@ -44,14 +41,9 @@ public class GLVertexArray
     
     public static void bind(@Nullable GLVertexArray vertexArray)
     {
-        if (!Objects.equals(GLVertexArray.current, vertexArray))
-        {
-            GLVertexArray.LOGGER.finest("Binding Vertex Array:", vertexArray);
-            
-            GLVertexArray.current = vertexArray;
-            
-            GL33.glBindVertexArray(vertexArray != null ? vertexArray.id : 0);
-        }
+        GLVertexArray.LOGGER.finest("Binding Vertex Array:", vertexArray);
+        
+        GL33.glBindVertexArray(vertexArray != null ? vertexArray.id : 0);
     }
     
     // --------------------
@@ -70,13 +62,14 @@ public class GLVertexArray
     /**
      * Creates a new GLVertexArray.
      */
-    private GLVertexArray(GLBufferElementArray indexBuffer, List<GLBufferArray> vertexBuffers, List<GLAttribute[]> vertexAttributes)
+    protected GLVertexArray(GLBufferElementArray indexBuffer, List<GLBufferArray> vertexBuffers, List<GLAttribute[]> vertexAttributes)
     {
         this.id = GL33.glGenVertexArrays();
         
-        GL33.glBindVertexArray(this.id);
+        GLVertexArray.bind(this);
         
         this.indexBuffer = indexBuffer;
+        GLBuffer.bind(this.indexBuffer);
         
         this.vertexBuffers    = new ArrayList<>();
         this.vertexAttributes = new ArrayList<>();

@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryStack;
-import pe.color.Color;
 import pe.color.ColorFormat;
 import pe.texture.Texture2D;
 import rutils.Logger;
@@ -20,8 +19,7 @@ public class GLTexture
     // ----- Static -----
     // ------------------
     
-    private static GLTexture defaultTexture;
-    private static GLTexture current;
+    static GLTexture defaultTexture;
     
     static void setup()
     {
@@ -39,7 +37,6 @@ public class GLTexture
         GLTexture.LOGGER.fine("Destroy");
         
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
-        GLTexture.current = null;
         
         GLTexture texture = GLTexture.defaultTexture;
         GLTexture.defaultTexture = null;
@@ -55,15 +52,10 @@ public class GLTexture
     {
         if (texture == null) texture = GLTexture.defaultTexture;
         
-        if (!Objects.equals(GLTexture.current, texture))
-        {
-            GLTexture.LOGGER.finest("Binding Texture:", texture);
-            
-            GLTexture.current = texture;
-            
-            GL33.glActiveTexture(GL33.GL_TEXTURE0);
-            GL33.glBindTexture(texture.type, texture.id);
-        }
+        GLTexture.LOGGER.finest("Binding Texture:", texture);
+        
+        GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        GL33.glBindTexture(texture.type, texture.id);
     }
     
     // --------------------

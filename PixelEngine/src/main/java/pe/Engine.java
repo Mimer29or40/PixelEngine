@@ -899,6 +899,8 @@ public abstract class Engine
                                 GLProgram.bind(null);
                                 GLTexture.bind(null);
                                 
+                                GLBatch.bind(null);
+                                
                                 GLState.defaultState();
                                 
                                 if (!Time.paused)

@@ -7,60 +7,10 @@ import java.util.logging.Level;
 
 public class EngineTest extends Engine
 {
-    GLVertexArray vao;
-    
     @Override
     protected void setup()
     {
         size(100, 100, 4, 4);
-        
-        // try (MemoryStack stack = MemoryStack.stackPush())
-        // {
-        // FloatBuffer pos = stack.floats(
-        //         50.0F, 25.0F, 0.0f, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 1.0F,
-        //         25.0F, 50.0F, 0.0f, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 1.0F,
-        //         75.0F, 50.0F, 0.0f, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 1.0F);
-        // vao = GLVertexArray.builder().buffer(pos, Usage.STATIC_DRAW,
-        //                                      new GLAttribute(GLType.FLOAT, 3),
-        //                                      new GLAttribute(GLType.FLOAT, 2),
-        //                                      new GLAttribute(GLType.FLOAT, 0),
-        //                                      new GLAttribute(GLType.FLOAT, 0),
-        //                                      new GLAttribute(GLType.FLOAT, 4, true),
-        //                                      new GLAttribute(GLType.FLOAT, 0)).build();
-        
-        // FloatBuffer pos = stack.floats(
-        //         50.0F, 25.0F, 0.0f,
-        //         25.0F, 50.0F, 0.0f,
-        //         75.0F, 50.0F, 0.0f);
-        // FloatBuffer tex = stack.floats(
-        //         0.0f, 0.0F,
-        //         0.0f, 0.0F,
-        //         0.0f, 0.0F);
-        // FloatBuffer norm = stack.floats(
-        //         0.0f, 0.0F, 1.0F,
-        //         0.0f, 0.0F, 1.0F,
-        //         0.0f, 0.0F, 1.0F);
-        // FloatBuffer tan = stack.floats(
-        //         1.0f, 0.0F, 0.0F,
-        //         1.0f, 0.0F, 0.0F,
-        //         1.0f, 0.0F, 0.0F);
-        // ByteBuffer col = stack.bytes(
-        //         (byte) 255, (byte) 0, (byte) 0, (byte) 255,
-        //         (byte) 0, (byte) 0, (byte) 255, (byte) 255,
-        //         (byte) 0, (byte) 255, (byte) 0, (byte) 255);
-        // FloatBuffer tex2 = stack.floats(
-        //         0.0f, 0.0F,
-        //         0.0f, 0.0F,
-        //         0.0f, 0.0F);
-        // vao = GLVertexArray.builder()
-        //                    .buffer(pos, Usage.STATIC_DRAW, new GLAttribute(GLType.FLOAT, 3))
-        //                    .buffer(tex, Usage.STATIC_DRAW, new GLAttribute(GLType.FLOAT, 2))
-        //                    .buffer(norm, Usage.STATIC_DRAW, new GLAttribute(GLType.FLOAT, 3))
-        //                    .buffer(tan, Usage.STATIC_DRAW, new GLAttribute(GLType.FLOAT, 3))
-        //                    .buffer(col, Usage.STATIC_DRAW, new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
-        //                    .buffer(tex2, Usage.STATIC_DRAW, new GLAttribute(GLType.FLOAT, 2))
-        //                    .build();
-        // }
         
         GLProgram.Uniform.vec4(GLProgram.UNIFORM_COLOR_DIFFUSE, 1.0, 1.0, 1.0, 1.0);
     }
@@ -91,10 +41,6 @@ public class EngineTest extends Engine
             .point2(75.0, 25.0)
             .thickness(1.0)
             .draw();
-        
-        GLBatch.get().draw();
-        
-        // vao.draw(DrawMode.TRIANGLES);
     }
     
     @Override

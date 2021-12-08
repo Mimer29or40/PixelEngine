@@ -21,10 +21,6 @@ public abstract class GLBuffer
     // ----- Static -----
     // ------------------
     
-    private static GLBufferArray        currentArray;
-    private static GLBufferElementArray currentElementArray;
-    private static GLBufferUniform      currentUniform;
-    
     static void setup()
     {
         GLBuffer.LOGGER.fine("Setup");
@@ -35,13 +31,8 @@ public abstract class GLBuffer
         GLBuffer.LOGGER.fine("Destroy");
         
         GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, 0);
-        GLBuffer.currentArray = null;
-        
         GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, 0);
-        GLBuffer.currentElementArray = null;
-        
         GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, 0);
-        GLBuffer.currentUniform = null;
     }
     
     public static void bind(@Nullable GLBuffer buffer)
@@ -53,38 +44,23 @@ public abstract class GLBuffer
     
     public static void bind(@Nullable GLBufferArray buffer)
     {
-        if (!Objects.equals(GLBuffer.currentArray, buffer))
-        {
-            GLBuffer.LOGGER.finest("Binding Array Buffer:", buffer);
-            
-            GLBuffer.currentArray = buffer;
-            
-            GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, buffer != null ? buffer.id : 0);
-        }
+        GLBuffer.LOGGER.finest("Binding Array Buffer:", buffer);
+        
+        GL33.glBindBuffer(GL33.GL_ARRAY_BUFFER, buffer != null ? buffer.id : 0);
     }
     
     public static void bind(@Nullable GLBufferElementArray buffer)
     {
-        if (!Objects.equals(GLBuffer.currentElementArray, buffer))
-        {
-            GLBuffer.LOGGER.finest("Binding Element Array Buffer:", buffer);
-            
-            GLBuffer.currentElementArray = buffer;
-            
-            GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, buffer != null ? buffer.id : 0);
-        }
+        GLBuffer.LOGGER.finest("Binding Element Array Buffer:", buffer);
+        
+        GL33.glBindBuffer(GL33.GL_ELEMENT_ARRAY_BUFFER, buffer != null ? buffer.id : 0);
     }
     
     public static void bind(@Nullable GLBufferUniform buffer)
     {
-        if (!Objects.equals(GLBuffer.currentUniform, buffer))
-        {
-            GLBuffer.LOGGER.finest("Binding Uniform Buffer:", buffer);
-            
-            GLBuffer.currentUniform = buffer;
-            
-            GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, buffer != null ? buffer.id : 0);
-        }
+        GLBuffer.LOGGER.finest("Binding Uniform Buffer:", buffer);
+        
+        GL33.glBindBuffer(GL33.GL_UNIFORM_BUFFER, buffer != null ? buffer.id : 0);
     }
     
     // --------------------
@@ -130,7 +106,7 @@ public abstract class GLBuffer
      * @param data  The data
      * @param usage How the buffer will be used.
      */
-    protected GLBuffer(int type, @NotNull Buffer data, Usage usage)
+    protected GLBuffer(int type, @NotNull Buffer data, @NotNull Usage usage)
     {
         this.id = GL33.glGenBuffers();
         
@@ -153,7 +129,7 @@ public abstract class GLBuffer
      * @param data  The data
      * @param usage How the buffer will be used.
      */
-    protected GLBuffer(int type, @NotNull CustomBuffer<?> data, Usage usage)
+    protected GLBuffer(int type, @NotNull CustomBuffer<?> data, @NotNull Usage usage)
     {
         this.id = GL33.glGenBuffers();
         

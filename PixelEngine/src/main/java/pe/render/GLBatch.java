@@ -27,8 +27,8 @@ public class GLBatch
     // ----- Static -----
     // ------------------
     
-    private static GLBatch defaultBatch;
-    private static GLBatch current;
+    static GLBatch defaultBatch;
+    static GLBatch current;
     
     static void setup()
     {
@@ -57,12 +57,9 @@ public class GLBatch
     {
         if (batch == null) batch = GLBatch.defaultBatch;
         
-        if (!Objects.equals(GLBatch.current, batch))
-        {
-            GLBatch.LOGGER.finest("Binding Batch:", batch);
-            
-            GLBatch.current = batch;
-        }
+        GLBatch.LOGGER.finest("Binding Batch:", batch);
+        
+        GLBatch.current = batch;
     }
     
     // --------------------
@@ -350,7 +347,7 @@ public class GLBatch
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_COLOR)).set(0, this.col.flip());
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_TEXCOORD2)).set(0, this.tex2.flip());
             
-            GLBuffer.bind((GLBufferArray) null);
+            // GLBuffer.bind((GLBufferArray) null);
             
             // GL.bindProgram(null); // TODO - Is this needed?
             //
@@ -367,7 +364,7 @@ public class GLBatch
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MODEL, false, this.model);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MVP, false, this.mvp);
             
-            GLBuffer.bind(this.vertexArray.indexBuffer()); // TODO - Is this needed?
+            // GLBuffer.bind(this.vertexArray.indexBuffer()); // TODO - Is this needed?
             
             activate();
             GL33.glActiveTexture(GL33.GL_TEXTURE0);
@@ -392,27 +389,27 @@ public class GLBatch
             
             deactivate();
             GL33.glActiveTexture(GL33.GL_TEXTURE0);
-            GLBuffer.bind((GLBufferElementArray) null); // TODO - Is this needed?
+            // GLBuffer.bind((GLBufferElementArray) null); // TODO - Is this needed?
+            
+            // Reset Batch to known state
+            
+            // Reset Vertex Array and increment buffer objects (in case of multi-buffering)
+            this.pos.clear();
+            this.tex1.clear();
+            this.norm.clear();
+            this.tan.clear();
+            this.col.clear();
+            this.tex2.clear();
+            
+            // Reset Draw Calls
+            this.currentDraw = 0;
+            // This doesn't need to happen because the draw call is reset when it is incremented.
+            // This happens to get rid of the reference to the GLTexture
+            for (DrawCall drawCall : this.drawCalls) drawCall.reset();
+            
+            // Reset Depth
+            this.currentDepth = 0.99995;
         }
-        
-        // Reset Batch to known state
-        
-        // Reset Vertex Array and increment buffer objects (in case of multi-buffering)
-        this.pos.clear();
-        this.tex1.clear();
-        this.norm.clear();
-        this.tan.clear();
-        this.col.clear();
-        this.tex2.clear();
-        
-        // Reset Draw Calls
-        this.currentDraw = 0;
-        // This doesn't need to happen because the draw call is reset when it is incremented.
-        // This happens to get rid of the reference to the GLTexture
-        for (DrawCall drawCall : this.drawCalls) drawCall.reset();
-        
-        // Reset Depth
-        this.currentDepth = 0.99995;
     }
     
     private void incDrawCall()

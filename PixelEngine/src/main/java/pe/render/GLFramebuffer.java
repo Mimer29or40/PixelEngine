@@ -15,8 +15,6 @@ public class GLFramebuffer
     // ----- Static -----
     // ------------------
     
-    private static GLFramebuffer current;
-    
     static void setup()
     {
         GLFramebuffer.LOGGER.fine("Setup");
@@ -27,27 +25,21 @@ public class GLFramebuffer
         GLFramebuffer.LOGGER.fine("Destroy");
         
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-        GLFramebuffer.current = null;
     }
     
     public static void bind(@Nullable GLFramebuffer framebuffer)
     {
-        if (!Objects.equals(GLFramebuffer.current, framebuffer))
+        GLFramebuffer.LOGGER.finest("Binding Framebuffer:", framebuffer);
+        
+        if (framebuffer == null)
         {
-            GLFramebuffer.LOGGER.finest("Binding Framebuffer:", framebuffer);
-            
-            GLFramebuffer.current = framebuffer;
-            
-            if (framebuffer == null)
-            {
-                GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-                GL33.glViewport(Engine.Viewport.x(), Engine.Viewport.y(), Engine.Viewport.width(), Engine.Viewport.height());
-            }
-            else
-            {
-                GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, framebuffer.id());
-                GL33.glViewport(0, 0, framebuffer.width(), framebuffer.height());
-            }
+            GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+            GL33.glViewport(Engine.Viewport.x(), Engine.Viewport.y(), Engine.Viewport.width(), Engine.Viewport.height());
+        }
+        else
+        {
+            GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, framebuffer.id());
+            GL33.glViewport(0, 0, framebuffer.width(), framebuffer.height());
         }
     }
     
