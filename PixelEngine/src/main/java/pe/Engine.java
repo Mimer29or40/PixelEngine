@@ -550,6 +550,7 @@ public abstract class Engine
     public static final class Debug
     {
         private static boolean enabled;
+        private static boolean wireframe;
         
         private static GLProgram     program;
         private static GLVertexArray vertexArray;
@@ -627,6 +628,11 @@ public abstract class Engine
         
         private static void handleEvents()
         {
+            if (Keyboard.get().down(Keyboard.Key.F10) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
+            {
+                Debug.wireframe = !Debug.wireframe;
+                Debug.notification(Debug.wireframe ? "Wireframe Mode: On" : "Wireframe Mode: Off");
+            }
             if (Keyboard.get().down(Keyboard.Key.F11) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
             {
                 Debug.enabled = !Debug.enabled;
@@ -897,6 +903,8 @@ public abstract class Engine
                                 
                                 if (!Time.paused)
                                 {
+                                    GLState.wireframe(Debug.wireframe);
+                                    
                                     // TODO - Bind RenderTarget Here
                                     
                                     // Engine.renderer.start(); // TODO
@@ -920,7 +928,8 @@ public abstract class Engine
                                     
                                     GLBatch.get().draw();
                                 }
-                                
+    
+                                GLState.wireframe(false);
                                 // TODO - Draw to Default FrameBuffer
                                 
                                 Debug.draw();
