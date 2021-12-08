@@ -609,7 +609,7 @@ public abstract class Engine
                                              .buffer(elementsCount, Usage.DYNAMIC_DRAW,
                                                      new GLAttribute(GLType.FLOAT, 3, false),
                                                      new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
-                                             // .indexBuffer(indices, Usage.STATIC_DRAW)
+                                             .indexBuffer(indices, Usage.STATIC_DRAW)
                                              .build();
             MemoryUtil.memFree(indices);
             
@@ -658,14 +658,19 @@ public abstract class Engine
             }
             if (Debug.enabled)
             {
+                String[] lines = {
+                        String.format("Frame: %s", Time.totalFrameCount),
+                        String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D),
+                        String.format("Wireframe: %s", Debug.wireframe),
+                        String.format("Vertex Count: %s", Debug.drawnVertices),
+                        };
+                
                 int x = 0, y = 0;
-                
-                String line;
-                
-                drawText(x, y, line = String.format("Frame: %s", Time.totalFrameCount));
-                drawText(x, y += textHeight(line), line = String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D));
-                drawText(x, y += textHeight(line), line = String.format("Wireframe: %s", Debug.wireframe));
-                drawText(x, y += textHeight(line), line = String.format("Vertex Count: %s", Debug.drawnVertices));
+                for (String line : lines)
+                {
+                    drawText(x, y, line);
+                    y += textHeight(line);
+                }
             }
             if (!Debug.lines.isEmpty())
             {
@@ -714,7 +719,7 @@ public abstract class Engine
                         int quads = stb_easy_font_print(line.a + 2, line.b + 2, line.c, textColor, buffer);
                         
                         Debug.vertexArray.buffer(0).set(buffer.clear());
-                        Debug.vertexArray.draw(DrawMode.QUADS, 4 + quads * 4);
+                        Debug.vertexArray.draw(DrawMode.TRIANGLES, (1 + quads) * 6);
                     }
                 }
                 
