@@ -50,7 +50,6 @@ public class GLShader
                 uniform sampler2D texture0;
                 void main()
                 {
-                    // vec4 texelColor = texture2D(texture0, fragTexCoord.xy / fragTexCoord.z);
                     vec4 texelColor = textureProj(texture0, fragTexCoord);
                     finalColor = texelColor * fragColor;
                 }

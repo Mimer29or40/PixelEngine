@@ -871,15 +871,16 @@ public abstract class Engine
     
     public static final class Draw
     {
-        private static final DrawPoint2D    DRAW_POINT_2D    = new DrawPoint2D();
-        private static final DrawLine2D     DRAW_LINE_2D     = new DrawLine2D();
-        private static final DrawLines2D    DRAW_LINES_2D    = new DrawLines2D();
-        private static final DrawBezier2D   DRAW_BEZIER_2D   = new DrawBezier2D();
-        private static final DrawTriangle2D DRAW_TRIANGLE_2D = new DrawTriangle2D();
-        private static final FillTriangle2D FILL_TRIANGLE_2D = new FillTriangle2D();
-        private static final DrawQuad2D     DRAW_QUAD_2D     = new DrawQuad2D();
-        private static final FillQuad2D     FILL_QUAD_2D     = new FillQuad2D();
-        private static final DrawTexture2D  DRAW_TEXTURE_2D  = new DrawTexture2D();
+        private static final DrawPoint2D         DRAW_POINT_2D          = new DrawPoint2D();
+        private static final DrawLine2D          DRAW_LINE_2D           = new DrawLine2D();
+        private static final DrawLines2D         DRAW_LINES_2D          = new DrawLines2D();
+        private static final DrawBezier2D        DRAW_BEZIER_2D         = new DrawBezier2D();
+        private static final DrawTriangle2D      DRAW_TRIANGLE_2D       = new DrawTriangle2D();
+        private static final FillTriangle2D      FILL_TRIANGLE_2D       = new FillTriangle2D();
+        private static final DrawQuad2D          DRAW_QUAD_2D           = new DrawQuad2D();
+        private static final FillQuad2D          FILL_QUAD_2D           = new FillQuad2D();
+        private static final DrawTexture2D       DRAW_TEXTURE_2D        = new DrawTexture2D();
+        private static final DrawTextureWarped2D DRAW_TEXTURE_WARPED_2D = new DrawTextureWarped2D();
         
         public static void clearBackground(@NotNull Colorc color)
         {
@@ -930,6 +931,11 @@ public abstract class Engine
         public static DrawTexture2D drawTexture2D()
         {
             return Draw.DRAW_TEXTURE_2D;
+        }
+        
+        public static DrawTextureWarped2D drawTextureWarped2D()
+        {
+            return Draw.DRAW_TEXTURE_WARPED_2D;
         }
     }
     
