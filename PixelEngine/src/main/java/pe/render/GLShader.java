@@ -29,28 +29,29 @@ public class GLShader
                 """
                 #version 330
                 in vec3 POSITION;
-                in vec2 TEXCOORD;
+                in vec3 TEXCOORD;
                 in vec4 COLOR;
-                out vec2 fragTexCoord;
+                out vec3 fragTexCoord;
                 out vec4 fragColor;
                 uniform mat4 MATRIX_MVP;
                 void main()
                 {
+                    gl_Position = MATRIX_MVP * vec4(POSITION, 1.0);
                     fragTexCoord = TEXCOORD;
                     fragColor = COLOR;
-                    gl_Position = MATRIX_MVP * vec4(POSITION, 1.0);
                 }
                 """;
         String fragCode =
                 """
                 #version 330
-                in vec2 fragTexCoord;
+                in vec3 fragTexCoord;
                 in vec4 fragColor;
                 out vec4 finalColor;
                 uniform sampler2D texture0;
                 void main()
                 {
-                    vec4 texelColor = texture(texture0, fragTexCoord);
+                    // vec4 texelColor = texture2D(texture0, fragTexCoord.xy / fragTexCoord.z);
+                    vec4 texelColor = textureProj(texture0, fragTexCoord);
                     finalColor = texelColor * fragColor;
                 }
                 """;

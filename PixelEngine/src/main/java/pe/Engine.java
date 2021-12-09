@@ -529,19 +529,23 @@ public abstract class Engine
                           """;
             Viewport.program = GLProgram.loadFromCode(vert, null, frag);
             
-            
             FloatBuffer vertices = MemoryUtil.memCallocFloat(16).put(new float[] {
                     -1.0F, +1.0F, 0.0F, 1.0F,
                     -1.0F, -1.0F, 0.0F, 0.0F,
                     +1.0F, -1.0F, 1.0F, 0.0F,
                     +1.0F, +1.0F, 1.0F, 1.0F,
                     });
+            IntBuffer indices = MemoryUtil.memCallocInt(6).put(new int[] {
+                    0, 1, 2, 0, 2, 3
+            });
             Viewport.vertexArray = GLVertexArray.builder()
                                                 .buffer(vertices.clear(), Usage.STATIC_DRAW,
                                                         new GLAttribute(GLType.FLOAT, 2, false),
                                                         new GLAttribute(GLType.FLOAT, 2, false))
+                                                .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
                                                 .build();
             MemoryUtil.memFree(vertices);
+            MemoryUtil.memFree(indices);
             
             Viewport.framebuffer = GLFramebuffer.load(Engine.screenSize.x, Engine.screenSize.y);
         }
@@ -603,7 +607,7 @@ public abstract class Engine
             GLProgram.bind(Viewport.program);
             
             GLTexture.bind(Viewport.framebuffer.color());
-            Viewport.vertexArray.draw(DrawMode.QUADS, 0, 4);
+            Viewport.vertexArray.draw(DrawMode.TRIANGLES, 0, 6);
         }
     }
     
@@ -867,12 +871,15 @@ public abstract class Engine
     
     public static final class Draw
     {
-        private static final Draw2DPoint    DRAW_2D_POINT    = new Draw2DPoint();
-        private static final Draw2DLine     DRAW_2D_LINE     = new Draw2DLine();
-        private static final Draw2DLines    DRAW_2D_LINES    = new Draw2DLines();
-        private static final Draw2DTriangle DRAW_2D_TRIANGLE = new Draw2DTriangle();
-        private static final Fill2DTriangle FILL_2D_TRIANGLE = new Fill2DTriangle();
-        private static final Draw2DTexture  DRAW_2D_TEXTURE  = new Draw2DTexture();
+        private static final DrawPoint2D    DRAW_POINT_2D    = new DrawPoint2D();
+        private static final DrawLine2D     DRAW_LINE_2D     = new DrawLine2D();
+        private static final DrawLines2D    DRAW_LINES_2D    = new DrawLines2D();
+        private static final DrawBezier2D   DRAW_BEZIER_2D   = new DrawBezier2D();
+        private static final DrawTriangle2D DRAW_TRIANGLE_2D = new DrawTriangle2D();
+        private static final FillTriangle2D FILL_TRIANGLE_2D = new FillTriangle2D();
+        private static final DrawQuad2D     DRAW_QUAD_2D     = new DrawQuad2D();
+        private static final FillQuad2D     FILL_QUAD_2D     = new FillQuad2D();
+        private static final DrawTexture2D  DRAW_TEXTURE_2D  = new DrawTexture2D();
         
         public static void clearBackground(@NotNull Colorc color)
         {
@@ -880,34 +887,49 @@ public abstract class Engine
             GLState.clearScreenBuffers();
         }
         
-        public static Draw2DPoint point2D()
+        public static DrawPoint2D point2D()
         {
-            return Draw.DRAW_2D_POINT;
+            return Draw.DRAW_POINT_2D;
         }
         
-        public static Draw2DLine line2D()
+        public static DrawLine2D line2D()
         {
-            return Draw.DRAW_2D_LINE;
+            return Draw.DRAW_LINE_2D;
         }
         
-        public static Draw2DLines lines2D()
+        public static DrawLines2D lines2D()
         {
-            return Draw.DRAW_2D_LINES;
+            return Draw.DRAW_LINES_2D;
         }
         
-        public static Draw2DTriangle drawTriangle2D()
+        public static DrawBezier2D bezier2D()
         {
-            return Draw.DRAW_2D_TRIANGLE;
+            return Draw.DRAW_BEZIER_2D;
         }
         
-        public static Fill2DTriangle fillTriangle2D()
+        public static DrawTriangle2D drawTriangle2D()
         {
-            return Draw.FILL_2D_TRIANGLE;
+            return Draw.DRAW_TRIANGLE_2D;
         }
         
-        public static Draw2DTexture drawTexture2D()
+        public static FillTriangle2D fillTriangle2D()
         {
-            return Draw.DRAW_2D_TEXTURE;
+            return Draw.FILL_TRIANGLE_2D;
+        }
+        
+        public static DrawQuad2D drawQuad2D()
+        {
+            return Draw.DRAW_QUAD_2D;
+        }
+        
+        public static FillQuad2D fillQuad2D()
+        {
+            return Draw.FILL_QUAD_2D;
+        }
+        
+        public static DrawTexture2D drawTexture2D()
+        {
+            return Draw.DRAW_TEXTURE_2D;
         }
     }
     

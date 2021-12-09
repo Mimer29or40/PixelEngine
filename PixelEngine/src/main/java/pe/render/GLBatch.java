@@ -71,11 +71,11 @@ public class GLBatch
     private final int elementsCount; // Number of elements in the buffer (QUADS)
     
     private final Float3.Buffer pos;  // (XYZ)  (shader-location = 0)
-    private final Float2.Buffer tex1; // (UV)   (shader-location = 1)
+    private final Float3.Buffer tex1; // (UVQ)  (shader-location = 1)
     private final Float3.Buffer norm; // (XYZ)  (shader-location = 2)
     private final Float3.Buffer tan;  // (XYZ)  (shader-location = 3)
     private final Byte4.Buffer  col;  // (RGBA) (shader-location = 4)
-    private final Float2.Buffer tex2; // (UV)   (shader-location = 5)
+    private final Float3.Buffer tex2; // (UVQ)  (shader-location = 5)
     
     private final GLVertexArray vertexArray;
     
@@ -112,11 +112,11 @@ public class GLBatch
         int capacity = this.elementsCount * 4;
         
         this.pos  = Float3.calloc(capacity); // 3 floats per position
-        this.tex1 = Float2.calloc(capacity); // 2 floats per texcoord
+        this.tex1 = Float3.calloc(capacity); // 2 floats per texcoord
         this.norm = Float3.calloc(capacity); // 3 floats per normal
         this.tan  = Float3.calloc(capacity); // 3 floats per tangent
         this.col  = Byte4.calloc(capacity);  // 4 bytes  per color
-        this.tex2 = Float2.calloc(capacity); // 2 floats per texcoord2
+        this.tex2 = Float3.calloc(capacity); // 2 floats per texcoord2
         
         IntBuffer indices = MemoryUtil.memCallocInt(this.elementsCount * 6); // 6 int per quad (indices)
         for (int i = 0; i < this.elementsCount; ++i)
@@ -128,16 +128,15 @@ public class GLBatch
             indices.put(4 * i + 2);
             indices.put(4 * i + 3);
         }
-        indices.flip();
         
         this.vertexArray = GLVertexArray.builder()
                                         .buffer(this.pos, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 3, false))
-                                        .buffer(this.tex1, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 2, false))
+                                        .buffer(this.tex1, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 3, false))
                                         .buffer(this.norm, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 3, false))
                                         .buffer(this.tan, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 3, false))
                                         .buffer(this.col, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
-                                        .buffer(this.tex2, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 2, false))
-                                        .indexBuffer(indices, Usage.STATIC_DRAW)
+                                        .buffer(this.tex2, Usage.DYNAMIC_DRAW, new GLAttribute(GLType.FLOAT, 3, false))
+                                        .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
                                         .build();
         MemoryUtil.memFree(indices);
         
@@ -237,7 +236,7 @@ public class GLBatch
         GLBatch.LOGGER.finest("Stopping", this);
         
         this.hasStart = false;
-    
+        
         drawInternal();
         
         return this.stats;
@@ -268,7 +267,7 @@ public class GLBatch
         GLBatch.LOGGER.finest("Ending", this);
         
         // Make sure tex1 count match vertex count
-        for (int i = 0, n = this.pos.position() - this.tex1.position(); i < n; i++) this.tex1.put(0.0, 0.0);
+        for (int i = 0, n = this.pos.position() - this.tex1.position(); i < n; i++) this.tex1.put(0.0, 0.0, 1.0);
         
         // Make sure norm count match vertex count
         for (int i = 0, n = this.pos.position() - this.norm.position(); i < n; i++) this.norm.put(0.0, 0.0, 1.0);
@@ -280,7 +279,7 @@ public class GLBatch
         for (int i = 0, n = this.pos.position() - this.col.position(); i < n; i++) this.col.put(this.col.get(this.col.position() - 1));
         
         // Make sure tex2 count match vertex count
-        for (int i = 0, n = this.pos.position() - this.tex2.position(); i < n; i++) this.tex2.put(0.0, 0.0);
+        for (int i = 0, n = this.pos.position() - this.tex2.position(); i < n; i++) this.tex2.put(0.0, 0.0, 1.0);
         
         // NOTE: Depth increment is dependant on rlOrtho(): z-near and z-far values,
         // as well as depth buffer bit-depth (16bit or 24bit or 32bit)
@@ -312,13 +311,18 @@ public class GLBatch
         vertex(x, y, this.currentDepth);
     }
     
-    public void texCoord(double u, double v)
+    public void texCoord(double u, double v, double q)
     {
         if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
         
-        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate: [%s, %s]", u, v);
+        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate: [%s, %s, %s]", u, v, q);
         
-        this.tex1.put(u, v);
+        this.tex1.put(u, v, q);
+    }
+    
+    public void texCoord(double u, double v)
+    {
+        texCoord(u, v, 1.0);
     }
     
     public void normal(double x, double y, double z)
@@ -348,13 +352,18 @@ public class GLBatch
         this.col.put(r, g, b, a);
     }
     
-    public void texCoord2(double u, double v)
+    public void texCoord2(double u, double v, double q)
     {
         if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
         
-        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate 2: [%s, %s]", u, v);
+        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate 2: [%s, %s, %s]", u, v, q);
         
-        this.tex2.put(u, v);
+        this.tex2.put(u, v, q);
+    }
+    
+    public void texCoord2(double u, double v)
+    {
+        texCoord2(u, v, 1.0);
     }
     
     public void checkBuffer(int vertexCount)
@@ -378,8 +387,6 @@ public class GLBatch
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_COLOR)).set(0, this.col.flip());
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_TEXCOORD2)).set(0, this.tex2.flip());
             
-            // GL.bindProgram(null); // TODO - Is this needed?
-            //
             // // Setup some default shader values
             // GL.Uniform.int1(GLProgram.MAP_DIFFUSE, 0); // Active default sampler2D: texture0 // TODO - Is this needed?
             

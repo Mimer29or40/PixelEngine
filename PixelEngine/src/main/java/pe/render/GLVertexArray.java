@@ -334,11 +334,9 @@ public class GLVertexArray
             return this;
         }
         
-        public GLVertexArray build()
+        public @NotNull GLVertexArray build()
         {
-            GLVertexArray vertexArray = new GLVertexArray(this.indexBuffer, this.buffers, this.attributes);
-            reset();
-            return vertexArray;
+            return new GLVertexArray(this.indexBuffer, this.buffers, this.attributes);
         }
     }
 }
