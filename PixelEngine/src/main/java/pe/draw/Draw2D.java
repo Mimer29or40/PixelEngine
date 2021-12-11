@@ -462,6 +462,14 @@ public abstract class Draw2D
     
     protected static void fillEllipse(double x, double y, double rx, double ry, double start, double stop, double offsetX, double offsetY, double rotation, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
     {
+        if (start == stop) return;
+    
+        while (start > Math.PI2 + 1e-6) start -= Math.PI2;
+        while (start < -Math.PI2 - 1e-6) start += Math.PI2;
+    
+        while (stop > Math.PI2 + 1e-6) stop -= Math.PI2;
+        while (stop < -Math.PI2 - 1e-6) stop += Math.PI2;
+        
         if (start > stop)
         {
             double temp = start;
@@ -469,18 +477,22 @@ public abstract class Draw2D
             stop  = temp;
         }
         
+        if (segments < 3) segments = segments(rx, ry, start, stop);
+        
         double inc   = (stop - start) / segments;
         double theta = start;
         
         double  tempX, tempY;
         boolean shouldRotate = rotation != 0.0;
         
-        double s = shouldRotate ? Math.sin(Math.toRadians(rotation)) : 0;
-        double c = shouldRotate ? Math.cos(Math.toRadians(rotation)) : 0;
+        double s = shouldRotate ? Math.sin(rotation) : 0;
+        double c = shouldRotate ? Math.cos(rotation) : 0;
         
         double cx, cy;
         
         double p0x, p0y, p1x, p1y;
+        
+        double cross;
         
         cx  = 0.0;
         cy  = 0.0;
@@ -528,13 +540,28 @@ public abstract class Draw2D
             batch.texCoord(Draw2D.u0, Draw2D.v0);
             batch.color(ri, gi, bi, ai);
             
-            batch.vertex(p1x, p1y);
-            batch.texCoord(Draw2D.u1, Draw2D.v1);
-            batch.color(ro, go, bo, ao);
+            cross = (p1x - cx) * (p0y - p1y) - (p1y - cy) * (p0x - p1x);
             
-            batch.vertex(p0x, p0y);
-            batch.texCoord(Draw2D.u0, Draw2D.v1);
-            batch.color(ro, go, bo, ao);
+            if (cross > 0.0)
+            {
+                batch.vertex(p0x, p0y);
+                batch.texCoord(Draw2D.u0, Draw2D.v1);
+                batch.color(ro, go, bo, ao);
+                
+                batch.vertex(p1x, p1y);
+                batch.texCoord(Draw2D.u1, Draw2D.v1);
+                batch.color(ro, go, bo, ao);
+            }
+            else
+            {
+                batch.vertex(p1x, p1y);
+                batch.texCoord(Draw2D.u1, Draw2D.v1);
+                batch.color(ro, go, bo, ao);
+                
+                batch.vertex(p0x, p0y);
+                batch.texCoord(Draw2D.u0, Draw2D.v1);
+                batch.color(ro, go, bo, ao);
+            }
             
             p0x = p1x;
             p0y = p1y;
@@ -557,7 +584,7 @@ public abstract class Draw2D
         
         double rn = ((x3 - x1) * (y0 - y1) - (y3 - y1) * (x0 - x1)) * rd;
         double sn = ((x2 - x0) * (y0 - y1) - (y2 - y0) * (x0 - x1)) * rd;
-    
+        
         if (!(rn < 0.0 || rn > 1.0 || sn < 0.0 || sn > 1.0))
         {
             cx = x0 + rn * (x2 - x0);
@@ -697,9 +724,15 @@ public abstract class Draw2D
         // batch.end();
     }
     
-    private static int segments(double rx, double ry)
+    protected static int segments(double rx, double ry)
     {
-        return Math.clamp((int) Math.max(rx, ry), 8, 48);
+        return segments(rx, ry, 0, Math.PI2);
+    }
+    
+    protected static int segments(double rx, double ry, double start, double stop)
+    {
+        double percentage = (stop - start) / Math.PI2;
+        return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * percentage), 8, 48);
     }
     
     public Draw2D()

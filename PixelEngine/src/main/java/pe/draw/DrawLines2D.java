@@ -43,7 +43,7 @@ public class DrawLines2D extends Draw2D
     @Override
     public void drawImpl()
     {
-        DrawLines2D.LOGGER.finest("Drawing points=%s point1=(%s, %s) thickness=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s)",
+        DrawLines2D.LOGGER.finest("Drawing points=%s thickness=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s)",
                                   this.points, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
         
         if (this.thickness <= 0) return;

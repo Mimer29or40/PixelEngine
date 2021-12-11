@@ -39,6 +39,10 @@ public class Draw2DTest extends Engine
     private Vector2d[] draggableQuad;
     private int        draggingQuad = -1;
     
+    // DrawEllipse2D
+    private Vector2d[] draggableEllipse;
+    private int        draggingEllipse = -1;
+    
     // DrawQuad2D
     private Vector2d[] draggableTexture;
     private int        draggingTexture = -1;
@@ -53,7 +57,7 @@ public class Draw2DTest extends Engine
     @Override
     protected void setup()
     {
-        size(200, 200, 4, 4);
+        size(800, 800, 1, 1);
         
         draggablePoint = new Vector2d[16];
         for (int i = 0, n = draggablePoint.length; i < n; i++)
@@ -99,6 +103,12 @@ public class Draw2DTest extends Engine
                 new Vector2d(10, screenHeight() - 10),
                 new Vector2d(screenWidth() - 10, screenHeight() - 10),
                 new Vector2d(screenWidth() - 10, 10),
+                };
+    
+        draggableEllipse = new Vector2d[] {
+                new Vector2d(screenWidth() - 10, screenHeight() - 10),
+                new Vector2d(screenWidth() * 0.5, screenHeight() * 0.5),
+                new Vector2d(screenWidth() - 10, screenHeight() * 0.5),
                 };
         
         draggableTexture = new Vector2d[] {
@@ -165,6 +175,7 @@ public class Draw2DTest extends Engine
                 draggingBezier   = -1;
                 draggingTriangle = -1;
                 draggingQuad     = -1;
+                draggingEllipse  = -1;
                 draggingTexture  = -1;
                 switch (state)
                 {
@@ -174,7 +185,8 @@ public class Draw2DTest extends Engine
                     case F4 -> draggingBezier = mouseDown(draggableBezier, buttonDown.pos());
                     case F5 -> draggingTriangle = mouseDown(draggableTriangle, buttonDown.pos());
                     case F6 -> draggingQuad = mouseDown(draggableQuad, buttonDown.pos());
-                    case F7 -> draggingTexture = mouseDown(draggableTexture, buttonDown.pos());
+                    case F7 -> draggingEllipse = mouseDown(draggableEllipse, buttonDown.pos());
+                    case F8 -> draggingTexture = mouseDown(draggableTexture, buttonDown.pos());
                 }
             }
             else if (event instanceof EventMouseButtonUp)
@@ -187,7 +199,8 @@ public class Draw2DTest extends Engine
                     case F4 -> draggingBezier = -1;
                     case F5 -> draggingTriangle = -1;
                     case F6 -> draggingQuad = -1;
-                    case F7 -> draggingTexture = -1;
+                    case F7 -> draggingEllipse = -1;
+                    case F8 -> draggingTexture = -1;
                 }
             }
             else if (event instanceof EventMouseMoved mouseMoved)
@@ -200,7 +213,8 @@ public class Draw2DTest extends Engine
                     case F4 -> mouseMoved(draggableBezier, draggingBezier, mouseMoved.pos());
                     case F5 -> mouseMoved(draggableTriangle, draggingTriangle, mouseMoved.pos());
                     case F6 -> mouseMoved(draggableQuad, draggingQuad, mouseMoved.pos());
-                    case F7 -> mouseMoved(draggableTexture, draggingTexture, mouseMoved.pos());
+                    case F7 -> mouseMoved(draggableEllipse, draggingEllipse, mouseMoved.pos());
+                    case F8 -> mouseMoved(draggableTexture, draggingTexture, mouseMoved.pos());
                 }
             }
         }
@@ -375,6 +389,43 @@ public class Draw2DTest extends Engine
                 }
             }
             case F7 -> {
+                double cx = screenWidth() * 0.5;
+                double cy = screenHeight() * 0.5;
+    
+                double rx = draggableEllipse[0].x - cx;
+                double ry = draggableEllipse[0].y - cy;
+                
+                double ox = draggableEllipse[1].x - cx;
+                double oy = draggableEllipse[1].y - cy;
+                
+                double rotation = Math.atan2(draggableEllipse[2].y - draggableEllipse[1].y, draggableEllipse[2].x - draggableEllipse[1].x);
+    
+                Draw.fillEllipse2D()
+                        .center(cx, cy)
+                        .radius(rx, ry)
+                        .origin(ox, oy)
+                        .angles(0, Math.toRadians(vValue))
+                        .angle(rotation)
+                        .colorInner(Color.GRAY)
+                        .colorOuter(Color.YELLOW)
+                    .draw();
+    
+                Draw.drawEllipse2D()
+                        .center(cx, cy)
+                        .radius(rx, ry)
+                        .thickness(thickness)
+                        .origin(ox, oy)
+                        .angles(0, Math.toRadians(vValue))
+                        .angle(rotation)
+                        .color(Color.DARKER_BLUE)
+                    .draw();
+    
+                for (Vector2d point : draggableEllipse)
+                {
+                    Draw.point2D().point(point).thickness(5).color(Color.WHITE).draw();
+                }
+            }
+            case F8 -> {
                 if (toggle)
                 {
                     double rotation = Math.toRadians(hValue);

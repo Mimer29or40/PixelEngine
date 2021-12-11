@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 
 import static org.lwjgl.system.MemoryUtil.memCopy;
 
-@SuppressWarnings("OctalInteger")
 public abstract class Color extends Struct implements NativeResource, Colorc
 {
     // ---------- Static ---------- //
@@ -19,8 +18,8 @@ public abstract class Color extends Struct implements NativeResource, Colorc
     public static final Colorc WHITE      = createColor(255, 255, 255, 255);
     public static final Colorc LIGHT_GRAY = createColor(191, 191, 191, 255);
     public static final Colorc GRAY       = createColor(127, 127, 127, 255);
-    public static final Colorc DARK_GRAY  = createColor(063, 063, 063, 255);
-    public static final Colorc BLACK      = createColor(000, 000, 000, 255);
+    public static final Colorc DARK_GRAY  = createColor(63, 63, 63, 255);
+    public static final Colorc BLACK      = createColor(0, 0, 0, 255);
     
     public static final Colorc LIGHT_GREY = LIGHT_GRAY;
     public static final Colorc GREY       = GRAY;
@@ -28,56 +27,56 @@ public abstract class Color extends Struct implements NativeResource, Colorc
     
     public static final Colorc LIGHTEST_RED = createColor(255, 191, 191, 255);
     public static final Colorc LIGHTER_RED  = createColor(255, 127, 127, 255);
-    public static final Colorc LIGHT_RED    = createColor(255, 063, 063, 255);
-    public static final Colorc RED          = createColor(255, 000, 000, 255);
-    public static final Colorc DARK_RED     = createColor(191, 000, 000, 255);
-    public static final Colorc DARKER_RED   = createColor(127, 000, 000, 255);
-    public static final Colorc DARKEST_RED  = createColor(063, 000, 000, 255);
+    public static final Colorc LIGHT_RED    = createColor(255, 63, 63, 255);
+    public static final Colorc RED          = createColor(255, 0, 0, 255);
+    public static final Colorc DARK_RED     = createColor(191, 0, 0, 255);
+    public static final Colorc DARKER_RED   = createColor(127, 0, 0, 255);
+    public static final Colorc DARKEST_RED  = createColor(63, 0, 0, 255);
     
     public static final Colorc LIGHTEST_YELLOW = createColor(255, 255, 191, 255);
     public static final Colorc LIGHTER_YELLOW  = createColor(255, 255, 127, 255);
-    public static final Colorc LIGHT_YELLOW    = createColor(255, 255, 063, 255);
-    public static final Colorc YELLOW          = createColor(255, 255, 000, 255);
-    public static final Colorc DARK_YELLOW     = createColor(191, 191, 000, 255);
-    public static final Colorc DARKER_YELLOW   = createColor(127, 127, 000, 255);
-    public static final Colorc DARKEST_YELLOW  = createColor(063, 063, 000, 255);
+    public static final Colorc LIGHT_YELLOW    = createColor(255, 255, 63, 255);
+    public static final Colorc YELLOW          = createColor(255, 255, 0, 255);
+    public static final Colorc DARK_YELLOW     = createColor(191, 191, 0, 255);
+    public static final Colorc DARKER_YELLOW   = createColor(127, 127, 0, 255);
+    public static final Colorc DARKEST_YELLOW  = createColor(63, 63, 0, 255);
     
     public static final Colorc LIGHTEST_GREEN = createColor(191, 255, 191, 255);
     public static final Colorc LIGHTER_GREEN  = createColor(127, 255, 127, 255);
-    public static final Colorc LIGHT_GREEN    = createColor(063, 255, 063, 255);
-    public static final Colorc GREEN          = createColor(000, 255, 000, 255);
-    public static final Colorc DARK_GREEN     = createColor(000, 191, 000, 255);
-    public static final Colorc DARKER_GREEN   = createColor(000, 127, 000, 255);
-    public static final Colorc DARKEST_GREEN  = createColor(000, 063, 000, 255);
+    public static final Colorc LIGHT_GREEN    = createColor(63, 255, 63, 255);
+    public static final Colorc GREEN          = createColor(0, 255, 0, 255);
+    public static final Colorc DARK_GREEN     = createColor(0, 191, 0, 255);
+    public static final Colorc DARKER_GREEN   = createColor(0, 127, 0, 255);
+    public static final Colorc DARKEST_GREEN  = createColor(0, 63, 0, 255);
     
     public static final Colorc LIGHTEST_CYAN = createColor(191, 255, 255, 255);
     public static final Colorc LIGHTER_CYAN  = createColor(127, 255, 255, 255);
-    public static final Colorc LIGHT_CYAN    = createColor(063, 255, 255, 255);
-    public static final Colorc CYAN          = createColor(000, 255, 255, 255);
-    public static final Colorc DARK_CYAN     = createColor(000, 191, 191, 255);
-    public static final Colorc DARKER_CYAN   = createColor(000, 127, 127, 255);
-    public static final Colorc DARKEST_CYAN  = createColor(000, 063, 063, 255);
+    public static final Colorc LIGHT_CYAN    = createColor(63, 255, 255, 255);
+    public static final Colorc CYAN          = createColor(0, 255, 255, 255);
+    public static final Colorc DARK_CYAN     = createColor(0, 191, 191, 255);
+    public static final Colorc DARKER_CYAN   = createColor(0, 127, 127, 255);
+    public static final Colorc DARKEST_CYAN  = createColor(0, 63, 63, 255);
     
     public static final Colorc LIGHTEST_BLUE = createColor(191, 191, 255, 255);
     public static final Colorc LIGHTER_BLUE  = createColor(127, 127, 255, 255);
-    public static final Colorc LIGHT_BLUE    = createColor(063, 063, 255, 255);
-    public static final Colorc BLUE          = createColor(000, 000, 255, 255);
-    public static final Colorc DARK_BLUE     = createColor(000, 000, 191, 255);
-    public static final Colorc DARKER_BLUE   = createColor(000, 000, 127, 255);
-    public static final Colorc DARKEST_BLUE  = createColor(000, 000, 063, 255);
+    public static final Colorc LIGHT_BLUE    = createColor(63, 63, 255, 255);
+    public static final Colorc BLUE          = createColor(0, 0, 255, 255);
+    public static final Colorc DARK_BLUE     = createColor(0, 0, 191, 255);
+    public static final Colorc DARKER_BLUE   = createColor(0, 0, 127, 255);
+    public static final Colorc DARKEST_BLUE  = createColor(0, 0, 63, 255);
     
     public static final Colorc LIGHTEST_MAGENTA = createColor(255, 191, 255, 255);
     public static final Colorc LIGHTER_MAGENTA  = createColor(255, 127, 255, 255);
-    public static final Colorc LIGHT_MAGENTA    = createColor(255, 063, 255, 255);
-    public static final Colorc MAGENTA          = createColor(255, 000, 255, 255);
-    public static final Colorc DARK_MAGENTA     = createColor(191, 000, 191, 255);
-    public static final Colorc DARKER_MAGENTA   = createColor(127, 000, 127, 255);
-    public static final Colorc DARKEST_MAGENTA  = createColor(063, 000, 063, 255);
+    public static final Colorc LIGHT_MAGENTA    = createColor(255, 63, 255, 255);
+    public static final Colorc MAGENTA          = createColor(255, 0, 255, 255);
+    public static final Colorc DARK_MAGENTA     = createColor(191, 0, 191, 255);
+    public static final Colorc DARKER_MAGENTA   = createColor(127, 0, 127, 255);
+    public static final Colorc DARKEST_MAGENTA  = createColor(63, 0, 63, 255);
     
-    public static final Colorc BLANK = createColor(000, 000, 000, 000);
+    public static final Colorc BLANK = createColor(0, 0, 0, 0);
     
     public static final Colorc RAY_WHITE       = createColor(245, 245, 245, 255);
-    public static final Colorc BACKGROUND_GRAY = createColor(051, 051, 051, 255);
+    public static final Colorc BACKGROUND_GRAY = createColor(51, 51, 51, 255);
     
     // 0.299R + 0.587G + 0.114B
     private static final double R_TO_GRAY_F = 0.299;
