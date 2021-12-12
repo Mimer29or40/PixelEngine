@@ -877,6 +877,8 @@ public abstract class Engine
         private static final FillTriangle2D      FILL_TRIANGLE_2D       = new FillTriangle2D();
         private static final DrawQuad2D          DRAW_QUAD_2D           = new DrawQuad2D();
         private static final FillQuad2D          FILL_QUAD_2D           = new FillQuad2D();
+        private static final DrawRect2D          DRAW_RECT_2D           = new DrawRect2D();
+        private static final FillRect2D          FILL_RECT_2D           = new FillRect2D();
         private static final DrawEllipse2D       DRAW_ELLIPSE_2D        = new DrawEllipse2D();
         private static final FillEllipse2D       FILL_ELLIPSE_2D        = new FillEllipse2D();
         private static final DrawTexture2D       DRAW_TEXTURE_2D        = new DrawTexture2D();
@@ -926,6 +928,16 @@ public abstract class Engine
         public static FillQuad2D fillQuad2D()
         {
             return Draw.FILL_QUAD_2D;
+        }
+        
+        public static DrawRect2D drawRect2D()
+        {
+            return Draw.DRAW_RECT_2D;
+        }
+        
+        public static FillRect2D fillRect2D()
+        {
+            return Draw.FILL_RECT_2D;
         }
         
         public static DrawEllipse2D drawEllipse2D()

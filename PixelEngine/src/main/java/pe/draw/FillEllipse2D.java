@@ -16,7 +16,7 @@ public class FillEllipse2D extends Draw2D
     private boolean hasCenter;
     
     private double rx, ry;
-    private boolean hasRadius;
+    private boolean hasSize;
     
     private double start, stop;
     
@@ -33,7 +33,7 @@ public class FillEllipse2D extends Draw2D
     protected void reset()
     {
         this.hasCenter = false;
-        this.hasRadius = false;
+        this.hasSize   = false;
         
         this.start = 0;
         this.stop  = Math.PI2;
@@ -55,13 +55,13 @@ public class FillEllipse2D extends Draw2D
     protected void check()
     {
         if (!this.hasCenter) throw new IllegalStateException("Must provide center");
-        if (!this.hasRadius) throw new IllegalStateException("Must provide radius");
+        if (!this.hasSize) throw new IllegalStateException("Must provide size");
     }
     
     @Override
     protected void drawImpl()
     {
-        FillEllipse2D.LOGGER.finest("Drawing center=(%s, %s) radius=(%s, %s) angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s colorInner=(%s, %s, %s, %s) colorOuter=(%s, %s, %s, %s)",
+        FillEllipse2D.LOGGER.finest("Drawing center=(%s, %s) size=(%s, %s) angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s colorInner=(%s, %s, %s, %s) colorOuter=(%s, %s, %s, %s)",
                                     this.x, this.y, this.rx, this.ry, this.start, this.stop,
                                     this.originX, this.originY, this.angle, this.segments,
                                     this.ri, this.gi, this.bi, this.ai, this.ro, this.go, this.bo, this.ao);
@@ -96,9 +96,9 @@ public class FillEllipse2D extends Draw2D
     
     public FillEllipse2D radius(double x, double y)
     {
-        this.rx        = x;
-        this.ry        = y;
-        this.hasRadius = true;
+        this.rx      = x;
+        this.ry      = y;
+        this.hasSize = true;
         return this;
     }
     
@@ -119,9 +119,9 @@ public class FillEllipse2D extends Draw2D
     
     public FillEllipse2D radius(double radius)
     {
-        this.rx        = radius;
-        this.ry        = radius;
-        this.hasRadius = true;
+        this.rx      = radius;
+        this.ry      = radius;
+        this.hasSize = true;
         return this;
     }
     
@@ -133,7 +133,7 @@ public class FillEllipse2D extends Draw2D
         this.y  = topLeftY + this.ry;
         
         this.hasCenter = true;
-        this.hasRadius = true;
+        this.hasSize   = true;
         return this;
     }
     

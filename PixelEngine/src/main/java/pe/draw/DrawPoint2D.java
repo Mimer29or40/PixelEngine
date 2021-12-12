@@ -44,9 +44,9 @@ public class DrawPoint2D extends Draw2D
     {
         DrawPoint2D.LOGGER.finest("Drawing point=(%s, %s) thickness=%s color=(%s, %s, %s, %s)",
                                   this.x, this.y, this.thickness, this.r, this.g, this.b, this.a);
-    
+        
         if (this.thickness <= 0) return;
-    
+        
         drawPoint(this.x, this.y, this.thickness, this.r, this.g, this.b, this.a);
     }
     

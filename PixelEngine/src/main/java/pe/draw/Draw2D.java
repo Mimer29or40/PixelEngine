@@ -418,55 +418,132 @@ public abstract class Draw2D
     
     protected static void fillQuad(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2, int r3, int g3, int b3, int a3)
     {
-        // TODO - Rearrange indices
+        double rd = (x2 - x0) * (y3 - y1) - (x3 - x1) * (y2 - y0);
         
-        double cx = (x0 + x1 + x2 + x3) * 0.25;
-        double cy = (y0 + y1 + y2 + y3) * 0.25;
+        if (rd == 0.0) return;
+        
+        rd = 1.0 / rd;
+        
+        double cx = 0.0, cy = 0.0;
+        
+        double rn = ((x3 - x1) * (y0 - y1) - (y3 - y1) * (x0 - x1)) * rd;
+        double sn = ((x2 - x0) * (y0 - y1) - (y2 - y0) * (x0 - x1)) * rd;
+        
+        if (!(rn < 0.0 || rn > 1.0 || sn < 0.0 || sn > 1.0))
+        {
+            cx = x0 + rn * (x2 - x0);
+            cy = y0 + rn * (y2 - y0);
+        }
         
         double d0 = Math.sqrt((x0 - cx) * (x0 - cx) + (y0 - cy) * (y0 - cy));
         double d1 = Math.sqrt((x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy));
         double d2 = Math.sqrt((x2 - cx) * (x2 - cx) + (y2 - cy) * (y2 - cy));
         double d3 = Math.sqrt((x3 - cx) * (x3 - cx) + (y3 - cy) * (y3 - cy));
         
-        double q0 = (d0 + d2) / d2;
-        double q1 = (d1 + d3) / d3;
-        double q2 = (d2 + d0) / d0;
-        double q3 = (d3 + d1) / d1;
+        double q0 = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
+        double q1 = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
+        double q2 = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
+        double q3 = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
         
         GLBatch batch = GLBatch.get();
         
         batch.checkBuffer(4);
         
-        batch.setTexture(Draw2D.texture);
-        
         batch.begin(DrawMode.QUADS);
         
-        batch.vertex(x0, y0);
-        batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
-        batch.color(r0, g0, b0, a0);
+        double winding  = (x1 - x0) * (y1 + y0) + (x2 - x1) * (y2 + y1) + (x3 - x2) * (y3 + y2) + (x0 - x3) * (y0 + y3);
+        double cross012 = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
+        double cross032 = (x3 - x0) * (y2 - y3) - (y3 - y0) * (x2 - x3);
         
-        batch.vertex(x1, y1);
-        batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
-        batch.color(r1, g1, b1, a1);
-        
-        batch.vertex(x2, y2);
-        batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
-        batch.color(r2, g2, b2, a2);
-        
-        batch.vertex(x3, y3);
-        batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
-        batch.color(r3, g3, b3, a3);
+        if (winding > 0.0)
+        {
+            if (cross012 < 0.0 && cross032 > 0.0)
+            {
+                batch.vertex(x0, y0);
+                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
+                batch.color(r0, g0, b0, a0);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
+                batch.color(r1, g1, b1, a1);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
+                batch.color(r2, g2, b2, a2);
+                
+                batch.vertex(x3, y3);
+                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
+                batch.color(r3, g3, b3, a3);
+            }
+            else
+            {
+                batch.vertex(x3, y3);
+                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
+                batch.color(r3, g3, b3, a3);
+                
+                batch.vertex(x0, y0);
+                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
+                batch.color(r0, g0, b0, a0);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
+                batch.color(r1, g1, b1, a1);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
+                batch.color(r2, g2, b2, a2);
+            }
+        }
+        else
+        {
+            if (cross012 > 0.0 && cross032 < 0.0)
+            {
+                batch.vertex(x0, y0);
+                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
+                batch.color(r0, g0, b0, a0);
+                
+                batch.vertex(x3, y3);
+                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
+                batch.color(r3, g3, b3, a3);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
+                batch.color(r2, g2, b2, a2);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
+                batch.color(r1, g1, b1, a1);
+            }
+            else
+            {
+                batch.vertex(x3, y3);
+                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
+                batch.color(r3, g3, b3, a3);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
+                batch.color(r2, g2, b2, a2);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
+                batch.color(r1, g1, b1, a1);
+                
+                batch.vertex(x0, y0);
+                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
+                batch.color(r0, g0, b0, a0);
+            }
+        }
         
         batch.end();
     }
     
-    protected static void fillEllipse(double x, double y, double rx, double ry, double start, double stop, double offsetX, double offsetY, double rotation, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
+    protected static void fillEllipse(double x, double y, double rx, double ry, double start, double stop, double offsetX, double offsetY, double angle, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
     {
         if (start == stop) return;
-    
+        
         while (start > Math.PI2 + 1e-6) start -= Math.PI2;
         while (start < -Math.PI2 - 1e-6) start += Math.PI2;
-    
+        
         while (stop > Math.PI2 + 1e-6) stop -= Math.PI2;
         while (stop < -Math.PI2 - 1e-6) stop += Math.PI2;
         
@@ -483,10 +560,10 @@ public abstract class Draw2D
         double theta = start;
         
         double  tempX, tempY;
-        boolean shouldRotate = rotation != 0.0;
+        boolean shouldRotate = !Math.equals(angle, 0.0, 1e-6);
         
-        double s = shouldRotate ? Math.sin(rotation) : 0;
-        double c = shouldRotate ? Math.cos(rotation) : 0;
+        double s = shouldRotate ? Math.sin(angle) : 0;
+        double c = shouldRotate ? Math.cos(angle) : 0;
         
         double cx, cy;
         
@@ -571,9 +648,6 @@ public abstract class Draw2D
     
     protected static void drawTexture(GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
     {
-        // Check if texture is valid
-        if (texture.id() <= 0) return;
-        
         double rd = (x2 - x0) * (y3 - y1) - (x3 - x1) * (y2 - y0);
         
         if (rd == 0.0) return;
@@ -609,25 +683,88 @@ public abstract class Draw2D
         
         batch.begin(DrawMode.QUADS);
         
-        // Top-left corner for texture and quad
-        batch.vertex(x0, y0);
-        batch.texCoord(u0 * q0, v0 * q0, q0);
-        batch.color(r, g, b, a);
+        double winding  = (x1 - x0) * (y1 + y0) + (x2 - x1) * (y2 + y1) + (x3 - x2) * (y3 + y2) + (x0 - x3) * (y0 + y3);
+        double cross012 = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
+        double cross032 = (x3 - x0) * (y2 - y3) - (y3 - y0) * (x2 - x3);
         
-        // Bottom-left corner for texture and quad
-        batch.vertex(x1, y1);
-        batch.texCoord(u1 * q1, v1 * q1, q1);
-        batch.color(r, g, b, a);
-        
-        // Bottom-right corner for texture and quad
-        batch.vertex(x2, y2);
-        batch.texCoord(u2 * q2, v2 * q2, q2);
-        batch.color(r, g, b, a);
-        
-        // Top-right corner for texture and quad
-        batch.vertex(x3, y3);
-        batch.texCoord(u3 * q3, v3 * q3, q3);
-        batch.color(r, g, b, a);
+        if (winding > 0.0)
+        {
+            if (cross012 < 0.0 && cross032 > 0.0)
+            {
+                batch.vertex(x0, y0);
+                batch.texCoord(u0 * q0, v0 * q0, q0);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(u1 * q1, v1 * q1, q1);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(u2 * q2, v2 * q2, q2);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x3, y3);
+                batch.texCoord(u3 * q3, v3 * q3, q3);
+                batch.color(r, g, b, a);
+            }
+            else
+            {
+                batch.vertex(x3, y3);
+                batch.texCoord(u3 * q3, v3 * q3, q3);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x0, y0);
+                batch.texCoord(u0 * q0, v0 * q0, q0);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(u1 * q1, v1 * q1, q1);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(u2 * q2, v2 * q2, q2);
+                batch.color(r, g, b, a);
+            }
+        }
+        else
+        {
+            if (cross012 > 0.0 && cross032 < 0.0)
+            {
+                batch.vertex(x0, y0);
+                batch.texCoord(u0 * q0, v0 * q0, q0);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x3, y3);
+                batch.texCoord(u3 * q3, v3 * q3, q3);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(u2 * q2, v2 * q2, q2);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(u1 * q1, v1 * q1, q1);
+                batch.color(r, g, b, a);
+            }
+            else
+            {
+                batch.vertex(x3, y3);
+                batch.texCoord(u3 * q3, v3 * q3, q3);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x2, y2);
+                batch.texCoord(u2 * q2, v2 * q2, q2);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x1, y1);
+                batch.texCoord(u1 * q1, v1 * q1, q1);
+                batch.color(r, g, b, a);
+                
+                batch.vertex(x0, y0);
+                batch.texCoord(u0 * q0, v0 * q0, q0);
+                batch.color(r, g, b, a);
+            }
+        }
         
         batch.end();
     }
@@ -692,36 +829,6 @@ public abstract class Draw2D
         double v1 = (srcY + srcH) / height;
         
         drawTexture(texture, x0, y0, x1, y1, x2, y2, x3, y3, u0, v0, u0, v1, u1, v1, u1, v0, r, g, b, a);
-        
-        // GLBatch batch = GLBatch.get();
-        //
-        // batch.checkBuffer(4); // Make sure there is enough free space on the batch buffer
-        //
-        // batch.setTexture(texture);
-        //
-        // batch.begin(DrawMode.QUADS);
-        //
-        // // Top-left corner for texture and quad
-        // batch.vertex(x0, y0);
-        // batch.texCoord(u0, v0);
-        // batch.color(r, g, b, a);
-        //
-        // // Bottom-left corner for texture and quad
-        // batch.vertex(x1, y1);
-        // batch.texCoord(u0, v1);
-        // batch.color(r, g, b, a);
-        //
-        // // Bottom-right corner for texture and quad
-        // batch.vertex(x2, y2);
-        // batch.texCoord(u1, v1);
-        // batch.color(r, g, b, a);
-        //
-        // // Top-right corner for texture and quad
-        // batch.vertex(x3, y3);
-        // batch.texCoord(u1, v0);
-        // batch.color(r, g, b, a);
-        //
-        // batch.end();
     }
     
     protected static int segments(double rx, double ry)

@@ -16,7 +16,7 @@ public class DrawEllipse2D extends Draw2D
     private boolean hasCenter;
     
     private double rx, ry;
-    private boolean hasRadius;
+    private boolean hasSize;
     
     private double  thickness;
     private boolean hasThickness;
@@ -35,7 +35,7 @@ public class DrawEllipse2D extends Draw2D
     protected void reset()
     {
         this.hasCenter    = false;
-        this.hasRadius    = false;
+        this.hasSize      = false;
         this.hasThickness = false;
         
         this.start = 0;
@@ -58,14 +58,14 @@ public class DrawEllipse2D extends Draw2D
     protected void check()
     {
         if (!this.hasCenter) throw new IllegalStateException("Must provide center");
-        if (!this.hasRadius) throw new IllegalStateException("Must provide radius");
+        if (!this.hasSize) throw new IllegalStateException("Must provide size");
         if (!this.hasThickness) throw new IllegalStateException("Must provide thickness");
     }
     
     @Override
     protected void drawImpl()
     {
-        DrawEllipse2D.LOGGER.finest("Drawing center=(%s, %s) radius=(%s, %s) thickness=%s angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s color=(%s, %s, %s, %s)",
+        DrawEllipse2D.LOGGER.finest("Drawing center=(%s, %s) size=(%s, %s) thickness=%s angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s color=(%s, %s, %s, %s)",
                                     this.x, this.y, this.rx, this.ry, this.thickness, this.start, this.stop,
                                     this.originX, this.originY, this.angle, this.segments,
                                     this.r, this.g, this.b, this.a);
@@ -92,7 +92,7 @@ public class DrawEllipse2D extends Draw2D
         double inc = (this.stop - this.start) / this.segments;
         double theta;
         
-        boolean shouldRotate = this.angle != 0.0;
+        boolean shouldRotate = !Math.equals(this.angle, 0.0, 1e-6);
         double  tempX, tempY;
         
         double s = shouldRotate ? Math.sin(this.angle) : 0.0;
@@ -150,9 +150,9 @@ public class DrawEllipse2D extends Draw2D
     
     public DrawEllipse2D radius(double x, double y)
     {
-        this.rx        = x;
-        this.ry        = y;
-        this.hasRadius = true;
+        this.rx      = x;
+        this.ry      = y;
+        this.hasSize = true;
         return this;
     }
     
@@ -173,9 +173,9 @@ public class DrawEllipse2D extends Draw2D
     
     public DrawEllipse2D radius(double radius)
     {
-        this.rx        = radius;
-        this.ry        = radius;
-        this.hasRadius = true;
+        this.rx      = radius;
+        this.ry      = radius;
+        this.hasSize = true;
         return this;
     }
     
@@ -187,7 +187,7 @@ public class DrawEllipse2D extends Draw2D
         this.y  = topLeftY + this.ry;
         
         this.hasCenter = true;
-        this.hasRadius = true;
+        this.hasSize   = true;
         return this;
     }
     

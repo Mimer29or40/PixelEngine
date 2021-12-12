@@ -50,9 +50,9 @@ public class DrawLine2D extends Draw2D
     {
         DrawLine2D.LOGGER.finest("Drawing point0=(%s, %s) point1=(%s, %s) thickness=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s)",
                                  this.x0, this.y0, this.x1, this.y1, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
-    
+        
         if (this.thickness <= 0) return;
-    
+        
         drawLine(this.x0, this.y0, this.x1, this.y1, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
     }
     
