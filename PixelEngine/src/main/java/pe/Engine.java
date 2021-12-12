@@ -881,6 +881,8 @@ public abstract class Engine
         private static final FillRect2D          FILL_RECT_2D           = new FillRect2D();
         private static final DrawEllipse2D       DRAW_ELLIPSE_2D        = new DrawEllipse2D();
         private static final FillEllipse2D       FILL_ELLIPSE_2D        = new FillEllipse2D();
+        private static final DrawRing2D          DRAW_RING_2D           = new DrawRing2D();
+        private static final FillRing2D          FILL_RING_2D           = new FillRing2D();
         private static final DrawTexture2D       DRAW_TEXTURE_2D        = new DrawTexture2D();
         private static final DrawTextureWarped2D DRAW_TEXTURE_WARPED_2D = new DrawTextureWarped2D();
         
@@ -948,6 +950,16 @@ public abstract class Engine
         public static FillEllipse2D fillEllipse2D()
         {
             return Draw.FILL_ELLIPSE_2D;
+        }
+        
+        public static DrawRing2D drawRing2D()
+        {
+            return Draw.DRAW_RING_2D;
+        }
+        
+        public static FillRing2D fillRing2D()
+        {
+            return Draw.FILL_RING_2D;
         }
         
         public static DrawTexture2D drawTexture2D()

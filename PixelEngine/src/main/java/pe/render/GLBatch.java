@@ -9,7 +9,6 @@ import org.joml.Matrix4fc;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryUtil;
 import pe.util.buffer.Byte4;
-import pe.util.buffer.Float2;
 import pe.util.buffer.Float3;
 import rutils.Logger;
 
@@ -237,7 +236,7 @@ public class GLBatch
         
         this.hasStart = false;
         
-        drawInternal();
+        draw();
         
         return this.stats;
     }
@@ -287,7 +286,7 @@ public class GLBatch
         this.currentDepth -= 0.00005;
     }
     
-    public void vertex(double x, double y, double z)
+    public void pos(double x, double y, double z)
     {
         if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
         
@@ -306,9 +305,9 @@ public class GLBatch
         }
     }
     
-    public void vertex(double x, double y)
+    public void pos(double x, double y)
     {
-        vertex(x, y, this.currentDepth);
+        pos(x, y, this.currentDepth);
     }
     
     public void texCoord(double u, double v, double q)
@@ -368,10 +367,10 @@ public class GLBatch
     
     public void checkBuffer(int vertexCount)
     {
-        if (this.pos.position() + vertexCount >= this.elementsCount * 4) drawInternal();
+        if (this.pos.position() + vertexCount >= this.elementsCount * 4) draw();
     }
     
-    private void drawInternal()
+    private void draw()
     {
         // Check to see if the vertex array was updated.
         if (this.pos.position() > 0)
@@ -398,6 +397,11 @@ public class GLBatch
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_VIEW, false, this.view);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MODEL, false, this.model);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MVP, false, this.mvp);
+            // GLProgram.UNIFORM_MATRIX_NORMAL;
+            // GLProgram.UNIFORM_VECTOR_VIEW;
+            // GLProgram.UNIFORM_COLOR_DIFFUSE;
+            // GLProgram.UNIFORM_COLOR_SPECULAR;
+            // GLProgram.UNIFORM_COLOR_AMBIENT;
             
             activate();
             
@@ -472,12 +476,8 @@ public class GLBatch
                 this.tex2.position(this.tex2.position() + drawCall.alignment);
             }
             
-            if (++this.currentDraw >= this.drawCalls.length) drawInternal();
-            
-            drawCall = this.drawCalls[this.currentDraw];
+            if (++this.currentDraw >= this.drawCalls.length) draw();
         }
-        
-        drawCall.reset();
     }
     
     /**

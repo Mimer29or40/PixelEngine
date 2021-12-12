@@ -70,59 +70,9 @@ public class DrawEllipse2D extends Draw2D
                                     this.originX, this.originY, this.angle, this.segments,
                                     this.r, this.g, this.b, this.a);
         
-        if (this.start == this.stop) return;
-        
-        while (this.start > Math.PI2 + 1e-6) this.start -= Math.PI2;
-        while (this.start < -Math.PI2 - 1e-6) this.start += Math.PI2;
-        
-        while (this.stop > Math.PI2 + 1e-6) this.stop -= Math.PI2;
-        while (this.stop < -Math.PI2 - 1e-6) this.stop += Math.PI2;
-        
-        if (this.start > this.stop)
-        {
-            double temp = this.start;
-            this.start = this.stop;
-            this.stop  = temp;
-        }
-        
-        if (this.segments < 3) this.segments = segments(this.rx, this.ry, this.start, this.stop);
-        
-        double[] points = new double[(this.segments + 1 + 2) << 1];
-        
-        double inc = (this.stop - this.start) / this.segments;
-        double theta;
-        
-        boolean shouldRotate = !Math.equals(this.angle, 0.0, 1e-6);
-        double  tempX, tempY;
-        
-        double s = shouldRotate ? Math.sin(this.angle) : 0.0;
-        double c = shouldRotate ? Math.cos(this.angle) : 0.0;
-        
-        double px, py;
-        
-        // Segments + 2 to make sure that the end segments are beveled
-        for (int i = -1, index = 0; i < this.segments + 2; i++)
-        {
-            theta = this.start + i * inc;
-            
-            px = Math.cos(theta) * this.rx;
-            py = Math.sin(theta) * this.ry;
-            if (shouldRotate)
-            {
-                tempX = px - this.originX;
-                tempY = py - this.originY;
-                px    = tempX * c - tempY * s + this.originX;
-                py    = tempX * s + tempY * c + this.originY;
-            }
-            px += this.x;
-            py += this.y;
-            
-            // Add Generated points to array.
-            points[index++] = px;
-            points[index++] = py;
-        }
-        
-        drawLines(points, this.thickness, this.r, this.g, this.b, this.a, this.r, this.g, this.b, this.a);
+        drawEllipse(this.x, this.y, this.rx, this.ry, this.thickness, this.start, this.stop,
+                    this.originX, this.originY, this.angle, this.segments,
+                    this.r, this.g, this.b, this.a);
     }
     
     public DrawEllipse2D center(double x, double y)

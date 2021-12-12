@@ -19,7 +19,7 @@ public enum DrawMode
     // PATCHES(GL33.GL_PATCHES),
     ;
     
-    public static final DrawMode DEFAULT = QUADS;
+    public static final DrawMode DEFAULT = TRIANGLES;
     
     public final int ref;
     

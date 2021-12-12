@@ -25,6 +25,8 @@ public class GLShader
     {
         GLShader.LOGGER.fine("Setup");
         
+        // TODO - http://www.reedbeta.com/blog/quadrilateral-interpolation-part-1/
+        // TODO - http://www.reedbeta.com/blog/quadrilateral-interpolation-part-2/
         String vertCode =
                 """
                 #version 330

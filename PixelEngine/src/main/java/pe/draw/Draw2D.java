@@ -15,6 +15,8 @@ public abstract class Draw2D
     
     protected static double u0, v0, u1, v1;
     
+    private static final Vertex VERTEX0 = new Vertex(), VERTEX1 = new Vertex(), VERTEX2 = new Vertex(), VERTEX3 = new Vertex();
+    
     static
     {
         Draw2D.texture = null;
@@ -48,10 +50,10 @@ public abstract class Draw2D
             
             batch.begin(DrawMode.LINES);
             
-            batch.vertex(x, y);
+            batch.pos(x, y);
             batch.color(r, g, b, a);
             
-            batch.vertex(x + 1, y + 1);
+            batch.pos(x + 1, y + 1);
             batch.color(r, g, b, a);
             
             batch.end();
@@ -64,22 +66,24 @@ public abstract class Draw2D
     
     protected static void drawLine(double x0, double y0, double x1, double y1, double thickness, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1)
     {
-        GLBatch batch = GLBatch.get();
-        
         double dx = x1 - x0;
         double dy = y1 - y0;
         
         if (thickness <= 1.0)
         {
+            GLBatch batch = GLBatch.get();
+            
             batch.checkBuffer(2);
             
             batch.begin(DrawMode.LINES);
             
-            batch.vertex(x0, y0);
-            batch.color(r0, g0, b0, a0);
+            Draw2D.VERTEX0.pos(x0, y0);
+            Draw2D.VERTEX0.color(r0, g0, b0, a0);
+            Draw2D.VERTEX1.pos(x1, y1);
+            Draw2D.VERTEX1.color(r1, g1, b1, a1);
             
-            batch.vertex(x1, y1);
-            batch.color(r1, g1, b1, a1);
+            Draw2D.VERTEX0.apply(batch);
+            Draw2D.VERTEX1.apply(batch);
             
             batch.end();
         }
@@ -90,23 +94,23 @@ public abstract class Draw2D
             double nx = -dy * s;
             double ny = dx * s;
             
+            GLBatch batch = GLBatch.get();
+            
             batch.checkBuffer(6);
             
             batch.begin(DrawMode.TRIANGLES);
             
-            batch.color(r0, g0, b0, a0);
-            batch.vertex(x0 - nx, y0 - ny);
-            batch.color(r0, g0, b0, a0);
-            batch.vertex(x0 + nx, y0 + ny);
-            batch.color(r1, g1, b1, a1);
-            batch.vertex(x1 - nx, y1 - ny);
+            Draw2D.VERTEX0.pos(x1 + nx, y1 + ny);
+            Draw2D.VERTEX0.color(r1, g1, b1, a1);
+            Draw2D.VERTEX1.pos(x0 + nx, y0 + ny);
+            Draw2D.VERTEX1.color(r0, g0, b0, a0);
+            Draw2D.VERTEX2.pos(x0 - nx, y0 - ny);
+            Draw2D.VERTEX2.color(r0, g0, b0, a0);
+            Draw2D.VERTEX3.pos(x1 - nx, y1 - ny);
+            Draw2D.VERTEX3.color(r1, g1, b1, a1);
             
-            batch.color(r0, g0, b0, a0);
-            batch.vertex(x0 + nx, y0 + ny);
-            batch.color(r1, g1, b1, a1);
-            batch.vertex(x1 + nx, y1 + ny);
-            batch.color(r1, g1, b1, a1);
-            batch.vertex(x1 - nx, y1 - ny);
+            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
             
             batch.end();
         }
@@ -132,7 +136,7 @@ public abstract class Draw2D
         
         if (thickness <= 1)
         {
-            batch.checkBuffer(pointsCount);
+            batch.checkBuffer((pointsCount - 2) * 2);
             
             batch.begin(DrawMode.LINES);
             for (int i = 1; i < pointsCount - 2; i++)
@@ -140,18 +144,20 @@ public abstract class Draw2D
                 int p0 = i << 1;
                 int p1 = (i + 1) << 1;
                 
-                double lerp = (double) i / (pointsCount - 2);
+                double lerp = (double) i / (pointsCount - 3);
                 
                 _r1 = Math.lerp(r0, r1, lerp);
                 _g1 = Math.lerp(g0, g1, lerp);
                 _b1 = Math.lerp(b0, b1, lerp);
                 _a1 = Math.lerp(a0, a1, lerp);
                 
-                batch.vertex(points[p0], points[p0 + 1]);
-                batch.color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX0.pos(points[p0], points[p0 + 1]);
+                Draw2D.VERTEX0.color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX1.pos(points[p1], points[p1 + 1]);
+                Draw2D.VERTEX1.color(_r1, _g1, _b1, _a1);
                 
-                batch.vertex(points[p1], points[p1 + 1]);
-                batch.color(_r1, _g1, _b1, _a1);
+                Draw2D.VERTEX0.apply(batch);
+                Draw2D.VERTEX1.apply(batch);
                 
                 _r0 = _r1;
                 _g0 = _g1;
@@ -184,7 +190,7 @@ public abstract class Draw2D
                 p2 = (i + 1) << 1;
                 p3 = (i + 2) << 1;
                 
-                lerp = (double) i / (pointsCount - 2);
+                lerp = (double) i / (pointsCount - 3);
                 
                 _r1 = Math.lerp(r0, r1, lerp);
                 _g1 = Math.lerp(g0, g1, lerp);
@@ -329,43 +335,35 @@ public abstract class Draw2D
                 
                 if (drawBevel)
                 {
-                    batch.vertex(o0x, o0y);
-                    batch.texCoord(Draw2D.u0, Draw2D.v0);
-                    batch.color(_r0, _g0, _b0, _a0);
+                    Draw2D.VERTEX0.pos(o0x, o0y);
+                    Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
+                    Draw2D.VERTEX0.color(_r0, _g0, _b0, _a0);
+                    Draw2D.VERTEX1.pos(o1x, o1y);
+                    Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
+                    Draw2D.VERTEX1.color(_r0, _g0, _b0, _a0);
+                    Draw2D.VERTEX2.pos(o2x, o2y);
+                    Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
+                    Draw2D.VERTEX2.color(_r0, _g0, _b0, _a0);
                     
-                    batch.vertex(o1x, o1y);
-                    batch.texCoord(Draw2D.u0, Draw2D.v1);
-                    batch.color(_r0, _g0, _b0, _a0);
-                    
-                    batch.vertex(o2x, o2y);
-                    batch.texCoord(Draw2D.u1, Draw2D.v1);
-                    batch.color(_r0, _g0, _b0, _a0);
+                    windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
                 }
                 
                 // Generates Line Strip
-                batch.vertex(o2x, o2y);
-                batch.texCoord(Draw2D.u0, Draw2D.v0);
-                batch.color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX0.pos(o2x, o2y);
+                Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
+                Draw2D.VERTEX0.color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX1.pos(o1x, o1y);
+                Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
+                Draw2D.VERTEX1.color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX2.pos(o3x, o3y);
+                Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
+                Draw2D.VERTEX2.color(_r1, _g1, _b1, _a1);
+                Draw2D.VERTEX3.pos(o4x, o4y);
+                Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v1);
+                Draw2D.VERTEX3.color(_r1, _g1, _b1, _a1);
                 
-                batch.vertex(o1x, o1y);
-                batch.texCoord(Draw2D.u0, Draw2D.v1);
-                batch.color(_r0, _g0, _b0, _a0);
-                
-                batch.vertex(o3x, o3y);
-                batch.texCoord(Draw2D.u1, Draw2D.v1);
-                batch.color(_r1, _g1, _b1, _a1);
-                
-                batch.vertex(o2x, o2y);
-                batch.texCoord(Draw2D.u0, Draw2D.v0);
-                batch.color(_r0, _g0, _b0, _a0);
-                
-                batch.vertex(o3x, o3y);
-                batch.texCoord(Draw2D.u0, Draw2D.v1);
-                batch.color(_r1, _g1, _b1, _a1);
-                
-                batch.vertex(o4x, o4y);
-                batch.texCoord(Draw2D.u1, Draw2D.v1);
-                batch.color(_r1, _g1, _b1, _a1);
+                windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+                windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
                 
                 _r0 = _r1;
                 _g0 = _g1;
@@ -378,8 +376,6 @@ public abstract class Draw2D
     
     protected static void fillTriangle(double x0, double y0, double x1, double y1, double x2, double y2, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2)
     {
-        double cross = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
-        
         GLBatch batch = GLBatch.get();
         
         batch.checkBuffer(3);
@@ -388,164 +384,113 @@ public abstract class Draw2D
         
         batch.begin(DrawMode.TRIANGLES);
         
-        batch.vertex(x0, y0);
-        batch.texCoord(Draw2D.u0, Draw2D.v0);
-        batch.color(r0, g0, b0, a0);
+        Draw2D.VERTEX0.pos(x0, y0);
+        Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
+        Draw2D.VERTEX0.color(r0, g0, b0, a0);
+        Draw2D.VERTEX1.pos(x1, y1);
+        Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
+        Draw2D.VERTEX1.color(r1, g1, b1, a1);
+        Draw2D.VERTEX2.pos(x2, y2);
+        Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
+        Draw2D.VERTEX2.color(r2, g2, b2, a2);
         
-        if (cross > 0.0)
-        {
-            batch.vertex(x2, y2);
-            batch.texCoord(Draw2D.u1, Draw2D.v1);
-            batch.color(r2, g2, b2, a2);
-            
-            batch.vertex(x1, y1);
-            batch.texCoord(Draw2D.u0, Draw2D.v1);
-            batch.color(r1, g1, b1, a1);
-        }
-        else
-        {
-            batch.vertex(x1, y1);
-            batch.texCoord(Draw2D.u0, Draw2D.v1);
-            batch.color(r1, g1, b1, a1);
-            
-            batch.vertex(x2, y2);
-            batch.texCoord(Draw2D.u1, Draw2D.v1);
-            batch.color(r2, g2, b2, a2);
-        }
+        windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
         
         batch.end();
     }
     
     protected static void fillQuad(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2, int r3, int g3, int b3, int a3)
     {
-        double rd = (x2 - x0) * (y3 - y1) - (x3 - x1) * (y2 - y0);
-        
-        if (rd == 0.0) return;
-        
-        rd = 1.0 / rd;
-        
-        double cx = 0.0, cy = 0.0;
-        
-        double rn = ((x3 - x1) * (y0 - y1) - (y3 - y1) * (x0 - x1)) * rd;
-        double sn = ((x2 - x0) * (y0 - y1) - (y2 - y0) * (x0 - x1)) * rd;
-        
-        if (!(rn < 0.0 || rn > 1.0 || sn < 0.0 || sn > 1.0))
-        {
-            cx = x0 + rn * (x2 - x0);
-            cy = y0 + rn * (y2 - y0);
-        }
-        
-        double d0 = Math.sqrt((x0 - cx) * (x0 - cx) + (y0 - cy) * (y0 - cy));
-        double d1 = Math.sqrt((x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy));
-        double d2 = Math.sqrt((x2 - cx) * (x2 - cx) + (y2 - cy) * (y2 - cy));
-        double d3 = Math.sqrt((x3 - cx) * (x3 - cx) + (y3 - cy) * (y3 - cy));
-        
-        double q0 = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
-        double q1 = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
-        double q2 = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
-        double q3 = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
-        
         GLBatch batch = GLBatch.get();
         
         batch.checkBuffer(4);
         
-        batch.begin(DrawMode.QUADS);
+        batch.begin(DrawMode.TRIANGLES);
         
-        double winding  = (x1 - x0) * (y1 + y0) + (x2 - x1) * (y2 + y1) + (x3 - x2) * (y3 + y2) + (x0 - x3) * (y0 + y3);
-        double cross012 = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
-        double cross032 = (x3 - x0) * (y2 - y3) - (y3 - y0) * (x2 - x3);
+        Draw2D.VERTEX0.pos(x0, y0);
+        Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
+        Draw2D.VERTEX0.color(r0, g0, b0, a0);
+        Draw2D.VERTEX1.pos(x1, y1);
+        Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
+        Draw2D.VERTEX1.color(r1, g1, b1, a1);
+        Draw2D.VERTEX2.pos(x2, y2);
+        Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
+        Draw2D.VERTEX2.color(r2, g2, b2, a2);
+        Draw2D.VERTEX3.pos(x3, y3);
+        Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v0);
+        Draw2D.VERTEX3.color(r3, g3, b3, a3);
         
-        if (winding > 0.0)
-        {
-            if (cross012 < 0.0 && cross032 > 0.0)
-            {
-                batch.vertex(x0, y0);
-                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
-                batch.color(r0, g0, b0, a0);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
-                batch.color(r1, g1, b1, a1);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
-                batch.color(r2, g2, b2, a2);
-                
-                batch.vertex(x3, y3);
-                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
-                batch.color(r3, g3, b3, a3);
-            }
-            else
-            {
-                batch.vertex(x3, y3);
-                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
-                batch.color(r3, g3, b3, a3);
-                
-                batch.vertex(x0, y0);
-                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
-                batch.color(r0, g0, b0, a0);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
-                batch.color(r1, g1, b1, a1);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
-                batch.color(r2, g2, b2, a2);
-            }
-        }
-        else
-        {
-            if (cross012 > 0.0 && cross032 < 0.0)
-            {
-                batch.vertex(x0, y0);
-                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
-                batch.color(r0, g0, b0, a0);
-                
-                batch.vertex(x3, y3);
-                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
-                batch.color(r3, g3, b3, a3);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
-                batch.color(r2, g2, b2, a2);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
-                batch.color(r1, g1, b1, a1);
-            }
-            else
-            {
-                batch.vertex(x3, y3);
-                batch.texCoord(Draw2D.u1 * q3, Draw2D.v0 * q3, q3);
-                batch.color(r3, g3, b3, a3);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(Draw2D.u1 * q2, Draw2D.v1 * q2, q2);
-                batch.color(r2, g2, b2, a2);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(Draw2D.u0 * q1, Draw2D.v1 * q1, q1);
-                batch.color(r1, g1, b1, a1);
-                
-                batch.vertex(x0, y0);
-                batch.texCoord(Draw2D.u0 * q0, Draw2D.v0 * q0, q0);
-                batch.color(r0, g0, b0, a0);
-            }
-        }
+        windQuad(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2, Draw2D.VERTEX3);
         
         batch.end();
     }
     
-    protected static void fillEllipse(double x, double y, double rx, double ry, double start, double stop, double offsetX, double offsetY, double angle, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
+    protected static void drawEllipse(double x, double y, double rx, double ry, double thickness, double start, double stop, double originX, double originY, double angle, int segments, int r, int g, int b, int a)
     {
-        if (start == stop) return;
-        
         while (start > Math.PI2 + 1e-6) start -= Math.PI2;
         while (start < -Math.PI2 - 1e-6) start += Math.PI2;
         
         while (stop > Math.PI2 + 1e-6) stop -= Math.PI2;
         while (stop < -Math.PI2 - 1e-6) stop += Math.PI2;
+        
+        if (Math.equals(start, stop, 1e-6)) return;
+        
+        if (start > stop)
+        {
+            double temp = start;
+            start = stop;
+            stop  = temp;
+        }
+        
+        if (segments < 3) segments = segments(rx, ry, start, stop);
+        
+        double[] points = new double[(segments + 1 + 2) << 1];
+        
+        double inc = (stop - start) / segments;
+        double theta;
+        
+        boolean shouldRotate = !Math.equals(angle, 0.0, 1e-6);
+        double  tempX, tempY;
+        
+        double s = shouldRotate ? Math.sin(angle) : 0.0;
+        double c = shouldRotate ? Math.cos(angle) : 0.0;
+        
+        double px, py;
+        
+        // Segments + 2 to make sure that the end segments are beveled
+        for (int i = -1, index = 0; i < segments + 2; i++)
+        {
+            theta = start + i * inc;
+            
+            px = Math.cos(theta) * rx;
+            py = Math.sin(theta) * ry;
+            if (shouldRotate)
+            {
+                tempX = px - originX;
+                tempY = py - originY;
+                px    = tempX * c - tempY * s + originX;
+                py    = tempX * s + tempY * c + originY;
+            }
+            px += x;
+            py += y;
+            
+            // Add Generated points to array.
+            points[index++] = px;
+            points[index++] = py;
+        }
+        
+        drawLines(points, thickness, r, g, b, a, r, g, b, a);
+    }
+    
+    protected static void fillEllipse(double x, double y, double rx, double ry, double start, double stop, double originX, double originY, double angle, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
+    {
+        while (start > Math.PI2 + 1e-6) start -= Math.PI2;
+        while (start < -Math.PI2 - 1e-6) start += Math.PI2;
+        
+        while (stop > Math.PI2 + 1e-6) stop -= Math.PI2;
+        while (stop < -Math.PI2 - 1e-6) stop += Math.PI2;
+        
+        if (Math.equals(start, stop, 1e-6)) return;
         
         if (start > stop)
         {
@@ -566,10 +511,7 @@ public abstract class Draw2D
         double c = shouldRotate ? Math.cos(angle) : 0;
         
         double cx, cy;
-        
         double p0x, p0y, p1x, p1y;
-        
-        double cross;
         
         cx  = 0.0;
         cy  = 0.0;
@@ -577,14 +519,14 @@ public abstract class Draw2D
         p0y = Math.sin(theta) * ry;
         if (shouldRotate)
         {
-            tempX = cx - offsetX;
-            tempY = cy - offsetY;
-            cx    = tempX * c - tempY * s + offsetX;
-            cy    = tempX * s + tempY * c + offsetY;
-            tempX = p0x - offsetX;
-            tempY = p0y - offsetY;
-            p0x   = tempX * c - tempY * s + offsetX;
-            p0y   = tempX * s + tempY * c + offsetY;
+            tempX = cx - originX;
+            tempY = cy - originY;
+            cx    = tempX * c - tempY * s + originX;
+            cy    = tempX * s + tempY * c + originY;
+            tempX = p0x - originX;
+            tempY = p0y - originY;
+            p0x   = tempX * c - tempY * s + originX;
+            p0y   = tempX * s + tempY * c + originY;
         }
         cx += x;
         cy += y;
@@ -598,6 +540,11 @@ public abstract class Draw2D
         batch.setTexture(Draw2D.texture);
         
         batch.begin(DrawMode.TRIANGLES);
+        
+        Draw2D.VERTEX0.pos(cx, cy);
+        Draw2D.VERTEX0.texCoord(Draw2D.u1, Draw2D.v1);
+        Draw2D.VERTEX0.color(ri, gi, bi, ai);
+        
         for (int i = 0; i < segments; i++)
         {
             theta = start + (i + 1) * inc;
@@ -605,40 +552,22 @@ public abstract class Draw2D
             p1y   = Math.sin(theta) * ry;
             if (shouldRotate)
             {
-                tempX = p1x - offsetX;
-                tempY = p1y - offsetY;
-                p1x   = tempX * c - tempY * s + offsetX;
-                p1y   = tempX * s + tempY * c + offsetY;
+                tempX = p1x - originX;
+                tempY = p1y - originY;
+                p1x   = tempX * c - tempY * s + originX;
+                p1y   = tempX * s + tempY * c + originY;
             }
             p1x += x;
             p1y += y;
             
-            batch.vertex(cx, cy);
-            batch.texCoord(Draw2D.u0, Draw2D.v0);
-            batch.color(ri, gi, bi, ai);
+            Draw2D.VERTEX1.pos(p0x, p0y);
+            Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v0);
+            Draw2D.VERTEX1.color(ro, go, bo, ao);
+            Draw2D.VERTEX2.pos(p1x, p1y);
+            Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v0);
+            Draw2D.VERTEX2.color(ro, go, bo, ao);
             
-            cross = (p1x - cx) * (p0y - p1y) - (p1y - cy) * (p0x - p1x);
-            
-            if (cross > 0.0)
-            {
-                batch.vertex(p0x, p0y);
-                batch.texCoord(Draw2D.u0, Draw2D.v1);
-                batch.color(ro, go, bo, ao);
-                
-                batch.vertex(p1x, p1y);
-                batch.texCoord(Draw2D.u1, Draw2D.v1);
-                batch.color(ro, go, bo, ao);
-            }
-            else
-            {
-                batch.vertex(p1x, p1y);
-                batch.texCoord(Draw2D.u1, Draw2D.v1);
-                batch.color(ro, go, bo, ao);
-                
-                batch.vertex(p0x, p0y);
-                batch.texCoord(Draw2D.u0, Draw2D.v1);
-                batch.color(ro, go, bo, ao);
-            }
+            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
             
             p0x = p1x;
             p0y = p1y;
@@ -646,125 +575,138 @@ public abstract class Draw2D
         batch.end();
     }
     
-    protected static void drawTexture(GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
+    protected static void fillRing(double x, double y, double rxi, double ryi, double rxo, double ryo, double start, double stop, double originX, double originY, double angle, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
     {
-        double rd = (x2 - x0) * (y3 - y1) - (x3 - x1) * (y2 - y0);
+        while (start > Math.PI2 + 1e-6) start -= Math.PI2;
+        while (start < -Math.PI2 - 1e-6) start += Math.PI2;
         
-        if (rd == 0.0) return;
+        while (stop > Math.PI2 + 1e-6) stop -= Math.PI2;
+        while (stop < -Math.PI2 - 1e-6) stop += Math.PI2;
         
-        rd = 1.0 / rd;
+        if (Math.equals(start, stop, 1e-6)) return;
         
-        double cx = 0.0, cy = 0.0;
-        
-        double rn = ((x3 - x1) * (y0 - y1) - (y3 - y1) * (x0 - x1)) * rd;
-        double sn = ((x2 - x0) * (y0 - y1) - (y2 - y0) * (x0 - x1)) * rd;
-        
-        if (!(rn < 0.0 || rn > 1.0 || sn < 0.0 || sn > 1.0))
+        if (start > stop)
         {
-            cx = x0 + rn * (x2 - x0);
-            cy = y0 + rn * (y2 - y0);
+            double temp = start;
+            start = stop;
+            stop  = temp;
         }
         
-        double d0 = Math.sqrt((x0 - cx) * (x0 - cx) + (y0 - cy) * (y0 - cy));
-        double d1 = Math.sqrt((x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy));
-        double d2 = Math.sqrt((x2 - cx) * (x2 - cx) + (y2 - cy) * (y2 - cy));
-        double d3 = Math.sqrt((x3 - cx) * (x3 - cx) + (y3 - cy) * (y3 - cy));
+        if (segments < 3) segments = segments(Math.max(Math.abs(rxi), Math.abs(rxo)), Math.max(Math.abs(ryi), Math.abs(ryo)), start, stop);
         
-        double q0 = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
-        double q1 = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
-        double q2 = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
-        double q3 = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
+        double inc   = (stop - start) / segments;
+        double theta = start;
         
+        double  tempX, tempY;
+        boolean shouldRotate = !Math.equals(angle, 0.0, 1e-6);
+        
+        double s = shouldRotate ? Math.sin(angle) : 0;
+        double c = shouldRotate ? Math.cos(angle) : 0;
+        
+        double cos, sin, x0i, y0i, x0o, y0o, x1i, y1i, x1o, y1o;
+        
+        cos = Math.cos(theta);
+        sin = Math.sin(theta);
+        x0i = cos * rxi;
+        y0i = sin * ryi;
+        x0o = cos * rxo;
+        y0o = sin * ryo;
+        if (shouldRotate)
+        {
+            tempX = x0i - originX;
+            tempY = y0i - originY;
+            x0i   = tempX * c - tempY * s + originX;
+            y0i   = tempX * s + tempY * c + originY;
+            tempX = x0o - originX;
+            tempY = y0o - originY;
+            x0o   = tempX * c - tempY * s + originX;
+            y0o   = tempX * s + tempY * c + originY;
+        }
+        x0i += x;
+        y0i += y;
+        x0o += x;
+        y0o += y;
+        
+        GLBatch batch = GLBatch.get();
+        
+        batch.checkBuffer(segments * 4);
+        
+        batch.setTexture(Draw2D.texture);
+        
+        batch.begin(DrawMode.TRIANGLES);
+        for (int i = 0; i < segments; i++)
+        {
+            theta = start + (i + 1) * inc;
+            cos   = Math.cos(theta);
+            sin   = Math.sin(theta);
+            x1i   = cos * rxi;
+            y1i   = sin * ryi;
+            x1o   = cos * rxo;
+            y1o   = sin * ryo;
+            if (shouldRotate)
+            {
+                tempX = x1i - originX;
+                tempY = y1i - originY;
+                x1i   = tempX * c - tempY * s + originX;
+                y1i   = tempX * s + tempY * c + originY;
+                tempX = x1o - originX;
+                tempY = y1o - originY;
+                x1o   = tempX * c - tempY * s + originX;
+                y1o   = tempX * s + tempY * c + originY;
+            }
+            x1i += x;
+            y1i += y;
+            x1o += x;
+            y1o += y;
+            
+            Draw2D.VERTEX0.pos(x0o, y0o);
+            Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
+            Draw2D.VERTEX0.color(ro, go, bo, ao);
+            Draw2D.VERTEX1.pos(x0i, y0i);
+            Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
+            Draw2D.VERTEX1.color(ri, gi, bi, ai);
+            Draw2D.VERTEX2.pos(x1i, y1i);
+            Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
+            Draw2D.VERTEX2.color(ri, gi, bi, ai);
+            Draw2D.VERTEX3.pos(x1o, y1o);
+            Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v0);
+            Draw2D.VERTEX3.color(ro, go, bo, ao);
+            
+            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
+            
+            x0i = x1i;
+            y0i = y1i;
+            x0o = x1o;
+            y0o = y1o;
+        }
+        batch.end();
+    }
+    
+    protected static void drawTexture(GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
+    {
         GLBatch batch = GLBatch.get();
         
         batch.checkBuffer(4); // Make sure there is enough free space on the batch buffer
         
         batch.setTexture(texture);
         
-        batch.begin(DrawMode.QUADS);
+        batch.begin(DrawMode.TRIANGLES);
         
-        double winding  = (x1 - x0) * (y1 + y0) + (x2 - x1) * (y2 + y1) + (x3 - x2) * (y3 + y2) + (x0 - x3) * (y0 + y3);
-        double cross012 = (x1 - x0) * (y2 - y1) - (y1 - y0) * (x2 - x1);
-        double cross032 = (x3 - x0) * (y2 - y3) - (y3 - y0) * (x2 - x3);
+        Draw2D.VERTEX0.pos(x0, y0);
+        Draw2D.VERTEX0.texCoord(u0, v0);
+        Draw2D.VERTEX0.color(r, g, b, a);
+        Draw2D.VERTEX1.pos(x1, y1);
+        Draw2D.VERTEX1.texCoord(u1, v1);
+        Draw2D.VERTEX1.color(r, g, b, a);
+        Draw2D.VERTEX2.pos(x2, y2);
+        Draw2D.VERTEX2.texCoord(u2, v2);
+        Draw2D.VERTEX2.color(r, g, b, a);
+        Draw2D.VERTEX3.pos(x3, y3);
+        Draw2D.VERTEX3.texCoord(u3, v3);
+        Draw2D.VERTEX3.color(r, g, b, a);
         
-        if (winding > 0.0)
-        {
-            if (cross012 < 0.0 && cross032 > 0.0)
-            {
-                batch.vertex(x0, y0);
-                batch.texCoord(u0 * q0, v0 * q0, q0);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(u1 * q1, v1 * q1, q1);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(u2 * q2, v2 * q2, q2);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x3, y3);
-                batch.texCoord(u3 * q3, v3 * q3, q3);
-                batch.color(r, g, b, a);
-            }
-            else
-            {
-                batch.vertex(x3, y3);
-                batch.texCoord(u3 * q3, v3 * q3, q3);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x0, y0);
-                batch.texCoord(u0 * q0, v0 * q0, q0);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(u1 * q1, v1 * q1, q1);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(u2 * q2, v2 * q2, q2);
-                batch.color(r, g, b, a);
-            }
-        }
-        else
-        {
-            if (cross012 > 0.0 && cross032 < 0.0)
-            {
-                batch.vertex(x0, y0);
-                batch.texCoord(u0 * q0, v0 * q0, q0);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x3, y3);
-                batch.texCoord(u3 * q3, v3 * q3, q3);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(u2 * q2, v2 * q2, q2);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(u1 * q1, v1 * q1, q1);
-                batch.color(r, g, b, a);
-            }
-            else
-            {
-                batch.vertex(x3, y3);
-                batch.texCoord(u3 * q3, v3 * q3, q3);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x2, y2);
-                batch.texCoord(u2 * q2, v2 * q2, q2);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x1, y1);
-                batch.texCoord(u1 * q1, v1 * q1, q1);
-                batch.color(r, g, b, a);
-                
-                batch.vertex(x0, y0);
-                batch.texCoord(u0 * q0, v0 * q0, q0);
-                batch.color(r, g, b, a);
-            }
-        }
+        windQuad(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2, Draw2D.VERTEX3);
         
         batch.end();
     }
@@ -786,7 +728,7 @@ public abstract class Draw2D
         double x0, y0, x1, y1, x2, y2, x3, y3;
         
         // Only calculate rotation if needed
-        if (Double.compare(angle, 0.0) == 0)
+        if (Math.equals(angle, 0.0, 1e-6))
         {
             double dx = dstX - originX;
             double dy = dstY - originY;
@@ -838,8 +780,68 @@ public abstract class Draw2D
     
     protected static int segments(double rx, double ry, double start, double stop)
     {
-        double percentage = (stop - start) / Math.PI2;
-        return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * percentage), 8, 48);
+        return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * (stop - start) / Math.PI2), 8, 48);
+    }
+    
+    private static void windTriangle(GLBatch batch, Vertex v0, Vertex v1, Vertex v2)
+    {
+        v0.apply(batch);
+        
+        double cross = (v1.x - v0.x) * (v2.y - v1.y) - (v1.y - v0.y) * (v2.x - v1.x);
+        if (cross > 0.0)
+        {
+            v2.apply(batch);
+            v1.apply(batch);
+        }
+        else
+        {
+            v1.apply(batch);
+            v2.apply(batch);
+        }
+    }
+    
+    private static void windQuad(GLBatch batch, Vertex v0, Vertex v1, Vertex v2, Vertex v3)
+    {
+        double rd = (v2.x - v0.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v0.y);
+        
+        if (rd == 0.0) return;
+        
+        rd = 1.0 / rd;
+        
+        double cx = 0.0, cy = 0.0;
+        
+        double rn = ((v3.x - v1.x) * (v0.y - v1.y) - (v3.y - v1.y) * (v0.x - v1.x)) * rd;
+        double sn = ((v2.x - v0.x) * (v0.y - v1.y) - (v2.y - v0.y) * (v0.x - v1.x)) * rd;
+        
+        if (!(rn < 0.0 || rn > 1.0 || sn < 0.0 || sn > 1.0))
+        {
+            cx = v0.x + rn * (v2.x - v0.x);
+            cy = v0.y + rn * (v2.y - v0.y);
+        }
+        
+        double d0 = Math.sqrt((v0.x - cx) * (v0.x - cx) + (v0.y - cy) * (v0.y - cy));
+        double d1 = Math.sqrt((v1.x - cx) * (v1.x - cx) + (v1.y - cy) * (v1.y - cy));
+        double d2 = Math.sqrt((v2.x - cx) * (v2.x - cx) + (v2.y - cy) * (v2.y - cy));
+        double d3 = Math.sqrt((v3.x - cx) * (v3.x - cx) + (v3.y - cy) * (v3.y - cy));
+        
+        v0.q = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
+        v1.q = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
+        v2.q = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
+        v3.q = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
+        
+        double cross012 = (v1.x - v0.x) * (v2.y - v1.y) - (v1.y - v0.y) * (v2.x - v1.x);
+        double cross032 = (v3.x - v0.x) * (v2.y - v3.y) - (v3.y - v0.y) * (v2.x - v3.x);
+        
+        if (cross012 < 0.0 && cross032 > 0.0)
+        {
+            windTriangle(batch, v0, v1, v2);
+            windTriangle(batch, v0, v2, v3);
+        }
+        else
+        {
+            windTriangle(batch, v3, v2, v1);
+            windTriangle(batch, v3, v1, v0);
+        }
     }
     
     public Draw2D()
@@ -860,5 +862,40 @@ public abstract class Draw2D
         drawImpl();
         
         reset();
+    }
+    
+    private static final class Vertex
+    {
+        private double x, y;
+        private double u, v, q;
+        private int r, g, b, a;
+        
+        private void pos(double x, double y)
+        {
+            this.x = x;
+            this.y = y;
+        }
+        
+        private void texCoord(double u, double v)
+        {
+            this.u = u;
+            this.v = v;
+            this.q = 1.0;
+        }
+        
+        private void color(int r, int g, int b, int a)
+        {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+        }
+        
+        private void apply(GLBatch batch)
+        {
+            batch.pos(this.x, this.y);
+            batch.texCoord(this.u * this.q, this.v * this.q, this.q);
+            batch.color(this.r, this.g, this.b, this.a);
+        }
     }
 }
