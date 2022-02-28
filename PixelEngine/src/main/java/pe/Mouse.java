@@ -573,24 +573,24 @@ public class Mouse
         }
     }
     
-    public boolean down(Button button, Modifier... modifiers)
+    public boolean down(Button button)
     {
-        return this.buttonMap.get(button).state == GLFW_PRESS && Modifier.all(modifiers);
+        return this.buttonMap.get(button).state == GLFW_PRESS;
     }
     
-    public boolean up(Button button, Modifier... modifiers)
+    public boolean up(Button button)
     {
-        return this.buttonMap.get(button).state == GLFW_RELEASE && Modifier.all(modifiers);
+        return this.buttonMap.get(button).state == GLFW_RELEASE;
     }
     
-    public boolean repeat(Button button, Modifier... modifiers)
+    public boolean repeat(Button button)
     {
-        return this.buttonMap.get(button).state == GLFW_REPEAT && Modifier.all(modifiers);
+        return this.buttonMap.get(button).state == GLFW_REPEAT;
     }
     
-    public boolean held(Button button, Modifier... modifiers)
+    public boolean held(Button button)
     {
-        return this.buttonMap.get(button).held && Modifier.all(modifiers);
+        return this.buttonMap.get(button).held;
     }
     
     static final class ButtonInput extends Input
@@ -601,7 +601,7 @@ public class Mouse
     
     public enum Button
     {
-        NONE(-1),
+        UNKNOWN(-1),
         
         LEFT(GLFW_MOUSE_BUTTON_LEFT),
         RIGHT(GLFW_MOUSE_BUTTON_RIGHT),
@@ -629,7 +629,7 @@ public class Mouse
          */
         public static Button get(int ref)
         {
-            return Button.BUTTON_MAP.getOrDefault(ref, Button.NONE);
+            return Button.BUTTON_MAP.getOrDefault(ref, Button.UNKNOWN);
         }
         
         static

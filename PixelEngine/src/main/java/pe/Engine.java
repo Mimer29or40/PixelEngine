@@ -17,6 +17,7 @@ import pe.event.Event;
 import pe.render.*;
 import pe.util.Random;
 import rutils.Logger;
+import rutils.Math;
 import rutils.group.Pair;
 import rutils.group.Triple;
 
@@ -27,7 +28,10 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.stb.STBEasyFont.*;
@@ -656,10 +660,10 @@ public abstract class Engine
                           """;
             Debug.program = GLProgram.loadFromCode(vert, null, frag);
             
-            int elementsCount = 1024;
+            int vertexLimit = 2048;
             
-            IntBuffer indices = MemoryUtil.memCallocInt(elementsCount * 6); // 6 int per quad (indices)
-            for (int i = 0; i < elementsCount; ++i)
+            IntBuffer indices = MemoryUtil.memCallocInt(vertexLimit * 6); // 6 vertices per quad (indices)
+            for (int i = 0; i < vertexLimit; ++i)
             {
                 indices.put(4 * i);
                 indices.put(4 * i + 1);
@@ -670,7 +674,7 @@ public abstract class Engine
             }
             
             Debug.vertexArray = GLVertexArray.builder()
-                                             .buffer(elementsCount, Usage.DYNAMIC_DRAW,
+                                             .buffer(vertexLimit, Usage.DYNAMIC_DRAW,
                                                      new GLAttribute(GLType.FLOAT, 3, false),
                                                      new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
                                              .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
@@ -722,12 +726,22 @@ public abstract class Engine
             }
             if (Debug.enabled)
             {
+                Collector<CharSequence, ?, String> collect = Collectors.joining(", ", "[", "]");
+                
+                EnumSet<Modifier> mods = EnumSet.complementOf(EnumSet.of(Modifier.ANY));
+                EnumSet<Mouse.Button> buttons = EnumSet.complementOf(EnumSet.of(Mouse.Button.UNKNOWN));
+                EnumSet<Keyboard.Key> keys = EnumSet.complementOf(EnumSet.of(Keyboard.Key.UNKNOWN));
+                
                 String[] lines = {
                         String.format("Frame: %s", Time.totalFrameCount),
                         String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D),
                         String.format("Wireframe: %s", Debug.wireframe),
                         String.format("Vertex Count: %s", Debug.vertices),
                         String.format("Draw Calls: %s", Debug.draws),
+                        String.format("Active Modifiers: %s", mods.stream().filter(Modifier::isActive).map(Enum::name).collect(collect)),
+                        String.format("Mouse Position: (%s, %s)", Math.round(Mouse.get().x(), 3), Math.round(Mouse.get().y(), 3)),
+                        String.format("Mouse Buttons Down: %s", buttons.stream().filter(Mouse.get()::held).map(Enum::name).collect(collect)),
+                        String.format("Keyboard Keys Down: %s", keys.stream().filter(Keyboard.get()::held).map(Enum::name).collect(collect)),
                         };
                 
                 int x = 0, y = 0;
@@ -782,7 +796,7 @@ public abstract class Engine
                         int quads = stb_easy_font_print(line.a + 2, line.b + 2, line.c, textColor, buffer);
                         
                         Debug.vertexArray.buffer(0).set(buffer.clear());
-                        Debug.vertexArray.draw(DrawMode.TRIANGLES, (1 + quads) * 6);
+                        Debug.vertexArray.draw(DrawMode.TRIANGLES, (quads + 1) * 6);
                     }
                 }
                 
