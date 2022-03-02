@@ -19,7 +19,6 @@ import pe.util.Random;
 import rutils.Logger;
 import rutils.Math;
 import rutils.group.Pair;
-import rutils.group.Triple;
 
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -28,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -617,6 +615,23 @@ public abstract class Engine
     
     public static final class Debug
     {
+        private static final class KeyLayout
+        {
+            final int x, y, width, height, tx, ty;
+            final String text;
+            
+            private KeyLayout(int x, int y, int width, int height, String text)
+            {
+                this.x      = x;
+                this.y      = y;
+                this.width  = width;
+                this.height = height;
+                this.text   = text;
+                this.tx     = x + (width - textWidth(text)) / 2 + 1;
+                this.ty     = y + (height - textHeight(text)) / 2 + 2;
+            }
+        }
+        
         private static boolean enabled;
         private static boolean wireframe;
         
@@ -624,16 +639,19 @@ public abstract class Engine
         private static int draws;
         
         private static GLProgram     program;
+        private static ByteBuffer    vertexBuffer;
         private static GLVertexArray vertexArray;
         private static Matrix4d      pv;
         
         private static Color textColor;
         private static Color backColor;
         
-        private static final List<Triple<Integer, Integer, String>> lines = new ArrayList<>();
+        private static final List<Object[]> toRender = new ArrayList<>();
         
         private static String notification;
         private static long   notificationTime;
+        
+        private static final EnumMap<Keyboard.Key, KeyLayout> layoutMap = new EnumMap<>(Keyboard.Key.class);
         
         private static void setup()
         {
@@ -660,9 +678,9 @@ public abstract class Engine
                           """;
             Debug.program = GLProgram.loadFromCode(vert, null, frag);
             
-            int vertexLimit = 2048;
+            int vertexLimit = 4096;
             
-            IntBuffer indices = MemoryUtil.memCallocInt(vertexLimit * 6); // 6 vertices per quad (indices)
+            IntBuffer indices = MemoryUtil.memAllocInt(vertexLimit * 6); // 6 vertices per quad (indices)
             for (int i = 0; i < vertexLimit; ++i)
             {
                 indices.put(4 * i);
@@ -673,8 +691,10 @@ public abstract class Engine
                 indices.put(4 * i + 3);
             }
             
+            Debug.vertexBuffer = MemoryUtil.memAlloc(vertexLimit * (Float.BYTES * 3 + Byte.BYTES * 4));
+            
             Debug.vertexArray = GLVertexArray.builder()
-                                             .buffer(vertexLimit, Usage.DYNAMIC_DRAW,
+                                             .buffer(Debug.vertexBuffer, Usage.DYNAMIC_DRAW,
                                                      new GLAttribute(GLType.FLOAT, 3, false),
                                                      new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
                                              .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
@@ -685,11 +705,236 @@ public abstract class Engine
             
             Debug.textColor = Color.create(ColorFormat.RGBA).set(255, 255, 255, 255);
             Debug.backColor = Color.create(ColorFormat.RGBA).set(255, 255, 255, 0x54);
+            
+            int x, y;
+            int gap  = 2;
+            int size = 24;
+            
+            x = 0;
+            y = 0;
+            Debug.layoutMap.put(Keyboard.Key.ESCAPE, new KeyLayout(x, y, size, size, "Esc"));
+            x += size + gap + 22;
+            Debug.layoutMap.put(Keyboard.Key.F1, new KeyLayout(x, y, size, size, "F1"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F2, new KeyLayout(x, y, size, size, "F2"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F3, new KeyLayout(x, y, size, size, "F3"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F4, new KeyLayout(x, y, size, size, "F4"));
+            x += size + gap + 20;
+            Debug.layoutMap.put(Keyboard.Key.F5, new KeyLayout(x, y, size, size, "F5"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F6, new KeyLayout(x, y, size, size, "F6"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F7, new KeyLayout(x, y, size, size, "F7"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F8, new KeyLayout(x, y, size, size, "F8"));
+            x += size + gap + 20;
+            Debug.layoutMap.put(Keyboard.Key.F9, new KeyLayout(x, y, size, size, "F9"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F10, new KeyLayout(x, y, size, size, "F10"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F11, new KeyLayout(x, y, size, size, "F11"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F12, new KeyLayout(x, y, size, size, "F12"));
+            x += size + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.PRINT_SCREEN, new KeyLayout(x, y, size, size, "PrSc"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.SCROLL_LOCK, new KeyLayout(x, y, size, size, "Scrl"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.PAUSE, new KeyLayout(x, y, size, size, "Pse"));
+            
+            x = 0;
+            y += size + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.GRAVE, new KeyLayout(x, y, size, size, "~\n`"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K1, new KeyLayout(x, y, size, size, "1"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K2, new KeyLayout(x, y, size, size, "2"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K3, new KeyLayout(x, y, size, size, "3"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K4, new KeyLayout(x, y, size, size, "4"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K5, new KeyLayout(x, y, size, size, "5"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K6, new KeyLayout(x, y, size, size, "6"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K7, new KeyLayout(x, y, size, size, "7"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K8, new KeyLayout(x, y, size, size, "8"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K9, new KeyLayout(x, y, size, size, "9"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K0, new KeyLayout(x, y, size, size, "0"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.MINUS, new KeyLayout(x, y, size, size, "_\n-"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.EQUAL, new KeyLayout(x, y, size, size, "+\n="));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.BACKSPACE, new KeyLayout(x, y, 60, size, "Back"));
+            x += 60 + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.INSERT, new KeyLayout(x, y, size, size, "Ins"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.HOME, new KeyLayout(x, y, size, size, "Hme"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.PAGE_UP, new KeyLayout(x, y, size, size, "PgUp"));
+            x += size + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.NUM_LOCK, new KeyLayout(x, y, size, size, "Num"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_DIVIDE, new KeyLayout(x, y, size, size, "/"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_MULTIPLY, new KeyLayout(x, y, size, size, "*"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_SUBTRACT, new KeyLayout(x, y, size, size, "-"));
+            
+            x = 0;
+            y += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.TAB, new KeyLayout(x, y, 42, size, "Tab"));
+            x += 42 + gap;
+            Debug.layoutMap.put(Keyboard.Key.Q, new KeyLayout(x, y, size, size, "Q"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.W, new KeyLayout(x, y, size, size, "W"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.E, new KeyLayout(x, y, size, size, "E"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.R, new KeyLayout(x, y, size, size, "R"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.T, new KeyLayout(x, y, size, size, "T"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.Y, new KeyLayout(x, y, size, size, "Y"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.U, new KeyLayout(x, y, size, size, "U"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.I, new KeyLayout(x, y, size, size, "I"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.O, new KeyLayout(x, y, size, size, "O"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.P, new KeyLayout(x, y, size, size, "P"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.L_BRACKET, new KeyLayout(x, y, size, size, "{\n["));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.R_BRACKET, new KeyLayout(x, y, size, size, "}\n}"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.BACKSLASH, new KeyLayout(x, y, 42, size, "|\n\\"));
+            x += 42 + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.DELETE, new KeyLayout(x, y, size, size, "Del"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.END, new KeyLayout(x, y, size, size, "End"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.PAGE_DOWN, new KeyLayout(x, y, size, size, "PgDn"));
+            x += size + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.KP_7, new KeyLayout(x, y, size, size, "7"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_8, new KeyLayout(x, y, size, size, "8"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_9, new KeyLayout(x, y, size, size, "9"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_ADD, new KeyLayout(x, y, size, size * 2 + gap, "+"));
+            
+            x = 0;
+            y += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.CAPS_LOCK, new KeyLayout(x, y, 46, size, "Caps"));
+            x += 46 + gap;
+            Debug.layoutMap.put(Keyboard.Key.A, new KeyLayout(x, y, size, size, "A"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.S, new KeyLayout(x, y, size, size, "S"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.D, new KeyLayout(x, y, size, size, "D"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.F, new KeyLayout(x, y, size, size, "F"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.G, new KeyLayout(x, y, size, size, "G"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.H, new KeyLayout(x, y, size, size, "H"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.J, new KeyLayout(x, y, size, size, "J"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.K, new KeyLayout(x, y, size, size, "K"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.L, new KeyLayout(x, y, size, size, "L"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.SEMICOLON, new KeyLayout(x, y, size, size, ":\n;"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.APOSTROPHE, new KeyLayout(x, y, size, size, "\"\n'"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.ENTER, new KeyLayout(x, y, 64, size, "<-|"));
+            x += 64 + (size + gap * 2) * 3;
+            Debug.layoutMap.put(Keyboard.Key.KP_4, new KeyLayout(x, y, size, size, "4"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_5, new KeyLayout(x, y, size, size, "5"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_6, new KeyLayout(x, y, size, size, "6"));
+    
+            x = 0;
+            y += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.L_SHIFT, new KeyLayout(x, y, 64, size, "Shift"));
+            x += 64 + gap;
+            Debug.layoutMap.put(Keyboard.Key.Z, new KeyLayout(x, y, size, size, "Z"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.X, new KeyLayout(x, y, size, size, "X"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.C, new KeyLayout(x, y, size, size, "C"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.V, new KeyLayout(x, y, size, size, "V"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.B, new KeyLayout(x, y, size, size, "B"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.N, new KeyLayout(x, y, size, size, "N"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.M, new KeyLayout(x, y, size, size, "M"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.COMMA, new KeyLayout(x, y, size, size, "<\n,"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.PERIOD, new KeyLayout(x, y, size, size, ">\n."));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.SLASH, new KeyLayout(x, y, size, size, "?\n/"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.R_SHIFT, new KeyLayout(x, y, 72, size, "Shift"));
+            x += 72 + gap * 3 + size;
+            Debug.layoutMap.put(Keyboard.Key.UP, new KeyLayout(x, y, size, size, "/\\"));
+            x += size + gap * 3 + size;
+            Debug.layoutMap.put(Keyboard.Key.KP_1, new KeyLayout(x, y, size, size, "1"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_2, new KeyLayout(x, y, size, size, "2"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_3, new KeyLayout(x, y, size, size, "3"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.KP_ENTER, new KeyLayout(x, y, size, size * 2 + gap, "<-|"));
+    
+            x = 0;
+            y += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.L_CONTROL, new KeyLayout(x, y, 42, size, "Ctrl"));
+            x += 42 + gap;
+            Debug.layoutMap.put(Keyboard.Key.L_SUPER, new KeyLayout(x, y, 30, size, "Super"));
+            x += 30 + gap;
+            Debug.layoutMap.put(Keyboard.Key.L_ALT, new KeyLayout(x, y, 30, size, "Alt"));
+            x += 30 + gap;
+            Debug.layoutMap.put(Keyboard.Key.SPACE, new KeyLayout(x, y, 150, size, "Space"));
+            x += 150 + gap;
+            Debug.layoutMap.put(Keyboard.Key.R_ALT, new KeyLayout(x, y, 30, size, "Alt"));
+            x += 30 + gap;
+            Debug.layoutMap.put(Keyboard.Key.UNKNOWN, new KeyLayout(x, y, 30, size, "Func"));
+            x += 30 + gap;
+            Debug.layoutMap.put(Keyboard.Key.MENU, new KeyLayout(x, y, 30, size, "Menu"));
+            x += 30 + gap;
+            Debug.layoutMap.put(Keyboard.Key.R_CONTROL, new KeyLayout(x, y, 42, size, "Ctrl"));
+            x += 42 + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.LEFT, new KeyLayout(x, y, size, size, "{-"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.DOWN, new KeyLayout(x, y, size, size, "\\/"));
+            x += size + gap;
+            Debug.layoutMap.put(Keyboard.Key.RIGHT, new KeyLayout(x, y, size, size, "-}"));
+            x += size + gap * 2;
+            Debug.layoutMap.put(Keyboard.Key.KP_0, new KeyLayout(x, y, size * 2 + gap, size, "0"));
+            x += (size + gap) * 2;
+            Debug.layoutMap.put(Keyboard.Key.KP_DECIMAL, new KeyLayout(x, y, size, size, "."));
         }
         
         private static void destroy()
         {
             Debug.program.delete();
+            MemoryUtil.memFree(Debug.vertexBuffer);
             Debug.vertexArray.delete();
             
             Debug.textColor.free();
@@ -722,15 +967,15 @@ public abstract class Engine
                 int x = (Window.get().framebufferWidth() - textWidth(Debug.notification)) >> 1;
                 int y = (Window.get().framebufferHeight() - textHeight(Debug.notification)) >> 1;
                 
-                drawText(x, y, Debug.notification);
+                drawTextWithBackground(x, y, Debug.notification, null, null);
             }
             if (Debug.enabled)
             {
                 Collector<CharSequence, ?, String> collect = Collectors.joining(", ", "[", "]");
                 
-                EnumSet<Modifier> mods = EnumSet.complementOf(EnumSet.of(Modifier.ANY));
+                EnumSet<Modifier>     mods    = EnumSet.complementOf(EnumSet.of(Modifier.ANY));
                 EnumSet<Mouse.Button> buttons = EnumSet.complementOf(EnumSet.of(Mouse.Button.UNKNOWN));
-                EnumSet<Keyboard.Key> keys = EnumSet.complementOf(EnumSet.of(Keyboard.Key.UNKNOWN));
+                EnumSet<Keyboard.Key> keys    = EnumSet.complementOf(EnumSet.of(Keyboard.Key.UNKNOWN));
                 
                 String[] lines = {
                         String.format("Frame: %s", Time.totalFrameCount),
@@ -747,11 +992,21 @@ public abstract class Engine
                 int x = 0, y = 0;
                 for (String line : lines)
                 {
-                    drawText(x, y, line);
+                    drawTextWithBackground(x, y, line, null, null);
                     y += textHeight(line);
                 }
+                
+                for (Keyboard.Key key : Debug.layoutMap.keySet())
+                {
+                    KeyLayout l = Debug.layoutMap.get(key);
+                    Colorc    c = Keyboard.get().held(key) ? Color.LIGHT_GRAY : Color.GRAY;
+                    
+                    drawQuad(x + l.x, y + l.y, l.width, l.height, c);
+                    drawText(x + l.tx, y + l.ty, l.text, Color.WHITE);
+                }
+                
             }
-            if (!Debug.lines.isEmpty())
+            if (!Debug.toRender.isEmpty())
             {
                 int fbWidth  = Window.get().framebufferWidth();
                 int fbHeight = Window.get().framebufferHeight();
@@ -763,44 +1018,76 @@ public abstract class Engine
                 
                 GLState.winding(Winding.CW);
                 
-                try (MemoryStack stack = MemoryStack.stackPush())
+                int quads = 0;
+                for (Object[] renderData : Debug.toRender)
                 {
-                    ByteBuffer buffer = stack.malloc((int) Debug.vertexArray.buffer(0).size());
-                    
-                    ByteBuffer textColor = Debug.textColor.toBuffer();
-                    ByteBuffer backColor = Debug.backColor.toBuffer();
-                    for (Triple<Integer, Integer, String> line : Debug.lines)
+                    switch ((String) renderData[0])
                     {
-                        float x1 = line.a;
-                        float y1 = line.b;
-                        float x2 = line.a + Debug.textWidth(line.c) + 2;
-                        float y2 = line.b + Debug.textHeight(line.c);
-                        
-                        buffer.putFloat(x1);
-                        buffer.putFloat(y1);
-                        buffer.putFloat(0F);
-                        buffer.put(backColor.clear());
-                        buffer.putFloat(x2);
-                        buffer.putFloat(y1);
-                        buffer.putFloat(0F);
-                        buffer.put(backColor.clear());
-                        buffer.putFloat(x2);
-                        buffer.putFloat(y2);
-                        buffer.putFloat(0F);
-                        buffer.put(backColor.clear());
-                        buffer.putFloat(x1);
-                        buffer.putFloat(y2);
-                        buffer.putFloat(0F);
-                        buffer.put(backColor.clear());
-                        
-                        int quads = stb_easy_font_print(line.a + 2, line.b + 2, line.c, textColor, buffer);
-                        
-                        Debug.vertexArray.buffer(0).set(buffer.clear());
-                        Debug.vertexArray.draw(DrawMode.TRIANGLES, (quads + 1) * 6);
+                        case "quad" -> {
+                            float x1 = (float) renderData[1];
+                            float y1 = (float) renderData[2];
+                            float x2 = x1 + (float) renderData[3];
+                            float y2 = y1 + (float) renderData[4];
+                            int   c  = (int) renderData[5];
+                            
+                            // 64 bytes per quad.
+                            if (Debug.vertexBuffer.remaining() < 64)
+                            {
+                                Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
+                                Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
+                                quads = 0;
+                            }
+                            
+                            Debug.vertexBuffer.putFloat(x1);
+                            Debug.vertexBuffer.putFloat(y1);
+                            Debug.vertexBuffer.putFloat(0F);
+                            Debug.vertexBuffer.putInt(c);
+                            Debug.vertexBuffer.putFloat(x2);
+                            Debug.vertexBuffer.putFloat(y1);
+                            Debug.vertexBuffer.putFloat(0F);
+                            Debug.vertexBuffer.putInt(c);
+                            Debug.vertexBuffer.putFloat(x2);
+                            Debug.vertexBuffer.putFloat(y2);
+                            Debug.vertexBuffer.putFloat(0F);
+                            Debug.vertexBuffer.putInt(c);
+                            Debug.vertexBuffer.putFloat(x1);
+                            Debug.vertexBuffer.putFloat(y2);
+                            Debug.vertexBuffer.putFloat(0F);
+                            Debug.vertexBuffer.putInt(c);
+                            
+                            quads++;
+                        }
+                        case "text" -> {
+                            float  x  = (float) renderData[1];
+                            float  y  = (float) renderData[2];
+                            String t  = (String) renderData[3];
+                            int    ct = (int) renderData[4];
+                            
+                            // 11 quads max * 64 bytes per quad.
+                            if (Debug.vertexBuffer.remaining() < t.length() * 704)
+                            {
+                                Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
+                                Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
+                                quads = 0;
+                            }
+                            
+                            int newQuads;
+                            try (MemoryStack stack = MemoryStack.stackPush())
+                            {
+                                ByteBuffer textColor = stack.malloc(4).putInt(0, ct);
+                                newQuads = stb_easy_font_print(x, y, t, textColor, Debug.vertexBuffer);
+                                Debug.vertexBuffer.position(Debug.vertexBuffer.position() + newQuads * 64);
+                            }
+                            
+                            quads += newQuads;
+                        }
                     }
                 }
                 
-                Debug.lines.clear();
+                Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
+                Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
+                
+                Debug.toRender.clear();
             }
         }
         
@@ -817,7 +1104,7 @@ public abstract class Engine
          *
          * @param color The new color.
          */
-        public static void textColor(Colorc color)
+        public static void defaultTextColor(Colorc color)
         {
             Debug.textColor.set(color);
         }
@@ -827,21 +1114,57 @@ public abstract class Engine
          *
          * @param color The new color.
          */
-        public static void backColor(Colorc color)
+        public static void defaultBackgroundColor(Colorc color)
         {
             Debug.backColor.set(color);
         }
         
         /**
-         * Draws Debug text to the screen. The coordinates passed in will not be affected by any transformations.
+         * Draws a colored quad to the screen.
          *
-         * @param x    The x coordinate of the top left point if the text.
-         * @param y    The y coordinate of the top left point if the text.
-         * @param text The text to render.
+         * @param x      The x coordinate of the top left point if the quad.
+         * @param y      The y coordinate of the top left point if the quad.
+         * @param width  The width of the quad.
+         * @param height The height of the quad.
+         * @param color  The color of the quad.
          */
-        public static void drawText(int x, int y, String text)
+        public static void drawQuad(int x, int y, int width, int height, @NotNull Colorc color)
         {
-            Debug.lines.add(new Triple<>(x, y, text));
+            Debug.toRender.add(new Object[] {"quad", (float) x, (float) y, (float) width, (float) height, color.toInt()});
+        }
+        
+        /**
+         * Draws Debug text to the screen with a background.
+         *
+         * @param x         The x coordinate of the top left point if the text.
+         * @param y         The y coordinate of the top left point if the text.
+         * @param text      The text to render.
+         * @param textColor The color of the text.
+         */
+        public static void drawText(int x, int y, String text, @Nullable Colorc textColor)
+        {
+            if (textColor == null) textColor = Debug.textColor;
+            Debug.toRender.add(new Object[] {"text", (float) x, (float) y, text, textColor.toInt()});
+        }
+        
+        /**
+         * Draws Debug text to the screen with a background.
+         *
+         * @param x               The x coordinate of the top left point if the text.
+         * @param y               The y coordinate of the top left point if the text.
+         * @param text            The text to render.
+         * @param textColor       The color of the text.
+         * @param backgroundColor The color of the background.
+         */
+        public static void drawTextWithBackground(int x, int y, String text, @Nullable Colorc textColor, @Nullable Colorc backgroundColor)
+        {
+            if (textColor == null) textColor = Debug.textColor;
+            if (backgroundColor == null) backgroundColor = Debug.backColor;
+            
+            float width  = Debug.textWidth(text) + 2;
+            float height = Debug.textHeight(text);
+            Debug.toRender.add(new Object[] {"quad", (float) x, (float) y, width, height, backgroundColor.toInt()});
+            Debug.toRender.add(new Object[] {"text", (float) x + 2, (float) y + 2, text, textColor.toInt()});
         }
         
         public static void notification(String notification)

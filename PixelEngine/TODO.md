@@ -99,7 +99,9 @@
 - [x] Mouse Position
 - [x] Mouse Button State
 - [x] Keyboard Key State
-- [x] Mouse/Keyboard State Map
+- [ ] Mouse State Map
+- [x] Keyboard State Map
+- [ ] Separate Debug Windows
 - [ ] Frame Time/FPS
 
 ## Extensions
