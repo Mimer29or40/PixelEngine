@@ -5,6 +5,7 @@
 - [x] Fixed Resolution
 - [x] Layers
 - [x] Engine Events
+  - [ ] Get raw time for each event
 - [x] Colors
 - [x] Images
 - [x] Texture
@@ -96,12 +97,9 @@
 - [x] Wireframe Enabled
 - [x] Vertex Count
 - [x] Draw Calls
-- [x] Mouse Position
-- [x] Mouse Button State
-- [x] Keyboard Key State
-- [ ] Mouse State Map
+- [x] Mouse State Map
 - [x] Keyboard State Map
-- [ ] Separate Debug Windows
+- [x] Separate Debug Windows
 - [ ] Frame Time/FPS
 
 ## Extensions

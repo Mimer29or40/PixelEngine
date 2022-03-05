@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Joystick
+public final class Joystick
 {
     private static final Logger LOGGER = new Logger();
     
@@ -24,7 +24,7 @@ public class Joystick
     private static final byte[][]  JOYSTICK_BUTTON_STATES = new byte[Index.LOOKUP.size()][];
     private static final byte[][]  JOYSTICK_HAT_STATES    = new byte[Index.LOOKUP.size()][];
     
-    private static void setupCallbackEmulation()
+    static void setupCallbackEmulation()
     {
         for (int jid = 0; jid < Index.LOOKUP.size(); jid++)
         {
@@ -167,24 +167,24 @@ public class Joystick
     
     // -------------------- Instance Objects -------------------- //
     
-    protected final int jid;
+    final int jid;
     
-    protected final boolean gamepad;
-    protected final String  guid;
+    final boolean gamepad;
+    final String  guid;
     
-    protected final String name;
+    final String name;
     
-    protected final Map<Axis, AxisInput> axisMap   = new EnumMap<>(Axis.class);
-    protected final Map<Button, Input>   buttonMap = new EnumMap<>(Button.class);
-    protected final Map<Hat, Input>      hatMap    = new EnumMap<>(Hat.class);
+    final Map<Axis, AxisInput> axisMap   = new EnumMap<>(Axis.class);
+    final Map<Button, Input>   buttonMap = new EnumMap<>(Button.class);
+    final Map<Hat, Input>      hatMap    = new EnumMap<>(Hat.class);
     
     // -------------------- Callback Objects -------------------- //
+    final Queue<Pair<Axis, Float>>     axisStateChanges   = new ConcurrentLinkedQueue<>();
+    final Queue<Pair<Button, Integer>> buttonStateChanges = new ConcurrentLinkedQueue<>();
     
-    protected final Queue<Pair<Axis, Float>>     axisStateChanges   = new ConcurrentLinkedQueue<>();
-    protected final Queue<Pair<Button, Integer>> buttonStateChanges = new ConcurrentLinkedQueue<>();
-    protected final Queue<Pair<Hat, Integer>>    hatStateChanges    = new ConcurrentLinkedQueue<>();
+    final Queue<Pair<Hat, Integer>> hatStateChanges = new ConcurrentLinkedQueue<>();
     
-    protected Joystick(int jid)
+    private Joystick(int jid)
     {
         this.jid = jid;
         
@@ -282,11 +282,10 @@ public class Joystick
      * This method is called by the window it is attached to. This is where
      * events should be posted to when something has changed.
      *
-     * @param time   The system time in nanoseconds.
-     * @param deltaT The time in nanoseconds since the last time this method was called.
+     * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    static void postEvents(long time, long deltaT)
+    static void postEvents(long time)
     {
         for (Joystick joystick : Joystick.INSTANCES.values())
         {

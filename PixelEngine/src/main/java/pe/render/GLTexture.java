@@ -19,9 +19,9 @@ public class GLTexture
     // ----- Static -----
     // ------------------
     
-    static GLTexture defaultTexture;
+    protected static GLTexture defaultTexture;
     
-    static void setup()
+    protected static void setup()
     {
         GLTexture.LOGGER.fine("Setup");
         
@@ -32,7 +32,7 @@ public class GLTexture
         }
     }
     
-    static void destroy()
+    protected static void destroy()
     {
         GLTexture.LOGGER.fine("Destroy");
         

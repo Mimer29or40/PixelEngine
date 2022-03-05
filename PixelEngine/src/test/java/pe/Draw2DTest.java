@@ -4,8 +4,6 @@ import org.joml.Vector2d;
 import org.joml.Vector2dc;
 import pe.color.Color;
 import pe.event.*;
-import pe.render.CullFace;
-import pe.render.GLState;
 import pe.texture.Image;
 import pe.texture.Texture;
 import rutils.Logger;

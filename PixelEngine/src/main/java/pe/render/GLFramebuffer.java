@@ -19,12 +19,12 @@ public class GLFramebuffer
     // ----- Static -----
     // ------------------
     
-    static void setup()
+    protected static void setup()
     {
         GLFramebuffer.LOGGER.fine("Setup");
     }
     
-    static void destroy()
+    protected static void destroy()
     {
         GLFramebuffer.LOGGER.fine("Destroy");
         

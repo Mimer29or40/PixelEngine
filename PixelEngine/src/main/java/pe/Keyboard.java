@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static org.lwjgl.glfw.GLFW.*;
 import static pe.Engine.Delegator;
 
-public class Keyboard
+public final class Keyboard
 {
     private static final Logger LOGGER = new Logger();
     
@@ -38,13 +38,13 @@ public class Keyboard
     
     // -------------------- Objects -------------------- //
     
-    private final Map<Key, Input> keyMap = new EnumMap<>(Key.class);
+    final Map<Key, Input> keyMap = new EnumMap<>(Key.class);
     
     // -------------------- Callback Objects -------------------- //
     
-    protected final Queue<String> _charChanges = new ConcurrentLinkedQueue<>();
+    final Queue<String> _charChanges = new ConcurrentLinkedQueue<>();
     
-    protected final Queue<Pair<Key, Integer>> _keyStateChanges = new ConcurrentLinkedQueue<>();
+    final Queue<Pair<Key, Integer>> _keyStateChanges = new ConcurrentLinkedQueue<>();
     
     private Keyboard()
     {
@@ -80,11 +80,10 @@ public class Keyboard
      * This method is called by the window it is attached to. This is where
      * events should be posted to when something has changed.
      *
-     * @param time   The system time in nanoseconds.
-     * @param deltaT The time in nanoseconds since the last time this method was called.
+     * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    protected void postEvents(long time, long deltaT)
+    void postEvents(long time)
     {
         String typed;
         while ((typed = this._charChanges.poll()) != null)

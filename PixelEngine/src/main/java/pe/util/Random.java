@@ -32,7 +32,7 @@ public class Random extends rutils.joml.Random
         if (alpha) out.a(nextInt(lower, upper));
         return out;
     }
-
+    
     /**
      * Randomizes a {@code Color}'s values, except for its alpha value.
      *
@@ -45,7 +45,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(lower, upper, false, out);
     }
-
+    
     /**
      * Creates a new random {@code Color}.
      *
@@ -58,7 +58,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(lower, upper, alpha, Color.create(ColorFormat.RGBA));
     }
-
+    
     /**
      * Creates a new random {@code Color}.
      *
@@ -70,7 +70,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(lower, upper, false, Color.create(ColorFormat.RGBA));
     }
-
+    
     /**
      * Randomizes a {@code Color}'s values, except for its alpha value, from [{@code 0} - {@code upper}.
      *
@@ -82,7 +82,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(0, upper, out);
     }
-
+    
     /**
      * Creates a new random {@code Color} from [{@code 0} - {@code upper}.
      *
@@ -94,7 +94,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(0, upper, alpha, Color.create(ColorFormat.RGBA));
     }
-
+    
     /**
      * Creates a new random {@code Color} from [{@code 0} - {@code upper}.
      *
@@ -105,7 +105,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(0, upper, Color.create(ColorFormat.RGBA));
     }
-
+    
     /**
      * Randomizes a {@code Color}'s values, except for its alpha value, from [{@code 0} - {@code 255}.
      *
@@ -116,7 +116,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(0, 255, out);
     }
-
+    
     /**
      * Creates a new random {@code Color} from [{@code 0} - {@code 255}.
      *
@@ -127,7 +127,7 @@ public class Random extends rutils.joml.Random
     {
         return nextColor(0, 255, alpha, Color.create(ColorFormat.RGBA));
     }
-
+    
     /**
      * Creates a new random {@code Color} from [{@code 0} - {@code 255}.
      *

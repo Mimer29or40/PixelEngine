@@ -18,7 +18,7 @@ public enum Modifier
     
     private static final Logger LOGGER = new Logger();
     
-    static int activeMods = 0;
+    protected static int activeMods = 0;
     
     public static int activeMods()
     {
@@ -57,6 +57,11 @@ public enum Modifier
     Modifier(int value)
     {
         this.value = value;
+    }
+    
+    static void setup()
+    {
+        // lockMods(true);
     }
     
     /**

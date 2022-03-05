@@ -21,12 +21,12 @@ public abstract class GLBuffer
     // ----- Static -----
     // ------------------
     
-    static void setup()
+    protected static void setup()
     {
         GLBuffer.LOGGER.fine("Setup");
     }
     
-    static void destroy()
+    protected static void destroy()
     {
         GLBuffer.LOGGER.fine("Destroy");
         

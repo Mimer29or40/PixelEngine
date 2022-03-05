@@ -22,7 +22,7 @@ import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 import static pe.Engine.Delegator;
 
-public class Mouse
+public final class Mouse
 {
     private static final Logger LOGGER = new Logger();
     
@@ -49,22 +49,22 @@ public class Mouse
     
     // -------------------- Objects -------------------- //
     
-    private final Map<Button, ButtonInput> buttonMap = new EnumMap<>(Button.class);
+    final Map<Button, ButtonInput> buttonMap = new EnumMap<>(Button.class);
     
     // -------------------- Callback Objects -------------------- //
     
-    protected boolean entered;
-    protected boolean _entered;
+    boolean entered;
+    boolean _entered;
     
-    protected final Vector2d pos  = new Vector2d();
-    protected final Vector2d _pos = new Vector2d();
+    final Vector2d pos  = new Vector2d();
+    final Vector2d _pos = new Vector2d();
     
-    protected final Vector2d rel = new Vector2d();
+    final Vector2d rel = new Vector2d();
     
-    protected final Vector2d scroll  = new Vector2d();
-    protected final Vector2d _scroll = new Vector2d();
+    final Vector2d scroll  = new Vector2d();
+    final Vector2d _scroll = new Vector2d();
     
-    protected final Queue<Pair<Button, Integer>> _buttonStateChanges = new ConcurrentLinkedQueue<>();
+    final Queue<Pair<Button, Integer>> _buttonStateChanges = new ConcurrentLinkedQueue<>();
     
     private Mouse()
     {
@@ -481,11 +481,10 @@ public class Mouse
      * This method is called by the window it is attached to. This is where
      * events should be posted to when something has changed.
      *
-     * @param time   The system time in nanoseconds.
-     * @param deltaT The time in nanoseconds since the last time this method was called.
+     * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    void postEvents(long time, long deltaT)
+    void postEvents(long time)
     {
         boolean entered = false;
         if (this.entered != this._entered)
@@ -593,7 +592,7 @@ public class Mouse
         return this.buttonMap.get(button).held;
     }
     
-    static final class ButtonInput extends Input
+    protected static final class ButtonInput extends Input
     {
         final Vector2d clickPos  = new Vector2d();
         final Vector2d dClickPos = new Vector2d();

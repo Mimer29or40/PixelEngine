@@ -21,7 +21,7 @@ import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static pe.Engine.Delegator;
 
-public class Window
+public final class Window
 {
     private static final Logger LOGGER = new Logger();
     
@@ -58,31 +58,31 @@ public class Window
     
     // -------------------- Objects -------------------- //
     
-    protected final long handle;
+    final long handle;
     
     // -------------------- Callback Objects -------------------- //
     
-    protected boolean close;
-    protected boolean _close;
+    boolean close;
+    boolean _close;
     
-    protected final Vector2i pos  = new Vector2i();
-    protected final Vector2i _pos = new Vector2i();
+    final Vector2i pos  = new Vector2i();
+    final Vector2i _pos = new Vector2i();
     
-    protected final Vector2i size  = new Vector2i();
-    protected final Vector2i _size = new Vector2i();
+    final Vector2i size  = new Vector2i();
+    final Vector2i _size = new Vector2i();
     
-    protected final Vector2d scale  = new Vector2d();
-    protected final Vector2d _scale = new Vector2d();
+    final Vector2d scale  = new Vector2d();
+    final Vector2d _scale = new Vector2d();
     
-    protected final Vector2i fbSize  = new Vector2i();
-    protected final Vector2i _fbSize = new Vector2i();
+    final Vector2i fbSize  = new Vector2i();
+    final Vector2i _fbSize = new Vector2i();
     
-    protected String[] _dropped;
+    String[] _dropped;
     
     // -------------------- Internal Objects -------------------- //
     
-    protected final Vector2i deltaI = new Vector2i();
-    protected final Vector2d deltaD = new Vector2d();
+    private final Vector2i deltaI = new Vector2i();
+    private final Vector2d deltaD = new Vector2d();
     
     private Window()
     {
@@ -607,10 +607,9 @@ public class Window
      * This method is called by the window it is attached to. This is where
      * events should be posted to when something has changed.
      *
-     * @param time   The system time in nanoseconds.
-     * @param deltaT The time in nanoseconds since the last time this method was called.
+     * @param time The system time in nanoseconds.
      */
-    protected void postEvents(long time, long deltaT)
+    void postEvents(long time)
     {
         if (this.close != this._close)
         {

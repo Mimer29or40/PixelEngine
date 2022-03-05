@@ -2,15 +2,10 @@ package pe;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4d;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
-import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.APIUtil;
-import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
-import pe.color.Color;
-import pe.color.ColorFormat;
 import pe.color.Colorc;
 import pe.draw.*;
 import pe.event.Event;
@@ -20,7 +15,6 @@ import rutils.Logger;
 import rutils.Math;
 import rutils.group.Pair;
 
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
@@ -28,265 +22,26 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.stb.STBEasyFont.*;
 
 public abstract class Engine
 {
     private static final Logger LOGGER = new Logger();
     
-    protected static Engine  instance;
-    protected static boolean running;
-    protected static Random  random;
+    static Engine  instance;
+    static boolean running;
+    static Random  random;
     
-    protected static final Vector2i screenSize = new Vector2i();
-    protected static final Vector2i pixelSize  = new Vector2i();
+    static final Vector2i screenSize = new Vector2i();
+    static final Vector2i pixelSize  = new Vector2i();
     
-    protected static boolean windowEnabled = false;
+    static boolean windowEnabled = false;
     
-    public static final class Time
-    {
-        private static long start; // The time the engine started
-        
-        private static boolean paused; // If time is paused
-        
-        private static long frameRate;       // The actual frame rate that the engine achieved
-        private static long frameRateTarget; // The target frame rate that the engine will try to achieve
-        
-        private static long totalFrameTime;  // The total time the engine has been not paused
-        private static long totalFrameCount; // The total number of frames that the engine has rendered
-        
-        private static long current;    // The current time of the frame
-        private static long delta;      // The time since the last frame
-        private static long lastDraw;   // The time of the last frame
-        private static long lastUpdate; // The time of the last title update
-        
-        private static long updateFreq; // The frequency to update the frame time data
-        
-        private static long notificationDur; // Time in seconds to display a notification.
-        
-        private static long totalTime;   // The total time since the last update
-        private static int  totalFrames; // The number of frames since the last update
-        
-        private static long minTime; // The min time that a frame took since the last update
-        private static long maxTime; // The max time that a frame took since the last update
-        
-        private static double avgFrameTime;
-        private static double minFrameTime;
-        private static double maxFrameTime;
-        
-        private static String getTimeString()
-        {
-            return String.format("FPS(%s) SPF(Avg: %s us, Min: %s us, Max: %s us)",
-                                 Time.frameRate,
-                                 Time.avgFrameTime,
-                                 Time.minFrameTime,
-                                 Time.maxFrameTime);
-        }
-        
-        private static void init()
-        {
-            Time.start = System.nanoTime();
-            
-            Time.paused = false;
-            
-            Time.updateFreq = 1_000_000_000L / 4L;
-            
-            Time.notificationDur = (long) (1_000_000_000L * 2.0);
-            
-            Time.totalTime   = 0;
-            Time.totalFrames = 0;
-            
-            Time.minTime = Long.MAX_VALUE;
-            Time.maxTime = Long.MIN_VALUE;
-            
-            Time.avgFrameTime = 0.0;
-            Time.minFrameTime = 0.0;
-            Time.maxFrameTime = 0.0;
-        }
-        
-        private static boolean shouldDraw()
-        {
-            Time.delta = Time.current - Time.lastDraw;
-            if (Time.delta >= Time.frameRateTarget)
-            {
-                Time.lastDraw = Time.current;
-                
-                return true;
-            }
-            return false;
-        }
-        
-        private static boolean shouldUpdate()
-        {
-            if (Time.current - Time.lastUpdate >= Time.updateFreq && Time.totalFrames > 0 && !Time.paused)
-            {
-                Time.lastUpdate = Time.current;
-                
-                long timePerFrame = Time.totalTime / Time.totalFrames;
-                
-                Time.frameRate = 1_000_000_000L / timePerFrame;
-                
-                Time.avgFrameTime = timePerFrame / 1_000D;
-                Time.minFrameTime = Time.minTime / 1_000D;
-                Time.maxFrameTime = Time.maxTime / 1_000D;
-                
-                Time.totalTime   = 0;
-                Time.totalFrames = 0;
-                
-                Time.minTime = Long.MAX_VALUE;
-                Time.maxTime = Long.MIN_VALUE;
-                
-                return true;
-            }
-            return false;
-        }
-        
-        private static void incFrame()
-        {
-            if (!Time.paused)
-            {
-                long delta = Time.nanosecondsActual() - Time.current;
-                Time.minTime = Math.min(Time.minTime, delta);
-                Time.maxTime = Math.max(Time.maxTime, delta);
-                Time.totalFrameTime += delta;
-                Time.totalFrameCount++;
-                Time.totalTime += delta;
-                Time.totalFrames++;
-            }
-        }
-        
-        /**
-         * @return {@code true} if the engine is paused.
-         */
-        public static boolean paused()
-        {
-            return Time.paused;
-        }
-        
-        /**
-         * @return The current frame rate.
-         */
-        public static int frameRate()
-        {
-            return (int) Time.frameRate;
-        }
-        
-        /**
-         * Sets the frame rate to try to run at. Use zero for no limit.
-         *
-         * @param frameRate The new frame rate.
-         */
-        public static void frameRate(int frameRate)
-        {
-            Time.frameRateTarget = frameRate > 0 ? 1_000_000_000L / (long) frameRate : 0L;
-        }
-        
-        /**
-         * @return The time that the engine has spent running and not paused.
-         */
-        public static long frameTime()
-        {
-            return Time.totalFrameTime;
-        }
-        
-        /**
-         * @return The current frame that engine is on.
-         */
-        public static long frameCount()
-        {
-            return Time.totalFrameCount;
-        }
-        
-        /**
-         * Sets the number of times a second to update the frame time information.
-         *
-         * @param times The number of times a second. Default: 4
-         */
-        public static void updateFrequency(int times)
-        {
-            if (times <= 0) times = 4;
-            Time.updateFreq = 1_000_000_000L / times;
-        }
-        
-        /**
-         * Sets the time, in seconds, to show a notification message.
-         *
-         * @param seconds The time to show a notification. Default: 2.0
-         */
-        public static void notificationDuration(double seconds)
-        {
-            if (seconds <= 0) seconds = 2.0;
-            Time.notificationDur = (long) (1_000_000_000L * seconds);
-        }
-        
-        /**
-         * @return The time in nanoseconds that the engine has been running and not paused
-         */
-        public static long nanoseconds()
-        {
-            return Time.totalFrameTime;
-        }
-        
-        /**
-         * @return The time in microseconds that the engine has been running and not paused
-         */
-        public static double microseconds()
-        {
-            return nanoseconds() / 1_000D;
-        }
-        
-        /**
-         * @return The time in milliseconds that the engine has been running and not paused
-         */
-        public static double milliseconds()
-        {
-            return nanoseconds() / 1_000_000D;
-        }
-        
-        /**
-         * @return The time in seconds that the engine has been running and not paused
-         */
-        public static double seconds()
-        {
-            return nanoseconds() / 1_000_000_000D;
-        }
-        
-        /**
-         * @return The actual time in nanoseconds since the engine started
-         */
-        public static long nanosecondsActual()
-        {
-            return Time.start > 0 ? System.nanoTime() - Time.start : -1L;
-        }
-        
-        /**
-         * @return The actual time in microseconds since the engine started
-         */
-        public static double microsecondsActual()
-        {
-            return nanosecondsActual() / 1_000D;
-        }
-        
-        /**
-         * @return The actual time in milliseconds since the engine started
-         */
-        public static double millisecondsActual()
-        {
-            return nanosecondsActual() / 1_000_000D;
-        }
-        
-        /**
-         * @return The actual time in seconds since the engine started
-         */
-        public static double secondsActual()
-        {
-            return nanosecondsActual() / 1_000_000_000D;
-        }
-    }
+    static boolean wireframe = false;
+    
+    static int vertices = 0;
+    static int draws    = 0;
     
     public static final class Events
     {
@@ -298,10 +53,12 @@ public abstract class Engine
         {
             Events.events.clear();
             
-            Mouse.get().postEvents(Time.current, Time.delta);
-            Keyboard.get().postEvents(Time.current, Time.delta);
-            Joystick.postEvents(Time.current, Time.delta);
-            Window.get().postEvents(Time.current, Time.delta);
+            long time = Time.getNS();
+            
+            Mouse.get().postEvents(time);
+            Keyboard.get().postEvents(time);
+            Joystick.postEvents(time);
+            Window.get().postEvents(time);
         }
         
         public static void post(Event event)
@@ -329,10 +86,9 @@ public abstract class Engine
         }
     }
     
-    protected static class Extensions
+    protected static class Extensions // TODO
     {
         private static final Logger LOGGER = new Logger();
-        // TODO
         
         private static void preSetup()
         {
@@ -613,597 +369,6 @@ public abstract class Engine
         }
     }
     
-    public static final class Debug
-    {
-        private static final class KeyLayout
-        {
-            final int x, y, width, height, tx, ty;
-            final String text;
-            
-            private KeyLayout(int x, int y, int width, int height, String text)
-            {
-                this.x      = x;
-                this.y      = y;
-                this.width  = width;
-                this.height = height;
-                this.text   = text;
-                this.tx     = x + (width - textWidth(text)) / 2 + 1;
-                this.ty     = y + (height - textHeight(text)) / 2 + 2;
-            }
-        }
-        
-        private static boolean enabled;
-        private static boolean wireframe;
-        
-        private static int vertices;
-        private static int draws;
-        
-        private static GLProgram     program;
-        private static ByteBuffer    vertexBuffer;
-        private static GLVertexArray vertexArray;
-        private static Matrix4d      pv;
-        
-        private static Color textColor;
-        private static Color backColor;
-        
-        private static final List<Object[]> toRender = new ArrayList<>();
-        
-        private static String notification;
-        private static long   notificationTime;
-        
-        private static final EnumMap<Keyboard.Key, KeyLayout> layoutMap = new EnumMap<>(Keyboard.Key.class);
-        
-        private static void setup()
-        {
-            Debug.enabled = true;
-            
-            String vert = """
-                          #version 330
-                          layout(location = 0) in vec3 aPos;
-                          layout(location = 1) in vec4 aCol;
-                          uniform mat4 pv;
-                          out vec4 color;
-                          void main(void) {
-                              color = aCol;
-                              gl_Position = pv * vec4(aPos, 1.0);
-                          }
-                          """;
-            String frag = """
-                          #version 330
-                          in vec4 color;
-                          out vec4 FragColor;
-                          void main(void) {
-                              FragColor = color;
-                          }
-                          """;
-            Debug.program = GLProgram.loadFromCode(vert, null, frag);
-            
-            int vertexLimit = 4096;
-            
-            IntBuffer indices = MemoryUtil.memAllocInt(vertexLimit * 6); // 6 vertices per quad (indices)
-            for (int i = 0; i < vertexLimit; ++i)
-            {
-                indices.put(4 * i);
-                indices.put(4 * i + 1);
-                indices.put(4 * i + 2);
-                indices.put(4 * i);
-                indices.put(4 * i + 2);
-                indices.put(4 * i + 3);
-            }
-            
-            Debug.vertexBuffer = MemoryUtil.memAlloc(vertexLimit * (Float.BYTES * 3 + Byte.BYTES * 4));
-            
-            Debug.vertexArray = GLVertexArray.builder()
-                                             .buffer(Debug.vertexBuffer, Usage.DYNAMIC_DRAW,
-                                                     new GLAttribute(GLType.FLOAT, 3, false),
-                                                     new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
-                                             .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
-                                             .build();
-            MemoryUtil.memFree(indices);
-            
-            Debug.pv = new Matrix4d();
-            
-            Debug.textColor = Color.create(ColorFormat.RGBA).set(255, 255, 255, 255);
-            Debug.backColor = Color.create(ColorFormat.RGBA).set(255, 255, 255, 0x54);
-            
-            int x, y;
-            int gap  = 2;
-            int size = 24;
-            
-            x = 0;
-            y = 0;
-            Debug.layoutMap.put(Keyboard.Key.ESCAPE, new KeyLayout(x, y, size, size, "Esc"));
-            x += size + gap + 22;
-            Debug.layoutMap.put(Keyboard.Key.F1, new KeyLayout(x, y, size, size, "F1"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F2, new KeyLayout(x, y, size, size, "F2"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F3, new KeyLayout(x, y, size, size, "F3"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F4, new KeyLayout(x, y, size, size, "F4"));
-            x += size + gap + 20;
-            Debug.layoutMap.put(Keyboard.Key.F5, new KeyLayout(x, y, size, size, "F5"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F6, new KeyLayout(x, y, size, size, "F6"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F7, new KeyLayout(x, y, size, size, "F7"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F8, new KeyLayout(x, y, size, size, "F8"));
-            x += size + gap + 20;
-            Debug.layoutMap.put(Keyboard.Key.F9, new KeyLayout(x, y, size, size, "F9"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F10, new KeyLayout(x, y, size, size, "F10"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F11, new KeyLayout(x, y, size, size, "F11"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F12, new KeyLayout(x, y, size, size, "F12"));
-            x += size + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.PRINT_SCREEN, new KeyLayout(x, y, size, size, "PrSc"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.SCROLL_LOCK, new KeyLayout(x, y, size, size, "Scrl"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.PAUSE, new KeyLayout(x, y, size, size, "Pse"));
-            
-            x = 0;
-            y += size + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.GRAVE, new KeyLayout(x, y, size, size, "~\n`"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K1, new KeyLayout(x, y, size, size, "1"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K2, new KeyLayout(x, y, size, size, "2"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K3, new KeyLayout(x, y, size, size, "3"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K4, new KeyLayout(x, y, size, size, "4"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K5, new KeyLayout(x, y, size, size, "5"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K6, new KeyLayout(x, y, size, size, "6"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K7, new KeyLayout(x, y, size, size, "7"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K8, new KeyLayout(x, y, size, size, "8"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K9, new KeyLayout(x, y, size, size, "9"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K0, new KeyLayout(x, y, size, size, "0"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.MINUS, new KeyLayout(x, y, size, size, "_\n-"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.EQUAL, new KeyLayout(x, y, size, size, "+\n="));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.BACKSPACE, new KeyLayout(x, y, 60, size, "Back"));
-            x += 60 + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.INSERT, new KeyLayout(x, y, size, size, "Ins"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.HOME, new KeyLayout(x, y, size, size, "Hme"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.PAGE_UP, new KeyLayout(x, y, size, size, "PgUp"));
-            x += size + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.NUM_LOCK, new KeyLayout(x, y, size, size, "Num"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_DIVIDE, new KeyLayout(x, y, size, size, "/"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_MULTIPLY, new KeyLayout(x, y, size, size, "*"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_SUBTRACT, new KeyLayout(x, y, size, size, "-"));
-            
-            x = 0;
-            y += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.TAB, new KeyLayout(x, y, 42, size, "Tab"));
-            x += 42 + gap;
-            Debug.layoutMap.put(Keyboard.Key.Q, new KeyLayout(x, y, size, size, "Q"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.W, new KeyLayout(x, y, size, size, "W"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.E, new KeyLayout(x, y, size, size, "E"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.R, new KeyLayout(x, y, size, size, "R"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.T, new KeyLayout(x, y, size, size, "T"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.Y, new KeyLayout(x, y, size, size, "Y"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.U, new KeyLayout(x, y, size, size, "U"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.I, new KeyLayout(x, y, size, size, "I"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.O, new KeyLayout(x, y, size, size, "O"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.P, new KeyLayout(x, y, size, size, "P"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.L_BRACKET, new KeyLayout(x, y, size, size, "{\n["));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.R_BRACKET, new KeyLayout(x, y, size, size, "}\n}"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.BACKSLASH, new KeyLayout(x, y, 42, size, "|\n\\"));
-            x += 42 + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.DELETE, new KeyLayout(x, y, size, size, "Del"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.END, new KeyLayout(x, y, size, size, "End"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.PAGE_DOWN, new KeyLayout(x, y, size, size, "PgDn"));
-            x += size + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.KP_7, new KeyLayout(x, y, size, size, "7"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_8, new KeyLayout(x, y, size, size, "8"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_9, new KeyLayout(x, y, size, size, "9"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_ADD, new KeyLayout(x, y, size, size * 2 + gap, "+"));
-            
-            x = 0;
-            y += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.CAPS_LOCK, new KeyLayout(x, y, 46, size, "Caps"));
-            x += 46 + gap;
-            Debug.layoutMap.put(Keyboard.Key.A, new KeyLayout(x, y, size, size, "A"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.S, new KeyLayout(x, y, size, size, "S"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.D, new KeyLayout(x, y, size, size, "D"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.F, new KeyLayout(x, y, size, size, "F"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.G, new KeyLayout(x, y, size, size, "G"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.H, new KeyLayout(x, y, size, size, "H"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.J, new KeyLayout(x, y, size, size, "J"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.K, new KeyLayout(x, y, size, size, "K"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.L, new KeyLayout(x, y, size, size, "L"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.SEMICOLON, new KeyLayout(x, y, size, size, ":\n;"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.APOSTROPHE, new KeyLayout(x, y, size, size, "\"\n'"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.ENTER, new KeyLayout(x, y, 64, size, "<-|"));
-            x += 64 + (size + gap * 2) * 3;
-            Debug.layoutMap.put(Keyboard.Key.KP_4, new KeyLayout(x, y, size, size, "4"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_5, new KeyLayout(x, y, size, size, "5"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_6, new KeyLayout(x, y, size, size, "6"));
-    
-            x = 0;
-            y += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.L_SHIFT, new KeyLayout(x, y, 64, size, "Shift"));
-            x += 64 + gap;
-            Debug.layoutMap.put(Keyboard.Key.Z, new KeyLayout(x, y, size, size, "Z"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.X, new KeyLayout(x, y, size, size, "X"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.C, new KeyLayout(x, y, size, size, "C"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.V, new KeyLayout(x, y, size, size, "V"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.B, new KeyLayout(x, y, size, size, "B"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.N, new KeyLayout(x, y, size, size, "N"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.M, new KeyLayout(x, y, size, size, "M"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.COMMA, new KeyLayout(x, y, size, size, "<\n,"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.PERIOD, new KeyLayout(x, y, size, size, ">\n."));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.SLASH, new KeyLayout(x, y, size, size, "?\n/"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.R_SHIFT, new KeyLayout(x, y, 72, size, "Shift"));
-            x += 72 + gap * 3 + size;
-            Debug.layoutMap.put(Keyboard.Key.UP, new KeyLayout(x, y, size, size, "/\\"));
-            x += size + gap * 3 + size;
-            Debug.layoutMap.put(Keyboard.Key.KP_1, new KeyLayout(x, y, size, size, "1"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_2, new KeyLayout(x, y, size, size, "2"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_3, new KeyLayout(x, y, size, size, "3"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.KP_ENTER, new KeyLayout(x, y, size, size * 2 + gap, "<-|"));
-    
-            x = 0;
-            y += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.L_CONTROL, new KeyLayout(x, y, 42, size, "Ctrl"));
-            x += 42 + gap;
-            Debug.layoutMap.put(Keyboard.Key.L_SUPER, new KeyLayout(x, y, 30, size, "Super"));
-            x += 30 + gap;
-            Debug.layoutMap.put(Keyboard.Key.L_ALT, new KeyLayout(x, y, 30, size, "Alt"));
-            x += 30 + gap;
-            Debug.layoutMap.put(Keyboard.Key.SPACE, new KeyLayout(x, y, 150, size, "Space"));
-            x += 150 + gap;
-            Debug.layoutMap.put(Keyboard.Key.R_ALT, new KeyLayout(x, y, 30, size, "Alt"));
-            x += 30 + gap;
-            Debug.layoutMap.put(Keyboard.Key.UNKNOWN, new KeyLayout(x, y, 30, size, "Func"));
-            x += 30 + gap;
-            Debug.layoutMap.put(Keyboard.Key.MENU, new KeyLayout(x, y, 30, size, "Menu"));
-            x += 30 + gap;
-            Debug.layoutMap.put(Keyboard.Key.R_CONTROL, new KeyLayout(x, y, 42, size, "Ctrl"));
-            x += 42 + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.LEFT, new KeyLayout(x, y, size, size, "{-"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.DOWN, new KeyLayout(x, y, size, size, "\\/"));
-            x += size + gap;
-            Debug.layoutMap.put(Keyboard.Key.RIGHT, new KeyLayout(x, y, size, size, "-}"));
-            x += size + gap * 2;
-            Debug.layoutMap.put(Keyboard.Key.KP_0, new KeyLayout(x, y, size * 2 + gap, size, "0"));
-            x += (size + gap) * 2;
-            Debug.layoutMap.put(Keyboard.Key.KP_DECIMAL, new KeyLayout(x, y, size, size, "."));
-        }
-        
-        private static void destroy()
-        {
-            Debug.program.delete();
-            MemoryUtil.memFree(Debug.vertexBuffer);
-            Debug.vertexArray.delete();
-            
-            Debug.textColor.free();
-            Debug.backColor.free();
-        }
-        
-        private static void handleEvents()
-        {
-            if (Keyboard.get().down(Keyboard.Key.F10) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-            {
-                Debug.wireframe = !Debug.wireframe;
-                Debug.notification(Debug.wireframe ? "Wireframe Mode: On" : "Wireframe Mode: Off");
-            }
-            if (Keyboard.get().down(Keyboard.Key.F11) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-            {
-                Debug.enabled = !Debug.enabled;
-                Debug.notification(Debug.enabled ? "Debug Mode: On" : "Debug Mode: Off");
-            }
-            if (Keyboard.get().down(Keyboard.Key.F12) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-            {
-                Time.paused = !Time.paused;
-                Debug.notification(Time.paused ? "Engine Paused" : "Engine Unpaused");
-            }
-        }
-        
-        private static void draw()
-        {
-            if (Debug.notification != null && Time.current - Debug.notificationTime < Time.notificationDur)
-            {
-                int x = (Window.get().framebufferWidth() - textWidth(Debug.notification)) >> 1;
-                int y = (Window.get().framebufferHeight() - textHeight(Debug.notification)) >> 1;
-                
-                drawTextWithBackground(x, y, Debug.notification, null, null);
-            }
-            if (Debug.enabled)
-            {
-                Collector<CharSequence, ?, String> collect = Collectors.joining(", ", "[", "]");
-                
-                EnumSet<Modifier>     mods    = EnumSet.complementOf(EnumSet.of(Modifier.ANY));
-                EnumSet<Mouse.Button> buttons = EnumSet.complementOf(EnumSet.of(Mouse.Button.UNKNOWN));
-                EnumSet<Keyboard.Key> keys    = EnumSet.complementOf(EnumSet.of(Keyboard.Key.UNKNOWN));
-                
-                String[] lines = {
-                        String.format("Frame: %s", Time.totalFrameCount),
-                        String.format("Time: %.3f", Time.totalFrameTime / 1_000_000_000D),
-                        String.format("Wireframe: %s", Debug.wireframe),
-                        String.format("Vertex Count: %s", Debug.vertices),
-                        String.format("Draw Calls: %s", Debug.draws),
-                        String.format("Active Modifiers: %s", mods.stream().filter(Modifier::isActive).map(Enum::name).collect(collect)),
-                        String.format("Mouse Position: (%s, %s)", Math.round(Mouse.get().x(), 3), Math.round(Mouse.get().y(), 3)),
-                        String.format("Mouse Buttons Down: %s", buttons.stream().filter(Mouse.get()::held).map(Enum::name).collect(collect)),
-                        String.format("Keyboard Keys Down: %s", keys.stream().filter(Keyboard.get()::held).map(Enum::name).collect(collect)),
-                        };
-                
-                int x = 0, y = 0;
-                for (String line : lines)
-                {
-                    drawTextWithBackground(x, y, line, null, null);
-                    y += textHeight(line);
-                }
-                
-                for (Keyboard.Key key : Debug.layoutMap.keySet())
-                {
-                    KeyLayout l = Debug.layoutMap.get(key);
-                    Colorc    c = Keyboard.get().held(key) ? Color.LIGHT_GRAY : Color.GRAY;
-                    
-                    drawQuad(x + l.x, y + l.y, l.width, l.height, c);
-                    drawText(x + l.tx, y + l.ty, l.text, Color.WHITE);
-                }
-                
-            }
-            if (!Debug.toRender.isEmpty())
-            {
-                int fbWidth  = Window.get().framebufferWidth();
-                int fbHeight = Window.get().framebufferHeight();
-                
-                GL33.glViewport(0, 0, fbWidth, fbHeight);
-                
-                GLProgram.bind(Debug.program);
-                GLProgram.Uniform.mat4("pv", Debug.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
-                
-                GLState.winding(Winding.CW);
-                
-                int quads = 0;
-                for (Object[] renderData : Debug.toRender)
-                {
-                    switch ((String) renderData[0])
-                    {
-                        case "quad" -> {
-                            float x1 = (float) renderData[1];
-                            float y1 = (float) renderData[2];
-                            float x2 = x1 + (float) renderData[3];
-                            float y2 = y1 + (float) renderData[4];
-                            int   c  = (int) renderData[5];
-                            
-                            // 64 bytes per quad.
-                            if (Debug.vertexBuffer.remaining() < 64)
-                            {
-                                Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
-                                Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
-                                quads = 0;
-                            }
-                            
-                            Debug.vertexBuffer.putFloat(x1);
-                            Debug.vertexBuffer.putFloat(y1);
-                            Debug.vertexBuffer.putFloat(0F);
-                            Debug.vertexBuffer.putInt(c);
-                            Debug.vertexBuffer.putFloat(x2);
-                            Debug.vertexBuffer.putFloat(y1);
-                            Debug.vertexBuffer.putFloat(0F);
-                            Debug.vertexBuffer.putInt(c);
-                            Debug.vertexBuffer.putFloat(x2);
-                            Debug.vertexBuffer.putFloat(y2);
-                            Debug.vertexBuffer.putFloat(0F);
-                            Debug.vertexBuffer.putInt(c);
-                            Debug.vertexBuffer.putFloat(x1);
-                            Debug.vertexBuffer.putFloat(y2);
-                            Debug.vertexBuffer.putFloat(0F);
-                            Debug.vertexBuffer.putInt(c);
-                            
-                            quads++;
-                        }
-                        case "text" -> {
-                            float  x  = (float) renderData[1];
-                            float  y  = (float) renderData[2];
-                            String t  = (String) renderData[3];
-                            int    ct = (int) renderData[4];
-                            
-                            // 11 quads max * 64 bytes per quad.
-                            if (Debug.vertexBuffer.remaining() < t.length() * 704)
-                            {
-                                Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
-                                Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
-                                quads = 0;
-                            }
-                            
-                            int newQuads;
-                            try (MemoryStack stack = MemoryStack.stackPush())
-                            {
-                                ByteBuffer textColor = stack.malloc(4).putInt(0, ct);
-                                newQuads = stb_easy_font_print(x, y, t, textColor, Debug.vertexBuffer);
-                                Debug.vertexBuffer.position(Debug.vertexBuffer.position() + newQuads * 64);
-                            }
-                            
-                            quads += newQuads;
-                        }
-                    }
-                }
-                
-                Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
-                Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
-                
-                Debug.toRender.clear();
-            }
-        }
-        
-        /**
-         * @return {@code true} if debug mode is enabled
-         */
-        public static boolean enabled()
-        {
-            return Debug.enabled;
-        }
-        
-        /**
-         * Sets the color of the text when rendering debug text.
-         *
-         * @param color The new color.
-         */
-        public static void defaultTextColor(Colorc color)
-        {
-            Debug.textColor.set(color);
-        }
-        
-        /**
-         * Sets the color of the background when rendering debug text.
-         *
-         * @param color The new color.
-         */
-        public static void defaultBackgroundColor(Colorc color)
-        {
-            Debug.backColor.set(color);
-        }
-        
-        /**
-         * Draws a colored quad to the screen.
-         *
-         * @param x      The x coordinate of the top left point if the quad.
-         * @param y      The y coordinate of the top left point if the quad.
-         * @param width  The width of the quad.
-         * @param height The height of the quad.
-         * @param color  The color of the quad.
-         */
-        public static void drawQuad(int x, int y, int width, int height, @NotNull Colorc color)
-        {
-            Debug.toRender.add(new Object[] {"quad", (float) x, (float) y, (float) width, (float) height, color.toInt()});
-        }
-        
-        /**
-         * Draws Debug text to the screen with a background.
-         *
-         * @param x         The x coordinate of the top left point if the text.
-         * @param y         The y coordinate of the top left point if the text.
-         * @param text      The text to render.
-         * @param textColor The color of the text.
-         */
-        public static void drawText(int x, int y, String text, @Nullable Colorc textColor)
-        {
-            if (textColor == null) textColor = Debug.textColor;
-            Debug.toRender.add(new Object[] {"text", (float) x, (float) y, text, textColor.toInt()});
-        }
-        
-        /**
-         * Draws Debug text to the screen with a background.
-         *
-         * @param x               The x coordinate of the top left point if the text.
-         * @param y               The y coordinate of the top left point if the text.
-         * @param text            The text to render.
-         * @param textColor       The color of the text.
-         * @param backgroundColor The color of the background.
-         */
-        public static void drawTextWithBackground(int x, int y, String text, @Nullable Colorc textColor, @Nullable Colorc backgroundColor)
-        {
-            if (textColor == null) textColor = Debug.textColor;
-            if (backgroundColor == null) backgroundColor = Debug.backColor;
-            
-            float width  = Debug.textWidth(text) + 2;
-            float height = Debug.textHeight(text);
-            Debug.toRender.add(new Object[] {"quad", (float) x, (float) y, width, height, backgroundColor.toInt()});
-            Debug.toRender.add(new Object[] {"text", (float) x + 2, (float) y + 2, text, textColor.toInt()});
-        }
-        
-        public static void notification(String notification)
-        {
-            Debug.notification     = notification;
-            Debug.notificationTime = Time.nanosecondsActual();
-        }
-        
-        /**
-         * Gets the width in pixels of the provided text.
-         *
-         * @param text The text
-         * @return The width in pixels
-         */
-        public static int textWidth(String text)
-        {
-            return stb_easy_font_width(text);
-        }
-        
-        /**
-         * Gets the height in pixels of the provided text.
-         *
-         * @param text The text
-         * @return The height in pixels
-         */
-        public static int textHeight(String text)
-        {
-            return stb_easy_font_height(text);
-        }
-        
-        // /**
-        //  * @return The Engine's Profiler instance.
-        //  */
-        // public static Profiler profiler()
-        // {
-        //     return Debug.profiler;
-        // }
-    }
-    
     public static final class Draw
     {
         private static final DrawPoint2D         DRAW_POINT_2D          = new DrawPoint2D();
@@ -1351,9 +516,7 @@ public abstract class Engine
                         
                         while (Engine.running)
                         {
-                            Time.current = Time.nanosecondsActual();
-                            
-                            if (Time.shouldDraw())
+                            if (Time.startFrame())
                             {
                                 // TODO Profiler Start Frame
                                 
@@ -1370,7 +533,7 @@ public abstract class Engine
                                     GLFramebuffer.bind(Viewport.framebuffer);
                                     
                                     GLState.defaultState();
-                                    GLState.wireframe(Debug.wireframe);
+                                    GLState.wireframe(Engine.wireframe);
                                     
                                     GLProgram.bind(null);
                                     
@@ -1383,7 +546,7 @@ public abstract class Engine
                                     // Engine.renderer.pop(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
-                                    Engine.instance.draw(Time.delta / 1_000_000_000D);
+                                    Engine.instance.draw(Time.delta());
                                     // Engine.renderer.pop(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
@@ -1397,8 +560,8 @@ public abstract class Engine
                                     
                                     GLBatch.BatchStats stats = GLBatch.get().stop();
                                     
-                                    Debug.vertices = stats.vertices();
-                                    Debug.draws    = stats.draws();
+                                    Engine.vertices = stats.vertices();
+                                    Engine.draws    = stats.draws();
                                 }
                                 
                                 Viewport.update();
@@ -1408,7 +571,7 @@ public abstract class Engine
                                 GLState.defaultState();
                                 GLState.depthMode(DepthMode.NONE);
                                 
-                                GLState.clearScreenBuffers(EnumSet.of(ScreenBuffer.COLOR));
+                                GLState.clearScreenBuffers(ScreenBuffer.COLOR);
                                 
                                 Viewport.draw();
                                 
@@ -1416,9 +579,9 @@ public abstract class Engine
                                 
                                 Window.get().swap();
                                 
-                                Time.incFrame();
-                                
                                 // TODO Profiler End Frame
+    
+                                Time.endFrame();
                             }
                             
                             // if (Engine.screenshot != null)
@@ -1452,12 +615,15 @@ public abstract class Engine
                             //     Engine.screenshot = null;
                             // }
                             
-                            if (Time.shouldUpdate())
-                            {
-                                Window.get().title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
-                                
-                                // Debug.update();
-                            }
+                            // TODO
+                            // if (Time.shouldUpdate())
+                            // {
+                            //     Window.get().title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
+                            //
+                            //     // Debug.update();
+                            // }
+                            
+                            Thread.yield();
                         }
                     }
                     catch (Exception e)
@@ -1468,7 +634,6 @@ public abstract class Engine
                     {
                         Extensions.renderDestroy();
                         
-                        // Renderer.destroy(); // TODO
                         Viewport.destroy();
                         Debug.destroy();
                         
@@ -1548,16 +713,15 @@ public abstract class Engine
         });
         
         Window.setup();
+        Modifier.setup();
         Mouse.setup();
         Keyboard.setup();
         Joystick.setup();
         
-        // Engine.LOGGER.finer("Initializing OpenGL Context");
         Window.get().makeCurrent();
         
         GLState.setup();
         
-        // Renderer.init(); // TODO
         Viewport.setup();
         Debug.setup();
         

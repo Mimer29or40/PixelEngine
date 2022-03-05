@@ -56,7 +56,7 @@ public class GLState
     {
         GLState.LOGGER.fine("Setup");
         
-        clearScreenBuffers(EnumSet.allOf(ScreenBuffer.class));
+        clearScreenBuffers(ScreenBuffer.COLOR, ScreenBuffer.DEPTH, ScreenBuffer.STENCIL);
         
         GLShader.setup();
         GLProgram.setup();
@@ -520,7 +520,7 @@ public class GLState
      *                <li>{@link ScreenBuffer#STENCIL STENCIL}</li>
      *                </ul>
      */
-    public static void clearScreenBuffers(@NotNull EnumSet<ScreenBuffer> buffers)
+    public static void clearScreenBuffers(@NotNull ScreenBuffer... buffers)
     {
         GLState.LOGGER.finest("Clearing Buffers:", buffers);
         
