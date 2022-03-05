@@ -406,6 +406,94 @@ public final class Debug
                 }
             }
         });
+        
+        Debug.addMenu(new Debug.Menu("Time")
+        {
+            final Color chartBackground = Color_RGBA.create().set(Color.GRAY).a(180);
+            final Color chartLine = Color_RGBA.create().set(Color.WHITE).a(180);
+            final Color barLow = Color_RGBA.create().set(Color.GREEN);
+            final Color barHigh = Color_RGBA.create().set(Color.RED);
+            final Color barTemp = Color_RGBA.create().set(Color.GREEN);
+            
+            @Override
+            protected void drawImpl()
+            {
+                String[] lines = {
+                        String.format("Frame: %s", Time.frameCount()),
+                        String.format("Time: %.3f", Time.get()),
+                        };
+                
+                int x = 0, y = 0;
+                for (String line : lines)
+                {
+                    drawTextWithBackground(x, y, line, Color.WHITE, null);
+                    y += Debug.textHeight(line);
+                }
+                
+                int chartX = 0;
+                int chartY = this.height >> 1;
+                int chartW = Math.min(this.width * 2 / 3, 512);
+                int chartH = this.height >> 1;
+                
+                long[] timeArray = Time.frameTimesRaw;
+                int    barX, barY, barW, barH;
+                int    ratio, r, g, b, a;
+                for (int i = 0, n = timeArray.length; i < n; i++)
+                {
+                    barW = 1;
+                    barH = Math.max(1, (int) (chartH * 30 * timeArray[i] / 1_000_000_000L));
+                    
+                    barX = chartX + chartW - 1 - i;
+                    barY = chartY + chartH - 1 - barH;
+                    
+                    ratio = 255 * barH / chartH;
+                    
+                    r = Math.clamp((this.barHigh.r() * ratio + this.barLow.r() * (255 - ratio)) / 255, 0, 255);
+                    g = Math.clamp((this.barHigh.g() * ratio + this.barLow.g() * (255 - ratio)) / 255, 0, 255);
+                    b = Math.clamp((this.barHigh.b() * ratio + this.barLow.b() * (255 - ratio)) / 255, 0, 255);
+                    a = 255;
+                    
+                    drawQuad(barX, barY, barW, barH, this.barTemp.set(r, g, b, a));
+                    
+                    if (barX < 0) break;
+                }
+                
+                int lineThickness = 1;
+                
+                drawQuad(chartX, chartY, chartW, chartH, this.chartBackground);
+                drawQuad(chartX, chartY, chartW, lineThickness, this.chartLine);
+                drawQuad(chartX, chartY + (chartH >> 1), chartW, lineThickness, this.chartLine);
+    
+                long min = Math.min(Time.frameTimesRaw);
+                long avg = (long) Math.mean(Time.frameTimesRaw);
+                long max = Math.max(Time.frameTimesRaw);
+    
+                String text;
+                int    textW, textH;
+    
+                text  = String.format("Min: %s us", min / 1_000L);
+                textH = textHeight(text);
+                drawText(chartX + 1, chartY - textH, text, Color.WHITE);
+    
+                text  = String.format("Avg: %s us", avg / 1_000L);
+                textW = textWidth(text);
+                textH = textHeight(text);
+                drawText(chartX + ((chartW - textW) >> 1), chartY - textH, text, Color.WHITE);
+    
+                text  = String.format("Max: %s us", max / 1_000L);
+                textW = textWidth(text);
+                textH = textHeight(text);
+                drawText(chartX + chartW - textW, chartY - textH, text, Color.WHITE);
+                
+                text = "30";
+                textW = textWidth(text);
+                drawText(chartX + chartW - textW, chartY + lineThickness, text, Color.WHITE);
+                
+                text = "60";
+                textW = textWidth(text);
+                drawText(chartX + chartW - textW, chartY + (chartH >> 1) + lineThickness, text, Color.WHITE);
+            }
+        });
     }
     
     static void destroy()
@@ -555,7 +643,7 @@ public final class Debug
      */
     public static void drawText(int x, int y, String text, @NotNull Colorc color)
     {
-        Debug.renderables.offer(new Text(x, y, text, color));
+        Debug.renderables.offer(new Text(x, y + 2, text, color));
     }
     
     /**
@@ -628,7 +716,7 @@ public final class Debug
     private static class Quad implements Renderable
     {
         private final float x1, y1, x2, y2;
-        private final Colorc c;
+        private final byte r, g, b, a;
         
         private Quad(int x, int y, int width, int height, Colorc color)
         {
@@ -636,7 +724,10 @@ public final class Debug
             this.y1 = y;
             this.x2 = x + width;
             this.y2 = y + height;
-            this.c  = color;
+            this.r  = (byte) color.r();
+            this.g  = (byte) color.g();
+            this.b  = (byte) color.b();
+            this.a  = (byte) color.a();
         }
         
         @Override
@@ -652,31 +743,31 @@ public final class Debug
             Debug.vertexBuffer.putFloat(this.x1);
             Debug.vertexBuffer.putFloat(this.y1);
             Debug.vertexBuffer.putFloat(0.0F);
-            Debug.vertexBuffer.put((byte) this.c.r());
-            Debug.vertexBuffer.put((byte) this.c.g());
-            Debug.vertexBuffer.put((byte) this.c.b());
-            Debug.vertexBuffer.put((byte) this.c.a());
+            Debug.vertexBuffer.put(this.r);
+            Debug.vertexBuffer.put(this.g);
+            Debug.vertexBuffer.put(this.b);
+            Debug.vertexBuffer.put(this.a);
             Debug.vertexBuffer.putFloat(this.x2);
             Debug.vertexBuffer.putFloat(this.y1);
             Debug.vertexBuffer.putFloat(0.0F);
-            Debug.vertexBuffer.put((byte) this.c.r());
-            Debug.vertexBuffer.put((byte) this.c.g());
-            Debug.vertexBuffer.put((byte) this.c.b());
-            Debug.vertexBuffer.put((byte) this.c.a());
+            Debug.vertexBuffer.put(this.r);
+            Debug.vertexBuffer.put(this.g);
+            Debug.vertexBuffer.put(this.b);
+            Debug.vertexBuffer.put(this.a);
             Debug.vertexBuffer.putFloat(this.x2);
             Debug.vertexBuffer.putFloat(this.y2);
             Debug.vertexBuffer.putFloat(0.0F);
-            Debug.vertexBuffer.put((byte) this.c.r());
-            Debug.vertexBuffer.put((byte) this.c.g());
-            Debug.vertexBuffer.put((byte) this.c.b());
-            Debug.vertexBuffer.put((byte) this.c.a());
+            Debug.vertexBuffer.put(this.r);
+            Debug.vertexBuffer.put(this.g);
+            Debug.vertexBuffer.put(this.b);
+            Debug.vertexBuffer.put(this.a);
             Debug.vertexBuffer.putFloat(this.x1);
             Debug.vertexBuffer.putFloat(this.y2);
             Debug.vertexBuffer.putFloat(0.0F);
-            Debug.vertexBuffer.put((byte) this.c.r());
-            Debug.vertexBuffer.put((byte) this.c.g());
-            Debug.vertexBuffer.put((byte) this.c.b());
-            Debug.vertexBuffer.put((byte) this.c.a());
+            Debug.vertexBuffer.put(this.r);
+            Debug.vertexBuffer.put(this.g);
+            Debug.vertexBuffer.put(this.b);
+            Debug.vertexBuffer.put(this.a);
             
             return 1;
         }
@@ -686,14 +777,17 @@ public final class Debug
     {
         private final float x, y;
         private final String t;
-        private final Colorc c;
+        private final byte   r, g, b, a;
         
         private Text(int x, int y, String text, Colorc color)
         {
             this.x = x;
             this.y = y;
             this.t = text;
-            this.c = color;
+            this.r = (byte) color.r();
+            this.g = (byte) color.g();
+            this.b = (byte) color.b();
+            this.a = (byte) color.a();
         }
         
         @Override
@@ -709,11 +803,7 @@ public final class Debug
             int newQuads;
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                ByteBuffer textColor = stack.malloc(4)
-                                            .put((byte) this.c.r())
-                                            .put((byte) this.c.g())
-                                            .put((byte) this.c.b())
-                                            .put((byte) this.c.a());
+                ByteBuffer textColor = stack.malloc(4).put(this.r).put(this.g).put(this.b).put(this.a);
                 newQuads = stb_easy_font_print(this.x, this.y, this.t, textColor.clear(), Debug.vertexBuffer);
                 Debug.vertexBuffer.position(Debug.vertexBuffer.position() + newQuads * 64);
             }

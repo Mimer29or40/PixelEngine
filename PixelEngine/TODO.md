@@ -16,6 +16,7 @@
 - [ ] Camera System
 - [ ] Screenshot
 - [ ] Screen Recording
+- [ ] Audio
 
 ## Drawing
 
@@ -105,7 +106,6 @@
 ## Extensions
 
 - [ ] Loading System
-- [ ] Audio Extension
 - [ ] NEAT Extension
 - [ ] GUI Extension
 - [ ] Physics Extension

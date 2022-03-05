@@ -67,6 +67,8 @@ public class Draw2DTest extends Engine
     {
         size(800, 800, 1, 1);
         
+        // Time.frameRate(60);
+        
         draggablePoint = new Vector2d[16];
         for (int i = 0, n = draggablePoint.length; i < n; i++)
         {
@@ -158,7 +160,7 @@ public class Draw2DTest extends Engine
                     case UP -> Debug.notification("V Value: " + ++vValue);
                     case SPACE -> toggle = !toggle;
                     case ESCAPE -> stop();
-                    case L_SHIFT -> {}
+                    case L_SHIFT, ENTER -> {}
                     default -> {if (Modifier.all()) state = keyDown.key();}
                 }
             }
@@ -185,6 +187,16 @@ public class Draw2DTest extends Engine
                         case RIGHT -> Debug.notification("H Value: " + ++hValue);
                         case DOWN -> Debug.notification("V Value: " + --vValue);
                         case UP -> Debug.notification("V Value: " + ++vValue);
+                        case ENTER -> {
+                            try
+                            {
+                                Thread.sleep(random.nextInt(1, 10));
+                            }
+                            catch (InterruptedException e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
                     }
                 }
             }
@@ -253,10 +265,7 @@ public class Draw2DTest extends Engine
             double x = pos.x() - draggable[i].x;
             double y = pos.y() - draggable[i].y;
             
-            if (Math.sqrt(x * x + y * y) < 10)
-            {
-                return i;
-            }
+            if (Math.sqrt(x * x + y * y) < 10) return i;
         }
         return -1;
     }
