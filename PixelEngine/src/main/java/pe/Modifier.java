@@ -1,5 +1,6 @@
 package pe;
 
+import org.jetbrains.annotations.NotNull;
 import rutils.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -13,12 +14,11 @@ public enum Modifier
     SUPER(GLFW_MOD_SUPER),
     CAPS_LOCK(GLFW_MOD_CAPS_LOCK),
     NUM_LOCK(GLFW_MOD_NUM_LOCK),
-    ANY(0xFFFFFFFF),
     ;
     
     private static final Logger LOGGER = new Logger();
     
-    protected static int activeMods = 0;
+    static int activeMods = 0;
     
     public static int activeMods()
     {
@@ -61,7 +61,7 @@ public enum Modifier
     
     static void setup()
     {
-        // lockMods(true);
+        lockMods(true);
     }
     
     /**
@@ -75,36 +75,24 @@ public enum Modifier
     }
     
     /**
-     * Checks to see if the provided modifiers are set.
+     * Checks to see if any of the provided modifiers are set.
      * <p>
-     * If {@link Modifier#ANY ANY} is present among any combination of
-     * Modifiers, then it will take precedent over the other Modifiers, i.e.
-     * returning {@code true} if any modifiers are currently active.
-     * <p>
-     * If no modifiers are provided, then it will return {@code true} if and
-     * only if any modifiers are currently active.
+     * If no modifiers are provided, then it will return {@code true} if any
+     * modifiers are currently active.
      *
      * @param modifiers The modifiers to query.
-     * @return {@code true} if and only if the provided modifiers are active.
+     * @return {@code true} if any of the provided modifiers are active.
      */
-    public static boolean any(Modifier... modifiers)
+    public static boolean any(Modifier @NotNull ... modifiers)
     {
         if (modifiers.length == 0) return Modifier.activeMods > 0;
         int query = 0;
-        for (Modifier modifier : modifiers)
-        {
-            if (modifier == Modifier.ANY) return Modifier.activeMods > 0;
-            query |= modifier.value;
-        }
-        return (Modifier.activeMods & query) == query;
+        for (Modifier modifier : modifiers) query |= modifier.value;
+        return (Modifier.activeMods & query) > 0;
     }
     
     /**
-     * Checks to see if and only if the provided modifiers are set.
-     * <p>
-     * If {@link Modifier#ANY ANY} is present among any combination of
-     * Modifiers, then it will take precedent over the other Modifiers, i.e.
-     * returning {@code true} if any modifiers are currently active.
+     * Checks to see if all the provided modifiers are set.
      * <p>
      * If no modifiers are provided, then it will return {@code true} if and
      * only if no modifiers are currently active.
@@ -112,15 +100,28 @@ public enum Modifier
      * @param modifiers The modifiers to query.
      * @return {@code true} if and only if the provided modifiers are active.
      */
-    public static boolean all(Modifier... modifiers)
+    public static boolean all(Modifier @NotNull ... modifiers)
     {
         if (modifiers.length == 0) return Modifier.activeMods == 0;
         int query = 0;
-        for (Modifier modifier : modifiers)
-        {
-            if (modifier == Modifier.ANY) return Modifier.activeMods > 0;
-            query |= modifier.value;
-        }
+        for (Modifier modifier : modifiers) query |= modifier.value;
+        return (Modifier.activeMods & query) == query;
+    }
+    
+    /**
+     * Checks to see if and only if the provided modifiers are set.
+     * <p>
+     * If no modifiers are provided, then it will return {@code true} if and
+     * only if no modifiers are currently active.
+     *
+     * @param modifiers The modifiers to query.
+     * @return {@code true} if and only if the provided modifiers are active.
+     */
+    public static boolean only(Modifier @NotNull ... modifiers)
+    {
+        if (modifiers.length == 0) return Modifier.activeMods == 0;
+        int query = 0;
+        for (Modifier modifier : modifiers) query |= modifier.value;
         return Modifier.activeMods == query;
     }
 }

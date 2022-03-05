@@ -285,7 +285,7 @@ public final class Joystick
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    static void postEvents(long time)
+    static void processEvents(long time)
     {
         for (Joystick joystick : Joystick.INSTANCES.values())
         {

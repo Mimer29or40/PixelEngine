@@ -13,7 +13,8 @@ abstract class AbstractEvent implements Event
 {
     private static final Map<Class<? extends Event>, Set<Method>> METHOD_CACHE = new ConcurrentHashMap<>();
     
-    private final double time;
+    private final double  time;
+    private       boolean consumed;
     
     AbstractEvent(long time)
     {
@@ -63,5 +64,17 @@ abstract class AbstractEvent implements Event
     public double time()
     {
         return this.time;
+    }
+    
+    @Override
+    public boolean consumed()
+    {
+        return this.consumed;
+    }
+    
+    @Override
+    public void consume()
+    {
+        this.consumed = true;
     }
 }

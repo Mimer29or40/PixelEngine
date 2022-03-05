@@ -159,14 +159,14 @@ public class Draw2DTest extends Engine
                     case DOWN -> Debug.notification("V Value: " + --vValue);
                     case UP -> Debug.notification("V Value: " + ++vValue);
                     case SPACE -> toggle = !toggle;
-                    case ESCAPE -> stop();
+                    // case ESCAPE -> stop();
                     case L_SHIFT, ENTER -> {}
-                    default -> {if (Modifier.all()) state = keyDown.key();}
+                    default -> {if (Modifier.only()) state = keyDown.key();}
                 }
             }
             else if (event instanceof EventKeyboardKeyRepeated keyRepeated)
             {
-                if (!Modifier.all(Modifier.CONTROL))
+                if (!Modifier.only(Modifier.CONTROL))
                 {
                     switch (keyRepeated.key())
                     {
@@ -179,7 +179,7 @@ public class Draw2DTest extends Engine
             }
             else if (event instanceof EventKeyboardKeyHeld keyHeld)
             {
-                if (Modifier.all(Modifier.CONTROL))
+                if (Modifier.only(Modifier.CONTROL))
                 {
                     switch (keyHeld.key())
                     {

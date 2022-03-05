@@ -609,7 +609,7 @@ public final class Window
      *
      * @param time The system time in nanoseconds.
      */
-    void postEvents(long time)
+    void processEvents(long time)
     {
         if (this.close != this._close)
         {

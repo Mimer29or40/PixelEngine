@@ -2,6 +2,8 @@ package pe;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.system.APIUtil;
@@ -49,16 +51,16 @@ public abstract class Engine
         
         private static final Set<Event> events = new HashSet<>();
         
-        private static void postEvents()
+        private static void processEvents()
         {
             Events.events.clear();
             
             long time = Time.getNS();
             
-            Mouse.get().postEvents(time);
-            Keyboard.get().postEvents(time);
-            Joystick.postEvents(time);
-            Window.get().postEvents(time);
+            Mouse.get().processEvents(time);
+            Keyboard.get().processEvents(time);
+            Joystick.processEvents(time);
+            Window.get().processEvents(time);
         }
         
         public static void post(Event event)
@@ -68,21 +70,25 @@ public abstract class Engine
             Events.events.add(event);
         }
         
+        @Unmodifiable
+        @NotNull
         public static Set<Event> get()
         {
-            return Set.copyOf(Events.events);
+            return get(Event.class);
         }
         
         @SuppressWarnings("unchecked")
-        public static <E extends Event> List<E> get(Class<E> eventType)
+        @Unmodifiable
+        @NotNull
+        public static <E extends Event> Set<E> get(Class<E> eventType)
         {
-            List<E> events = new ArrayList<>();
+            Set<E> events = new HashSet<>();
             for (Event event : Events.events)
             {
                 Class<? extends Event> eventClass = event.getClass();
-                if (eventType.isAssignableFrom(eventClass)) events.add((E) event);
+                if (eventType.isAssignableFrom(eventClass) && !event.consumed()) events.add((E) event);
             }
-            return Collections.unmodifiableList(events);
+            return Collections.unmodifiableSet(events);
         }
     }
     
@@ -522,7 +528,7 @@ public abstract class Engine
                                 
                                 Extensions.preEvents();
                                 
-                                Events.postEvents();
+                                Events.processEvents();
                                 
                                 Extensions.postEvents();
                                 

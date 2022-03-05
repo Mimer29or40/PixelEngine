@@ -83,7 +83,7 @@ public final class Keyboard
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    void postEvents(long time)
+    void processEvents(long time)
     {
         String typed;
         while ((typed = this._charChanges.poll()) != null)

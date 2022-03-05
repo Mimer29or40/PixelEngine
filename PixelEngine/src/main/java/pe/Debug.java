@@ -9,6 +9,7 @@ import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
 import pe.color.Color_RGBA;
 import pe.color.Colorc;
+import pe.event.EventKeyboardKeyDown;
 import pe.render.*;
 import rutils.Math;
 
@@ -505,28 +506,43 @@ public final class Debug
     
     static void handleEvents()
     {
-        if (Keyboard.get().down(Keyboard.Key.F10) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
+        if (Modifier.all(Modifier.SHIFT, Modifier.CONTROL, Modifier.ALT))
         {
-            Engine.wireframe = !Engine.wireframe;
-            Debug.notification(Engine.wireframe ? "Wireframe Mode: On" : "Wireframe Mode: Off");
-        }
-        if (Keyboard.get().down(Keyboard.Key.LEFT) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-        {
-            if (Debug.currentMenu >= 0) Debug.currentMenu = Math.index(Debug.currentMenu - 1, Debug.menus.size());
-        }
-        if (Keyboard.get().down(Keyboard.Key.RIGHT) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-        {
-            if (Debug.currentMenu >= 0) Debug.currentMenu = Math.index(Debug.currentMenu + 1, Debug.menus.size());
-        }
-        if (Keyboard.get().down(Keyboard.Key.F11) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-        {
-            Debug.enabled = !Debug.enabled;
-            Debug.notification(Debug.enabled ? "Debug Mode: On" : "Debug Mode: Off");
-        }
-        if (Keyboard.get().down(Keyboard.Key.F12) && Modifier.all(Modifier.CONTROL, Modifier.ALT, Modifier.SHIFT))
-        {
-            Time.paused = !Time.paused;
-            Debug.notification(Time.paused ? "Engine Paused" : "Engine Unpaused");
+            for (EventKeyboardKeyDown event : Engine.Events.get(EventKeyboardKeyDown.class))
+            {
+                switch (event.key())
+                {
+                    case F10 -> {
+                        Engine.wireframe = !Engine.wireframe;
+                        Debug.notification(Engine.wireframe ? "Wireframe Mode: On" : "Wireframe Mode: Off");
+                        event.consume();
+                    }
+                    case LEFT -> {
+                        if (Debug.currentMenu >= 0)
+                        {
+                            Debug.currentMenu = Math.index(Debug.currentMenu - 1, Debug.menus.size());
+                            event.consume();
+                        }
+                    }
+                    case RIGHT -> {
+                        if (Debug.currentMenu >= 0)
+                        {
+                            Debug.currentMenu = Math.index(Debug.currentMenu + 1, Debug.menus.size());
+                            event.consume();
+                        }
+                    }
+                    case F11 -> {
+                        Debug.enabled = !Debug.enabled;
+                        Debug.notification(Debug.enabled ? "Debug Mode: On" : "Debug Mode: Off");
+                        event.consume();
+                    }
+                    case F12 -> {
+                        Time.paused = !Time.paused;
+                        Debug.notification(Time.paused ? "Engine Paused" : "Engine Unpaused");
+                        event.consume();
+                    }
+                }
+            }
         }
     }
     
