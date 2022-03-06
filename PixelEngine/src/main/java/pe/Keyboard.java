@@ -42,7 +42,7 @@ public final class Keyboard
     
     // -------------------- Callback Objects -------------------- //
     
-    final Queue<String> _charChanges = new ConcurrentLinkedQueue<>();
+    final Queue<Integer> _charChanges = new ConcurrentLinkedQueue<>();
     
     final Queue<Pair<Key, Integer>> _keyStateChanges = new ConcurrentLinkedQueue<>();
     
@@ -85,10 +85,10 @@ public final class Keyboard
     @SuppressWarnings("ConstantConditions")
     void processEvents(long time)
     {
-        String typed;
-        while ((typed = this._charChanges.poll()) != null)
+        Integer codePoint;
+        while ((codePoint = this._charChanges.poll()) != null)
         {
-            Engine.Events.post(EventKeyboardTyped.create(time, typed));
+            Engine.Events.post(EventKeyboardTyped.create(time, codePoint));
         }
         
         Pair<Key, Integer> keyStateChange;
@@ -348,6 +348,6 @@ public final class Keyboard
     
     private static void charCallback(long handle, int codePoint)
     {
-        Keyboard.INSTANCE._charChanges.offer(Character.toString(codePoint));
+        Keyboard.INSTANCE._charChanges.offer(codePoint);
     }
 }

@@ -3,17 +3,28 @@ package pe.event;
 public interface EventKeyboardTyped extends EventKeyboard
 {
     @EventProperty
+    int codePoint();
+    
+    @EventProperty
     String typed();
     
     final class _EventKeyboardTyped extends AbstractEventInputDevice implements EventKeyboardTyped
     {
+        private final int    codePoint;
         private final String typed;
         
-        private _EventKeyboardTyped(long time, String typed)
+        private _EventKeyboardTyped(long time, int codePoint)
         {
             super(time);
             
-            this.typed = typed;
+            this.codePoint = codePoint;
+            this.typed     = Character.toString(codePoint);
+        }
+        
+        @Override
+        public int codePoint()
+        {
+            return this.typed;
         }
         
         @Override
@@ -23,7 +34,7 @@ public interface EventKeyboardTyped extends EventKeyboard
         }
     }
     
-    static EventKeyboardTyped create(long time, String typed)
+    static EventKeyboardTyped create(long time, int codePoint)
     {
         return new _EventKeyboardTyped(time, typed);
     }
