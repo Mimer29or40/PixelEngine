@@ -61,7 +61,7 @@ public enum Modifier
     
     static void setup()
     {
-        lockMods(true);
+        lockMods(false);
     }
     
     /**

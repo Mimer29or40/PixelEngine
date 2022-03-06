@@ -1,6 +1,7 @@
 package pe;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector2dc;
 import org.joml.Vector2i;
@@ -12,6 +13,7 @@ import org.lwjgl.system.MemoryUtil;
 import pe.event.*;
 import rutils.Logger;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
@@ -54,6 +56,8 @@ public final class Window
         
         glfwFreeCallbacks(Window.INSTANCE.handle);
         glfwDestroyWindow(Window.INSTANCE.handle);
+        
+        org.lwjgl.opengl.GL.destroy();
     }
     
     // -------------------- Objects -------------------- //
@@ -601,6 +605,63 @@ public final class Window
     public void swap()
     {
         glfwSwapBuffers(this.handle);
+    }
+    
+    /**
+     * Sets the system clipboard to the specified, UTF-8 encoded string.
+     * <p>
+     * The specified string is copied before this function returns.
+     *
+     * @param string a UTF-8 encoded string
+     */
+    public void setClipboard(ByteBuffer string)
+    {
+        Delegator.runTask(() -> glfwSetClipboardString(this.handle, string));
+    }
+    
+    /**
+     * Sets the system clipboard to the specified, UTF-8 encoded string.
+     * <p>
+     * The specified string is copied before this function returns.
+     *
+     * @param string a UTF-8 encoded string
+     */
+    public void setClipboard(CharSequence string)
+    {
+        Delegator.runTask(() -> glfwSetClipboardString(this.handle, string));
+    }
+    
+    /**
+     * Returns the contents of the system clipboard, if it contains or is
+     * convertible to a UTF-8 encoded string. If the clipboard is empty or if
+     * its contents cannot be converted, {@code null} is returned and a
+     * {@link org.lwjgl.glfw.GLFW#GLFW_FORMAT_UNAVAILABLE FORMAT_UNAVAILABLE}
+     * error is generated.
+     *
+     * @return the contents of the clipboard as a UTF-8 encoded string, or
+     * {@code null} if an error occurred
+     */
+    @Nullable
+    public String getClipboard()
+    {
+        return Delegator.waitReturnTask(() -> glfwGetClipboardString(this.handle));
+    }
+    
+    /**
+     * Returns the contents of the system clipboard, if it contains or is
+     * convertible to a UTF-8 encoded string. If the clipboard is empty or if
+     * its contents cannot be converted, {@link MemoryUtil#NULL NULL} is
+     * returned and a
+     * {@link org.lwjgl.glfw.GLFW#GLFW_FORMAT_UNAVAILABLE FORMAT_UNAVAILABLE}
+     * error is generated.
+     *
+     * @return the contents of the clipboard as a UTF-8 encoded string, or
+     * {@code null} if an error occurred
+     */
+    @SuppressWarnings("ConstantConditions")
+    public long getClipboardRaw()
+    {
+        return Delegator.waitReturnTask(() -> nglfwGetClipboardString(this.handle));
     }
     
     /**

@@ -3,7 +3,6 @@ package pe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
-import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.system.APIUtil;
@@ -351,7 +350,7 @@ public abstract class Engine
             return Viewport.size.y;
         }
         
-        private static void update()
+        private static void draw()
         {
             double aspect = (double) (Engine.screenSize.x * Engine.pixelSize.x) / (double) (Engine.screenSize.y * Engine.pixelSize.y);
             
@@ -364,11 +363,14 @@ public abstract class Engine
             
             Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
             Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
-        }
-        
-        private static void draw()
-        {
+    
+            GLFramebuffer.bind(null);
             GLProgram.bind(Viewport.program);
+            
+            GLState.defaultState();
+            GLState.depthMode(DepthMode.NONE);
+            
+            GLState.clearScreenBuffers(ScreenBuffer.COLOR);
             
             GLTexture.bind(Viewport.framebuffer.color());
             Viewport.vertexArray.draw(DrawMode.TRIANGLES, 0, 6);
@@ -532,16 +534,16 @@ public abstract class Engine
                                 
                                 Extensions.postEvents();
                                 
+                                GUI.handleEvents();
                                 Debug.handleEvents();
                                 
                                 if (!Time.paused)
                                 {
                                     GLFramebuffer.bind(Viewport.framebuffer);
+                                    GLProgram.bind(null);
                                     
                                     GLState.defaultState();
                                     GLState.wireframe(Engine.wireframe);
-                                    
-                                    GLProgram.bind(null);
                                     
                                     GLBatch.get().start();
                                     
@@ -570,23 +572,14 @@ public abstract class Engine
                                     Engine.draws    = stats.draws();
                                 }
                                 
-                                Viewport.update();
-                                
-                                GLFramebuffer.bind(null);
-                                
-                                GLState.defaultState();
-                                GLState.depthMode(DepthMode.NONE);
-                                
-                                GLState.clearScreenBuffers(ScreenBuffer.COLOR);
-                                
                                 Viewport.draw();
-                                
+                                GUI.draw();
                                 Debug.draw();
                                 
                                 Window.get().swap();
                                 
                                 // TODO Profiler End Frame
-    
+                                
                                 Time.endFrame();
                             }
                             
@@ -641,11 +634,14 @@ public abstract class Engine
                         Extensions.renderDestroy();
                         
                         Viewport.destroy();
+                        GUI.destroy();
                         Debug.destroy();
                         
                         GLState.destroy();
                         
                         Window.get().unmakeCurrent();
+                        
+                        Window.destroy();
                         
                         Engine.running = false;
                         
@@ -678,10 +674,6 @@ public abstract class Engine
             Engine.instance.destroy();
             
             Extensions.postDestroy();
-            
-            Window.destroy();
-            
-            org.lwjgl.opengl.GL.destroy();
             
             glfwTerminate();
         }
@@ -725,10 +717,12 @@ public abstract class Engine
         Joystick.setup();
         
         Window.get().makeCurrent();
+        Window.get().title("Engine - " + Engine.instance.name);
         
         GLState.setup();
         
         Viewport.setup();
+        GUI.setup();
         Debug.setup();
         
         Engine.windowEnabled = true;
@@ -802,10 +796,10 @@ public abstract class Engine
         String className = getClass().getSimpleName();
         
         StringBuilder name = new StringBuilder();
-        for (int i = 0; i < className.length(); i++)
+        for (int i = 0, n = className.length(); i < n; i++)
         {
             char ch = className.charAt(i);
-            if (i > 0 && Character.isUpperCase(ch)) name.append(' ');
+            if (i > 0 && (Character.isDigit(ch) || Character.isUpperCase(ch))) name.append(' ');
             name.append(ch == '_' ? " - " : ch);
         }
         this.name = name.toString();

@@ -24,7 +24,7 @@ public interface EventKeyboardTyped extends EventKeyboard
         @Override
         public int codePoint()
         {
-            return this.typed;
+            return this.codePoint;
         }
         
         @Override
@@ -36,6 +36,6 @@ public interface EventKeyboardTyped extends EventKeyboard
     
     static EventKeyboardTyped create(long time, int codePoint)
     {
-        return new _EventKeyboardTyped(time, typed);
+        return new _EventKeyboardTyped(time, codePoint);
     }
 }
