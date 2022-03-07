@@ -590,8 +590,8 @@ public abstract class Engine
                             // {
                             //     String fileName = Engine.screenshot + (!Engine.screenshot.endsWith(".png") ? ".png" : "");
                             //
-                            //     int w = Engine.viewSize.left;
-                            //     int h = Engine.viewSize.bottom;
+                            //     int w = Engine.viewSize.x;
+                            //     int h = Engine.viewSize.y;
                             //     int c = 3;
                             //
                             //     int stride = w * c;

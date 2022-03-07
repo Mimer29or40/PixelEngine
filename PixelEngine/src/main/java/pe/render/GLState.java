@@ -51,6 +51,8 @@ public class GLState
     private static CullFace cullFace;
     private static Winding  winding;
     
+    private static final ScissorMode scissorModeCustom = new ScissorMode(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    
     public static void setup()
     {
         GLState.LOGGER.fine("Setup");
@@ -353,18 +355,18 @@ public class GLState
      * Defines the scissor mode for all viewports. When set to
      * {@link ScissorMode#NONE}, it is as if the scissor test always passes.
      * When set to anything else, if
-     * <code>mode.left() &le; x &lt; mode.left() + mode.width()</code> and
-     * <code>mode.bottom() &le; y &lt; mode.bottom() + mode.height()</code> for
+     * <code>mode.x() &le; x &lt; mode.x() + mode.width()</code> and
+     * <code>mode.y() &le; y &lt; mode.y() + mode.height()</code> for
      * the scissor rectangle, then the test passes. Otherwise, the test fails
      * and the fragment is discarded.
      *
-     * @param mode The new scissor mode
+     * @param mode The new scissorMode mode
      */
     public static void scissorMode(@Nullable ScissorMode mode)
     {
         if (mode == null) mode = ScissorMode.DEFAULT;
         
-        GLState.LOGGER.finest("Setting SCISSOR Mode:", mode);
+        GLState.LOGGER.finest("Setting ScissorMode:", mode);
         
         if (!Objects.equals(GLState.scissorMode, mode))
         {
@@ -377,9 +379,31 @@ public class GLState
             else
             {
                 GL33.glEnable(GL33.GL_SCISSOR_TEST);
-                GL33.glScissor(mode.left(), mode.bottom(), mode.width(), mode.height());
+                GL33.glScissor(mode.x(), mode.y(), mode.width(), mode.height());
             }
         }
+    }
+    
+    /**
+     * Defines a scissor rect for all viewports. When set to anything else, if
+     * <code>x &le; frag_x &lt; x) + width)</code> and
+     * <code>y &le; frag_y &lt; y) + height)</code> for the scissor rectangle,
+     * then the test passes. Otherwise, the test fails and the fragment is
+     * discarded.
+     *
+     * @param x      the left scissor rectangle coordinate
+     * @param y      the bottom scissor rectangle coordinate
+     * @param width  the scissor rectangle width
+     * @param height the scissor rectangle height
+     */
+    public static void scissor(int x, int y, int width, int height)
+    {
+        GLState.LOGGER.finest("Setting Custom Scissor: [%s, %s, %s, %s]", x, y, width, height);
+    
+        GLState.scissorMode = GLState.scissorModeCustom;
+        
+        GL33.glEnable(GL33.GL_SCISSOR_TEST);
+        GL33.glScissor(x, y, width, height);
     }
     
     /**

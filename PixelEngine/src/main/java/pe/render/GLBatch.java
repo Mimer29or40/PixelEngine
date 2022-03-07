@@ -603,20 +603,20 @@ public class GLBatch
     }
     
     /**
-     * Manipulates the current matrix with a translation matrix along the left-,
-     * bottom- and z- axes.
+     * Manipulates the current matrix with a translation matrix along the x-,
+     * y- and z- axes.
      * <p>
      * Calling this function is equivalent to calling
      * {@link #mulMatrix} with the following matrix:
      * <table class=striped>
-     * <tr><td>1</td><td>0</td><td>0</td><td>left</td></tr>
-     * <tr><td>0</td><td>1</td><td>0</td><td>bottom</td></tr>
+     * <tr><td>1</td><td>0</td><td>0</td><td>x</td></tr>
+     * <tr><td>0</td><td>1</td><td>0</td><td>y</td></tr>
      * <tr><td>0</td><td>0</td><td>1</td><td>z</td></tr>
      * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
      * </table>
      *
-     * @param x the left-axis translation
-     * @param y the bottom-axis translation
+     * @param x the x-axis translation
+     * @param y the y-axis translation
      * @param z the z-axis translation
      */
     public void translate(double x, double y, double z)
@@ -630,7 +630,7 @@ public class GLBatch
      * Manipulates the current matrix with a rotation matrix.
      * <p>
      * {@code angle} gives an angle of rotation; the coordinates of a vector v
-     * are given by <code>v = (left bottom z)<sup>T</sup></code>. The computed
+     * are given by <code>v = (x y z)<sup>T</sup></code>. The computed
      * matrix is a counter-clockwise rotation about the line through the origin
      * with the specified axis when that axis is pointing up (i.e. the
      * right-hand rule determines the sense of the rotation angle). The matrix
@@ -642,18 +642,18 @@ public class GLBatch
      * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
      * </table>
      * <p>
-     * Let <code>u = v / ||v|| = (left' bottom' z')<sup>T</sup></code>. If <b>S</b> =
+     * Let <code>u = v / ||v|| = (x' y' z')<sup>T</sup></code>. If <b>S</b> =
      * <table class=striped>
-     * <tr><td>0</td><td>-z'</td><td>bottom'</td></tr>
-     * <tr><td>z'</td><td>0</td><td>-left'</td></tr>
-     * <tr><td>-bottom'</td><td>left'</td><td>0</td></tr>
+     * <tr><td>0</td><td>-z'</td><td>y'</td></tr>
+     * <tr><td>z'</td><td>0</td><td>-x'</td></tr>
+     * <tr><td>-y'</td><td>x'</td><td>0</td></tr>
      * </table>
      * <p>
      * then <code><b>R</b> = uu<sup>T</sup> + cos(angle)(I - uu<sup>T</sup>) + sin(angle)<b>S</b></code>
      *
      * @param angle the angle of rotation
-     * @param x     the left coordinate of the rotation vector
-     * @param y     the bottom coordinate of the rotation vector
+     * @param x     the x coordinate of the rotation vector
+     * @param y     the y coordinate of the rotation vector
      * @param z     the z coordinate of the rotation vector
      */
     public void rotate(double angle, double x, double y, double z)
@@ -665,19 +665,19 @@ public class GLBatch
     
     /**
      * Manipulates the current matrix with a general scaling matrix along the
-     * left-, bottom- and z- axes.
+     * x-, y- and z- axes.
      * <p>
      * Calling this function is equivalent to calling
      * {@link #mulMatrix} with the following matrix:
      * <table class=striped>
-     * <tr><td>left</td><td>0</td><td>0</td><td>0</td></tr>
-     * <tr><td>0</td><td>bottom</td><td>0</td><td>0</td></tr>
+     * <tr><td>x</td><td>0</td><td>0</td><td>0</td></tr>
+     * <tr><td>0</td><td>y</td><td>0</td><td>0</td></tr>
      * <tr><td>0</td><td>0</td><td>z</td><td>0</td></tr>
      * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
      * </table>
      *
-     * @param x the left-axis scaling factor
-     * @param y the bottom-axis scaling factor
+     * @param x the x-axis scaling factor
+     * @param y the y-axis scaling factor
      * @param z the z-axis scaling factor
      */
     public void scale(double x, double y, double z)
@@ -692,7 +692,7 @@ public class GLBatch
      * projection, in such a way that the coordinates
      * <code>(lb &ndash; n)<sup>T</sup></code> and
      * <code>(rt &ndash; n)<sup>T</sup></code> specify the points on the near
-     * clipping plane that are mapped to the lower left and upper right corners
+     * clipping plane that are mapped to the lower x and upper right corners
      * of the window, respectively (assuming that the eye is located at
      * <code>(0 0 0)<sup>T</sup></code>). {@code f} gives the distance from the
      * eye to the far clipping plane.
@@ -706,10 +706,10 @@ public class GLBatch
      * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
      * </table>
      *
-     * @param l the left frustum plane
+     * @param l the x frustum plane
      * @param r the right frustum plane
-     * @param b the bottom frustum plane
-     * @param t the bottom frustum plane
+     * @param b the y frustum plane
+     * @param t the y frustum plane
      * @param n the near frustum plane
      * @param f the far frustum plane
      */
@@ -725,7 +725,7 @@ public class GLBatch
      * projection, in such a way that the coordinates
      * <code>(lb &ndash; n)<sup>T</sup></code> and
      * <code>(rt &ndash; n)<sup>T</sup></code> specify the points on the near
-     * clipping plane that are mapped to the lower left and upper right corners
+     * clipping plane that are mapped to the lower x and upper right corners
      * of the window, respectively (assuming that the eye is located at
      * <code>(0 0 0)<sup>T</sup></code>). {@code f} gives the distance from the
      * eye to the far clipping plane.
@@ -739,10 +739,10 @@ public class GLBatch
      * <tr><td>0</td><td>0</td><td>-1</td><td>0</td></tr>
      * </table>
      *
-     * @param l the left frustum plane
+     * @param l the x frustum plane
      * @param r the right frustum plane
-     * @param b the bottom frustum plane
-     * @param t the bottom frustum plane
+     * @param b the y frustum plane
+     * @param t the y frustum plane
      * @param n the near frustum plane
      * @param f the far frustum plane
      */
@@ -755,7 +755,7 @@ public class GLBatch
     
     /**
      * Pushes the current matrix stack down by one, duplicating the current
-     * matrix in both the bottom of the stack and the entry below it.
+     * matrix in both the y of the stack and the entry below it.
      */
     public void pushMatrix()
     {
@@ -765,7 +765,7 @@ public class GLBatch
     }
     
     /**
-     * Pops the bottom entry off the current matrix stack, replacing the current
+     * Pops the y entry off the current matrix stack, replacing the current
      * matrix with the matrix that was the second entry in the stack.
      */
     public void popMatrix()
