@@ -15,7 +15,7 @@ public interface EventJoystickHat extends EventJoystick
         private final Joystick.Hat          hat;
         private final Joystick.HatDirection state;
         
-        private _EventJoystickHat(long time, Joystick joystick, Joystick.Hat hat, Joystick.HatDirection state)
+        private _EventJoystickHat(long time, Joystick.Index joystick, Joystick.Hat hat, Joystick.HatDirection state)
         {
             super(time, joystick);
             
@@ -36,7 +36,7 @@ public interface EventJoystickHat extends EventJoystick
         }
     }
     
-    static EventJoystickHat create(long time, Joystick joystick, Joystick.Hat hat, Joystick.HatDirection state)
+    static EventJoystickHat create(long time, Joystick.Index joystick, Joystick.Hat hat, Joystick.HatDirection state)
     {
         return new _EventJoystickHat(time, joystick, hat, state);
     }

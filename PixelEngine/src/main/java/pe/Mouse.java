@@ -1,6 +1,7 @@
 package pe;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector2dc;
 import org.joml.Vector2ic;
@@ -28,61 +29,52 @@ public final class Mouse
     
     // -------------------- Static Objects -------------------- //
     
-    private static Mouse INSTANCE;
+    static final Map<Button, ButtonInput> buttonMap = new EnumMap<>(Button.class);
     
-    public static Mouse get()
-    {
-        return Mouse.INSTANCE;
-    }
+    // -------------------- Callback Objects -------------------- //
+    
+    static boolean entered;
+    static boolean _entered;
+    
+    static final Vector2d absPos  = new Vector2d();
+    static final Vector2d _absPos = new Vector2d();
+    
+    static final Vector2d pos  = new Vector2d();
+    static final Vector2d _pos = new Vector2d();
+    
+    static final Vector2d rel = new Vector2d();
+    
+    static final Vector2d scroll  = new Vector2d();
+    static final Vector2d _scroll = new Vector2d();
+    
+    static final Queue<Pair<Button, Integer>> _buttonStateChanges = new ConcurrentLinkedQueue<>();
     
     static void setup()
     {
         Mouse.LOGGER.fine("Setup");
         
-        Mouse.INSTANCE = new Mouse();
+        for (Button button : Button.values()) Mouse.buttonMap.put(button, new ButtonInput());
         
-        glfwSetCursorEnterCallback(Window.get().handle, Mouse::enteredCallback);
-        glfwSetCursorPosCallback(Window.get().handle, Mouse::posCallback);
-        glfwSetScrollCallback(Window.get().handle, Mouse::scrollCallback);
-        glfwSetMouseButtonCallback(Window.get().handle, Mouse::buttonCallback);
+        glfwSetCursorEnterCallback(Window.handle, Mouse::enteredCallback);
+        glfwSetCursorPosCallback(Window.handle, Mouse::posCallback);
+        glfwSetScrollCallback(Window.handle, Mouse::scrollCallback);
+        glfwSetMouseButtonCallback(Window.handle, Mouse::buttonCallback);
     }
     
-    // -------------------- Objects -------------------- //
-    
-    final Map<Button, ButtonInput> buttonMap = new EnumMap<>(Button.class);
-    
-    // -------------------- Callback Objects -------------------- //
-    
-    boolean entered;
-    boolean _entered;
-    
-    final Vector2d pos  = new Vector2d();
-    final Vector2d _pos = new Vector2d();
-    
-    final Vector2d rel = new Vector2d();
-    
-    final Vector2d scroll  = new Vector2d();
-    final Vector2d _scroll = new Vector2d();
-    
-    final Queue<Pair<Button, Integer>> _buttonStateChanges = new ConcurrentLinkedQueue<>();
-    
-    private Mouse()
-    {
-        for (Button button : Button.values()) this.buttonMap.put(button, new ButtonInput());
-    }
+    private Mouse() {}
     
     // -------------------- Properties -------------------- //
     
     /**
      * Makes the cursor visible and behaving normally.
      */
-    public void show()
+    public static void show()
     {
         Mouse.LOGGER.finest("Showing");
         
         Delegator.runTask(() -> {
-            if (glfwGetInputMode(Window.get().handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) this._pos.set(this.pos.set(Window.get().size()).mul(0.5));
-            glfwSetInputMode(Window.get().handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            if (glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) Mouse._pos.set(Mouse.pos.set(Window.size()).mul(0.5));
+            glfwSetInputMode(Window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         });
     }
     
@@ -90,29 +82,29 @@ public final class Mouse
      * @return Retrieves if the mouse is visible and behaving normally in its window.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean isShown()
+    public static boolean isShown()
     {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.get().handle, GLFW_CURSOR) == GLFW_CURSOR_NORMAL);
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_NORMAL);
     }
     
     /**
      * Makes the cursor invisible when it is over the content area of the
      * window but does not restrict the cursor from leaving.
      */
-    public void hide()
+    public static void hide()
     {
         Mouse.LOGGER.finest("Hiding");
         
-        Delegator.runTask(() -> glfwSetInputMode(Window.get().handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN));
+        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN));
     }
     
     /**
      * @return Retrieves if the mouse is hidden over its window.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean isHidden()
+    public static boolean isHidden()
     {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.get().handle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN);
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN);
     }
     
     /**
@@ -120,14 +112,14 @@ public final class Mouse
      * movement. This is useful for implementing for example 3D camera
      * controls.
      */
-    public void capture()
+    public static void capture()
     {
         Mouse.LOGGER.finest("Capturing");
         
-        this._pos.set(this.pos.set(Window.get().width() * 0.5, Window.get().height() * 0.5));
+        Mouse._pos.set(Mouse.pos.set(Window.width() * 0.5, Window.height() * 0.5));
         Delegator.runTask(() -> {
-            glfwSetCursorPos(Window.get().handle, this._pos.x, this._pos.y);
-            glfwSetInputMode(Window.get().handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPos(Window.handle, Mouse._pos.x, Mouse._pos.y);
+            glfwSetInputMode(Window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         });
     }
     
@@ -135,9 +127,9 @@ public final class Mouse
      * @return Retrieves if the mouse is captured by its window.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean isCaptured()
+    public static boolean isCaptured()
     {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.get().handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED);
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED);
     }
     
     /**
@@ -148,7 +140,7 @@ public final class Mouse
      *
      * @param rawInput {@code true} to enable raw mouse motion mode, otherwise {@code false}.
      */
-    public void rawInput(boolean rawInput)
+    public static void rawInput(boolean rawInput)
     {
         Mouse.LOGGER.finest("Setting Raw Input Flag:", rawInput);
         
@@ -158,7 +150,7 @@ public final class Mouse
                 Mouse.LOGGER.warning("Raw Mouse Motion is not support on", Platform.get());
                 return;
             }
-            glfwSetInputMode(Window.get().handle, GLFW_RAW_MOUSE_MOTION, rawInput ? GLFW_TRUE : GLFW_FALSE);
+            glfwSetInputMode(Window.handle, GLFW_RAW_MOUSE_MOTION, rawInput ? GLFW_TRUE : GLFW_FALSE);
         });
     }
     
@@ -166,7 +158,7 @@ public final class Mouse
      * @return Retrieves the raw mouse motion flag.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean rawInputEnabled()
+    public static boolean rawInputEnabled()
     {
         return Delegator.waitReturnTask(() -> {
             if (!glfwRawMouseMotionSupported())
@@ -174,7 +166,7 @@ public final class Mouse
                 Mouse.LOGGER.warning("Raw Mouse Motion is not support on", Platform.get());
                 return false;
             }
-            return glfwGetInputMode(Window.get().handle, GLFW_RAW_MOUSE_MOTION) == GLFW_TRUE;
+            return glfwGetInputMode(Window.handle, GLFW_RAW_MOUSE_MOTION) == GLFW_TRUE;
         });
     }
     
@@ -187,20 +179,20 @@ public final class Mouse
      *
      * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
      */
-    public void sticky(boolean sticky)
+    public static void sticky(boolean sticky)
     {
         Mouse.LOGGER.finest("Setting Sticky Flag:", sticky);
         
-        Delegator.runTask(() -> glfwSetInputMode(Window.get().handle, GLFW_STICKY_MOUSE_BUTTONS, sticky ? GLFW_TRUE : GLFW_FALSE));
+        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_STICKY_MOUSE_BUTTONS, sticky ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves the sticky mouse buttons flag.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean stickyEnabled()
+    public static boolean stickyEnabled()
     {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.get().handle, GLFW_STICKY_MOUSE_BUTTONS) == GLFW_TRUE);
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_STICKY_MOUSE_BUTTONS) == GLFW_TRUE);
     }
     
     /**
@@ -213,11 +205,11 @@ public final class Mouse
      *
      * @param shape the cursor to set, or {@code null} to switch back to the default arrow cursor
      */
-    public void shape(Shape shape)
+    public static void shape(@Nullable Shape shape)
     {
         Mouse.LOGGER.finest("Setting Shape:", shape);
         
-        Delegator.waitRunTask(() -> glfwSetCursor(Window.get().handle, shape != null ? shape.handle : NULL));
+        Delegator.waitRunTask(() -> glfwSetCursor(Window.handle, shape != null ? shape.handle : NULL));
     }
     
     // -------------------- Callback Related Things -------------------- //
@@ -237,9 +229,10 @@ public final class Mouse
      *
      * @return The position of the cursor, in screen coordinates, relative to the upper-left corner of the content area of the last window the mouse was reported in.
      */
-    public @NotNull Vector2dc pos()
+    @NotNull
+    public static Vector2dc pos()
     {
-        return this.pos;
+        return Mouse.pos;
     }
     
     /**
@@ -257,9 +250,9 @@ public final class Mouse
      *
      * @return The x position of the cursor, in screen coordinates, relative to the upper-left corner of the content area of the last window the mouse was reported in.
      */
-    public double x()
+    public static double x()
     {
-        return this.pos.x;
+        return Mouse.pos.x;
     }
     
     /**
@@ -277,9 +270,9 @@ public final class Mouse
      *
      * @return The y position of the cursor, in screen coordinates, relative to the upper-left corner of the content area of the last window the mouse was reported in.
      */
-    public double y()
+    public static double y()
     {
-        return this.pos.y;
+        return Mouse.pos.y;
     }
     
     /**
@@ -300,11 +293,11 @@ public final class Mouse
      * @param x The x-coordinate of the upper-left corner of the content area.
      * @param y The y-coordinate of the upper-left corner of the content area.
      */
-    public void pos(double x, double y)
+    public static void pos(double x, double y)
     {
         Mouse.LOGGER.finest("Setting Position: (%s, %s)", x, y);
         
-        Delegator.waitRunTask(() -> glfwSetCursorPos(Window.get().handle, x, y));
+        Delegator.waitRunTask(() -> glfwSetCursorPos(Window.handle, x, y));
     }
     
     /**
@@ -324,7 +317,7 @@ public final class Mouse
      *
      * @param pos The position of the upper-left corner of the content area.
      */
-    public void pos(@NotNull Vector2ic pos)
+    public static void pos(@NotNull Vector2ic pos)
     {
         pos(pos.x(), pos.y());
     }
@@ -346,7 +339,7 @@ public final class Mouse
      *
      * @param pos The position of the upper-left corner of the content area.
      */
-    public void pos(@NotNull Vector2dc pos)
+    public static void pos(@NotNull Vector2dc pos)
     {
         pos(pos.x(), pos.y());
     }
@@ -371,9 +364,10 @@ public final class Mouse
      *
      * @return The difference in position of the cursor, in screen coordinates, since the last time the mouse was updated.
      */
-    public @NotNull Vector2dc rel()
+    @NotNull
+    public static Vector2dc rel()
     {
-        return this.rel;
+        return Mouse.rel;
     }
     
     /**
@@ -396,9 +390,9 @@ public final class Mouse
      *
      * @return The difference in x position of the cursor, in screen coordinates, since the last time the mouse was updated.
      */
-    public double dx()
+    public static double dx()
     {
-        return this.rel.x;
+        return Mouse.rel.x;
     }
     
     /**
@@ -421,9 +415,9 @@ public final class Mouse
      *
      * @return The difference in y position of the cursor, in screen coordinates, since the last time the mouse was updated.
      */
-    public double dy()
+    public static double dy()
     {
-        return this.rel.y;
+        return Mouse.rel.y;
     }
     
     /**
@@ -438,9 +432,10 @@ public final class Mouse
      *
      * @return The amount that the mouse wheel, or touch-pad, was scrolled since the last time the mouse was updated.
      */
-    public @NotNull Vector2dc scroll()
+    @NotNull
+    public static Vector2dc scroll()
     {
-        return this.scroll;
+        return Mouse.scroll;
     }
     
     /**
@@ -455,9 +450,9 @@ public final class Mouse
      *
      * @return The amount that the mouse wheel, or touch-pad, was scrolled horizontally since the last time the mouse was updated.
      */
-    public double scrollX()
+    public static double scrollX()
     {
-        return this.scroll.x;
+        return Mouse.scroll.x;
     }
     
     /**
@@ -472,9 +467,9 @@ public final class Mouse
      *
      * @return The amount that the mouse wheel, or touch-pad, was scrolled vertically since the last time the mouse was updated.
      */
-    public double scrollY()
+    public static double scrollY()
     {
-        return this.scroll.y;
+        return Mouse.scroll.y;
     }
     
     /**
@@ -484,48 +479,50 @@ public final class Mouse
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    void processEvents(long time)
+    static void processEvents(long time)
     {
         boolean entered = false;
-        if (this.entered != this._entered)
+        if (Mouse.entered != Mouse._entered)
         {
-            this.entered = this._entered;
-            if (this.entered)
+            Mouse.entered = Mouse._entered;
+            if (Mouse.entered)
             {
                 entered = true;
                 
-                this.pos.set(this._pos);
+                Mouse.pos.set(Mouse._pos);
             }
-            Engine.Events.post(EventMouseEntered.create(time, this.entered));
+            Engine.Events.post(EventMouseEntered.create(time, Mouse.entered));
         }
         
-        this.rel.set(0);
-        if (Double.compare(this.pos.x, this._pos.x) != 0 || Double.compare(this.pos.y, this._pos.y) != 0 || entered)
+        Mouse.rel.set(0);
+        if (Double.compare(Mouse.pos.x, Mouse._pos.x) != 0 || Double.compare(Mouse.pos.y, Mouse._pos.y) != 0 || entered)
         {
-            this._pos.sub(this.pos, this.rel);
-            this.pos.set(this._pos);
-            Engine.Events.post(EventMouseMoved.create(time, this.pos, this.rel));
+            Mouse.absPos.set(Mouse._absPos); // TODO - Check setting mouse pos
+            
+            Mouse._pos.sub(Mouse.pos, Mouse.rel);
+            Mouse.pos.set(Mouse._pos);
+            Engine.Events.post(EventMouseMoved.create(time, Mouse.pos, Mouse.rel));
         }
         
-        this.scroll.set(0);
-        if (Double.compare(this.scroll.x, this._scroll.x) != 0 || Double.compare(this.scroll.y, this._scroll.y) != 0)
+        Mouse.scroll.set(0);
+        if (Double.compare(Mouse.scroll.x, Mouse._scroll.x) != 0 || Double.compare(Mouse.scroll.y, Mouse._scroll.y) != 0)
         {
-            this.scroll.set(this._scroll);
-            this._scroll.set(0);
-            Engine.Events.post(EventMouseScrolled.create(time, this.scroll));
+            Mouse.scroll.set(Mouse._scroll);
+            Mouse._scroll.set(0);
+            Engine.Events.post(EventMouseScrolled.create(time, Mouse.scroll));
         }
         
         Pair<Button, Integer> buttonStateChange;
-        while ((buttonStateChange = this._buttonStateChanges.poll()) != null)
+        while ((buttonStateChange = Mouse._buttonStateChanges.poll()) != null)
         {
-            ButtonInput buttonObj = this.buttonMap.get(buttonStateChange.getA());
+            ButtonInput buttonObj = Mouse.buttonMap.get(buttonStateChange.getA());
             
             buttonObj._state = buttonStateChange.getB();
         }
         
-        for (Button button : this.buttonMap.keySet())
+        for (Button button : Mouse.buttonMap.keySet())
         {
-            ButtonInput input = this.buttonMap.get(button);
+            ButtonInput input = Mouse.buttonMap.get(button);
             
             input.state  = input._state;
             input._state = -1;
@@ -534,62 +531,62 @@ public final class Mouse
                 case GLFW_PRESS -> {
                     input.held     = true;
                     input.holdTime = time + Input.holdFrequencyL();
-                    Engine.Events.post(EventMouseButtonDown.create(time, button, this.pos));
+                    Engine.Events.post(EventMouseButtonDown.create(time, button, Mouse.pos));
                     
-                    input.clickPos.set(this.pos);
+                    input.clickPos.set(Mouse.pos);
                 }
                 case GLFW_RELEASE -> {
                     input.held     = false;
                     input.holdTime = Long.MAX_VALUE;
-                    Engine.Events.post(EventMouseButtonUp.create(time, button, this.pos));
+                    Engine.Events.post(EventMouseButtonUp.create(time, button, Mouse.pos));
                     
-                    boolean inClickRange  = Math.abs(this.pos.x - input.clickPos.x) < 2 && Math.abs(this.pos.y - input.clickPos.y) < 2;
-                    boolean inDClickRange = Math.abs(this.pos.x - input.dClickPos.x) < 2 && Math.abs(this.pos.y - input.dClickPos.y) < 2;
+                    boolean inClickRange  = Math.abs(Mouse.pos.x - input.clickPos.x) < 2 && Math.abs(Mouse.pos.y - input.clickPos.y) < 2;
+                    boolean inDClickRange = Math.abs(Mouse.pos.x - input.dClickPos.x) < 2 && Math.abs(Mouse.pos.y - input.dClickPos.y) < 2;
                     
                     if (inDClickRange && time - input.pressTime < Input.doublePressedDelayL())
                     {
                         input.pressTime = 0;
-                        Engine.Events.post(EventMouseButtonPressed.create(time, button, this.pos, true));
+                        Engine.Events.post(EventMouseButtonPressed.create(time, button, Mouse.pos, true));
                     }
                     else if (inClickRange)
                     {
-                        input.dClickPos.set(this.pos);
+                        input.dClickPos.set(Mouse.pos);
                         input.pressTime = time;
-                        Engine.Events.post(EventMouseButtonPressed.create(time, button, this.pos, false));
+                        Engine.Events.post(EventMouseButtonPressed.create(time, button, Mouse.pos, false));
                     }
                 }
-                case GLFW_REPEAT -> Engine.Events.post(EventMouseButtonRepeated.create(time, button, this.pos));
+                case GLFW_REPEAT -> Engine.Events.post(EventMouseButtonRepeated.create(time, button, Mouse.pos));
             }
             if (input.held)
             {
                 if (time - input.holdTime >= Input.holdFrequencyL())
                 {
                     input.holdTime += Input.holdFrequencyL();
-                    Engine.Events.post(EventMouseButtonHeld.create(time, button, this.pos));
+                    Engine.Events.post(EventMouseButtonHeld.create(time, button, Mouse.pos));
                 }
-                if (this.rel.x != 0 || this.rel.y != 0) Engine.Events.post(EventMouseButtonDragged.create(time, button, this.pos, this.rel, input.clickPos));
+                if (Mouse.rel.x != 0 || Mouse.rel.y != 0) Engine.Events.post(EventMouseButtonDragged.create(time, button, Mouse.pos, Mouse.rel, input.clickPos));
             }
         }
     }
     
-    public boolean down(Button button)
+    public static boolean down(Button button)
     {
-        return this.buttonMap.get(button).state == GLFW_PRESS;
+        return Mouse.buttonMap.get(button).state == GLFW_PRESS;
     }
     
-    public boolean up(Button button)
+    public static boolean up(Button button)
     {
-        return this.buttonMap.get(button).state == GLFW_RELEASE;
+        return Mouse.buttonMap.get(button).state == GLFW_RELEASE;
     }
     
-    public boolean repeat(Button button)
+    public static boolean repeat(Button button)
     {
-        return this.buttonMap.get(button).state == GLFW_REPEAT;
+        return Mouse.buttonMap.get(button).state == GLFW_REPEAT;
     }
     
-    public boolean held(Button button)
+    public static boolean held(Button button)
     {
-        return this.buttonMap.get(button).held;
+        return Mouse.buttonMap.get(button).held;
     }
     
     protected static final class ButtonInput extends Input
@@ -690,25 +687,27 @@ public final class Mouse
     
     private static void enteredCallback(long handle, boolean entered)
     {
-        Mouse.INSTANCE._entered = entered;
+        Mouse._entered = entered;
     }
     
     private static void posCallback(long handle, double x, double y)
     {
+        Mouse._absPos.set(x, y);
+        
         x = (x - Engine.Viewport.x()) * (double) Engine.screenSize.x / (double) Engine.Viewport.width();
         y = (y - Engine.Viewport.y()) * (double) Engine.screenSize.y / (double) Engine.Viewport.height();
         
-        Mouse.INSTANCE._pos.set(x, y);
+        Mouse._pos.set(x, y);
     }
     
     private static void scrollCallback(long handle, double dx, double dy)
     {
-        Mouse.INSTANCE._scroll.add(dx, dy);
+        Mouse._scroll.add(dx, dy);
     }
     
     private static void buttonCallback(long handle, int button, int action, int mods)
     {
-        Mouse.INSTANCE._buttonStateChanges.offer(new Pair<>(Mouse.Button.get(button), action));
+        Mouse._buttonStateChanges.offer(new Pair<>(Mouse.Button.get(button), action));
         
         Modifier.activeMods = mods;
     }

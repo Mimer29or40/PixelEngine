@@ -56,10 +56,10 @@ public abstract class Engine
             
             long time = Time.getNS();
             
-            Mouse.get().processEvents(time);
-            Keyboard.get().processEvents(time);
+            Mouse.processEvents(time);
+            Keyboard.processEvents(time);
             Joystick.processEvents(time);
-            Window.get().processEvents(time);
+            Window.processEvents(time);
         }
         
         public static void post(Event event)
@@ -351,8 +351,8 @@ public abstract class Engine
         {
             double aspect = (double) (Engine.screenSize.x * Engine.pixelSize.x) / (double) (Engine.screenSize.y * Engine.pixelSize.y);
             
-            int frameWidth  = Window.get().framebufferWidth();
-            int frameHeight = Window.get().framebufferHeight();
+            int frameWidth  = Window.framebufferWidth();
+            int frameHeight = Window.framebufferHeight();
             
             Viewport.size.set(frameWidth, (int) (frameWidth / aspect));
             if (Viewport.size.y > frameHeight) Viewport.size.set((int) (frameHeight * aspect), frameHeight);
@@ -510,14 +510,14 @@ public abstract class Engine
             
             if (Engine.windowEnabled)
             {
-                Window.get().unmakeCurrent();
+                Window.unmakeCurrent();
                 
                 final CountDownLatch latch = new CountDownLatch(1);
                 
                 new Thread(() -> {
                     try
                     {
-                        Window.get().makeCurrent();
+                        Window.makeCurrent();
                         
                         Extensions.renderSetup();
                         
@@ -577,7 +577,7 @@ public abstract class Engine
                                 Debug.draw();
                                 OverlayGUI.draw();
                                 
-                                Window.get().swap();
+                                Window.swap();
                                 
                                 // TODO Profiler End Frame
                                 
@@ -618,7 +618,7 @@ public abstract class Engine
                             // TODO
                             // if (Time.shouldUpdate())
                             // {
-                            //     Window.get().title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
+                            //     Window.title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
                             //
                             //     // Debug.update();
                             // }
@@ -641,7 +641,7 @@ public abstract class Engine
                         
                         GLState.destroy();
                         
-                        Window.get().unmakeCurrent();
+                        Window.unmakeCurrent();
                         
                         Window.destroy();
                         
@@ -718,8 +718,8 @@ public abstract class Engine
         Keyboard.setup();
         Joystick.setup();
         
-        Window.get().makeCurrent();
-        Window.get().title("Engine - " + Engine.instance.name);
+        Window.makeCurrent();
+        Window.title("Engine - " + Engine.instance.name);
         
         GLState.setup();
         

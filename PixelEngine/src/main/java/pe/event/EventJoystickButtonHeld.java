@@ -6,13 +6,13 @@ public interface EventJoystickButtonHeld extends EventInputDeviceInputHeld, Even
 {
     final class _EventJoystickButtonHeld extends AbstractEventJoystickButton implements EventJoystickButtonHeld
     {
-        private _EventJoystickButtonHeld(long time, Joystick joystick, Joystick.Button button)
+        private _EventJoystickButtonHeld(long time, Joystick.Index joystick, Joystick.Button button)
         {
             super(time, joystick, button);
         }
     }
     
-    static EventJoystickButtonHeld create(long time, Joystick joystick, Joystick.Button button)
+    static EventJoystickButtonHeld create(long time, Joystick.Index joystick, Joystick.Button button)
     {
         return new _EventJoystickButtonHeld(time, joystick, button);
     }

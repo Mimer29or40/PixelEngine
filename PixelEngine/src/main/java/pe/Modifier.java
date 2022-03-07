@@ -49,7 +49,7 @@ public enum Modifier
         Modifier.LOGGER.finest("Setting Lock Mods State:", lockMods);
         
         Modifier.lockMods = lockMods;
-        Delegator.runTask(() -> glfwSetInputMode(Window.get().handle, GLFW_LOCK_KEY_MODS, lockMods ? GLFW_TRUE : GLFW_FALSE));
+        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_LOCK_KEY_MODS, lockMods ? GLFW_TRUE : GLFW_FALSE));
     }
     
     private final int value;

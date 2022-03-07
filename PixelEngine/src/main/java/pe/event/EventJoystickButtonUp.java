@@ -6,13 +6,13 @@ public interface EventJoystickButtonUp extends EventInputDeviceInputUp, EventJoy
 {
     final class _EventJoystickButtonUp extends AbstractEventJoystickButton implements EventJoystickButtonUp
     {
-        private _EventJoystickButtonUp(long time, Joystick joystick, Joystick.Button button)
+        private _EventJoystickButtonUp(long time, Joystick.Index joystick, Joystick.Button button)
         {
             super(time, joystick, button);
         }
     }
     
-    static EventJoystickButtonUp create(long time, Joystick joystick, Joystick.Button button)
+    static EventJoystickButtonUp create(long time, Joystick.Index joystick, Joystick.Button button)
     {
         return new _EventJoystickButtonUp(time, joystick, button);
     }

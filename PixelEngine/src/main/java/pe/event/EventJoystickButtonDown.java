@@ -6,13 +6,13 @@ public interface EventJoystickButtonDown extends EventInputDeviceInputDown, Even
 {
     final class _EventJoystickButtonDown extends AbstractEventJoystickButton implements EventJoystickButtonDown
     {
-        private _EventJoystickButtonDown(long time, Joystick joystick, Joystick.Button button)
+        private _EventJoystickButtonDown(long time, Joystick.Index joystick, Joystick.Button button)
         {
             super(time, joystick, button);
         }
     }
     
-    static EventJoystickButtonDown create(long time, Joystick joystick, Joystick.Button button)
+    static EventJoystickButtonDown create(long time, Joystick.Index joystick, Joystick.Button button)
     {
         return new _EventJoystickButtonDown(time, joystick, button);
     }

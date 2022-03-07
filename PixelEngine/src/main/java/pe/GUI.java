@@ -153,13 +153,13 @@ public final class GUI
             MemoryUtil.memCopy(text, MemoryUtil.memAddress(str), len);
             str.put(len, (byte) 0);
             
-            Window.get().setClipboard(str);
+            Window.setClipboard(str);
         }
     }
     
     private static void paste(long handle, long edit)
     {
-        long text = Window.get().getClipboardRaw();
+        long text = Window.getClipboardRaw();
         if (text != MemoryUtil.NULL) nnk_textedit_paste(edit, text, nnk_strlen(text));
     }
     
@@ -289,19 +289,19 @@ public final class GUI
         NkMouse mouse = GUI.ctx.input().mouse();
         if (mouse.grab())
         {
-            Mouse.get().hide();
+            Mouse.hide();
         }
         else if (mouse.grabbed())
         {
             float prevX = mouse.prev().x();
             float prevY = mouse.prev().y();
-            Mouse.get().pos(prevX, prevY);
+            Mouse.pos(prevX, prevY);
             mouse.pos().x(prevX);
             mouse.pos().y(prevY);
         }
         else if (mouse.ungrab())
         {
-            Mouse.get().show();
+            Mouse.show();
         }
         
         nk_input_end(GUI.ctx);
@@ -452,10 +452,8 @@ public final class GUI
         
         // GLBatch batch = GLBatch.get();
         
-        Window window = Window.get();
-        
-        float fb_scale_x = (float) window.framebufferWidth() / (float) window.width();
-        float fb_scale_y = (float) window.framebufferHeight() / (float) window.height();
+        float fb_scale_x = (float) Window.framebufferWidth() / (float) Window.width();
+        float fb_scale_y = (float) Window.framebufferHeight() / (float) Window.height();
         
         // iterate over and execute each draw command
         long offset = MemoryUtil.NULL;
@@ -509,7 +507,7 @@ public final class GUI
             glBindTexture(GL_TEXTURE_2D, cmd.texture().id());
             glScissor(
                     (int) (cmd.clip_rect().x() * fb_scale_x),
-                    (int) ((window.height() - (int) (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
+                    (int) ((Window.height() - (int) (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
                     (int) (cmd.clip_rect().w() * fb_scale_x),
                     (int) (cmd.clip_rect().h() * fb_scale_y)
                      );

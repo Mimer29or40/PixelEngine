@@ -3,7 +3,6 @@ package pe.render;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
-import pe.Engine;
 import pe.color.ColorFormat;
 import pe.texture.Texture;
 import pe.texture.TextureDepthStencil;

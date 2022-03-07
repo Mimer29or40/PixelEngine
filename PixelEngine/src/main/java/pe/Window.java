@@ -29,75 +29,44 @@ public final class Window
     
     // -------------------- Static Objects -------------------- //
     
-    private static Window INSTANCE;
+    static long handle;
     
-    public static Window get()
-    {
-        return Window.INSTANCE;
-    }
+    // -------------------- Callback Objects -------------------- //
+    
+    static boolean close;
+    static boolean _close;
+    
+    static final Vector2i pos  = new Vector2i();
+    static final Vector2i _pos = new Vector2i();
+    
+    static final Vector2i size  = new Vector2i();
+    static final Vector2i _size = new Vector2i();
+    
+    static final Vector2d scale  = new Vector2d();
+    static final Vector2d _scale = new Vector2d();
+    
+    static final Vector2i fbSize  = new Vector2i();
+    static final Vector2i _fbSize = new Vector2i();
+    
+    static String[] _dropped;
+    
+    // -------------------- Internal Objects -------------------- //
+    
+    private static final Vector2i deltaI = new Vector2i();
+    private static final Vector2d deltaD = new Vector2d();
     
     static void setup()
     {
         Window.LOGGER.finer("Setup");
         
-        Window.INSTANCE = new Window();
-        
-        glfwSetWindowCloseCallback(Window.INSTANCE.handle, Window::closeCallback);
-        glfwSetWindowPosCallback(Window.INSTANCE.handle, Window::posCallback);
-        glfwSetWindowSizeCallback(Window.INSTANCE.handle, Window::sizeCallback);
-        glfwSetWindowContentScaleCallback(Window.INSTANCE.handle, Window::contentScaleCallback);
-        glfwSetFramebufferSizeCallback(Window.INSTANCE.handle, Window::framebufferSizeCallback);
-        glfwSetDropCallback(Window.INSTANCE.handle, Window::dropCallback);
-    }
-    
-    static void destroy()
-    {
-        Window.LOGGER.finer("Destroy");
-        
-        glfwFreeCallbacks(Window.INSTANCE.handle);
-        glfwDestroyWindow(Window.INSTANCE.handle);
-        
-        org.lwjgl.opengl.GL.destroy();
-    }
-    
-    // -------------------- Objects -------------------- //
-    
-    final long handle;
-    
-    // -------------------- Callback Objects -------------------- //
-    
-    boolean close;
-    boolean _close;
-    
-    final Vector2i pos  = new Vector2i();
-    final Vector2i _pos = new Vector2i();
-    
-    final Vector2i size  = new Vector2i();
-    final Vector2i _size = new Vector2i();
-    
-    final Vector2d scale  = new Vector2d();
-    final Vector2d _scale = new Vector2d();
-    
-    final Vector2i fbSize  = new Vector2i();
-    final Vector2i _fbSize = new Vector2i();
-    
-    String[] _dropped;
-    
-    // -------------------- Internal Objects -------------------- //
-    
-    private final Vector2i deltaI = new Vector2i();
-    private final Vector2d deltaD = new Vector2d();
-    
-    private Window()
-    {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         
         int width  = Engine.screenSize.x * Engine.pixelSize.x;
         int height = Engine.screenSize.y * Engine.pixelSize.y;
         
-        this.handle = glfwCreateWindow(width, height, "", MemoryUtil.NULL, MemoryUtil.NULL);
-        if (this.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the GLFW window");
+        Window.handle = glfwCreateWindow(width, height, "", MemoryUtil.NULL, MemoryUtil.NULL);
+        if (Window.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the GLFW window");
         
         try (MemoryStack stack = MemoryStack.stackPush())
         {
@@ -107,25 +76,44 @@ public final class Window
             FloatBuffer xf = stack.mallocFloat(1);
             FloatBuffer yf = stack.mallocFloat(1);
             
-            glfwGetWindowPos(this.handle, x, y);
-            this.pos.set(this._pos.set(x.get(0), y.get(0)));
+            glfwGetWindowPos(Window.handle, x, y);
+            Window.pos.set(Window._pos.set(x.get(0), y.get(0)));
             
-            glfwGetWindowSize(this.handle, x, y);
-            this.size.set(this._size.set(x.get(0), y.get(0)));
+            glfwGetWindowSize(Window.handle, x, y);
+            Window.size.set(Window._size.set(x.get(0), y.get(0)));
             
-            glfwGetWindowContentScale(this.handle, xf, yf);
-            this.scale.set(this._scale.set(xf.get(0), yf.get(0)));
+            glfwGetWindowContentScale(Window.handle, xf, yf);
+            Window.scale.set(Window._scale.set(xf.get(0), yf.get(0)));
             
-            glfwGetFramebufferSize(this.handle, x, y);
-            this.fbSize.set(this._fbSize.set(x.get(0), y.get(0)));
+            glfwGetFramebufferSize(Window.handle, x, y);
+            Window.fbSize.set(Window._fbSize.set(x.get(0), y.get(0)));
         }
         
-        glfwSetWindowSizeLimits(this.handle, Engine.screenSize.x, Engine.screenSize.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
+        glfwSetWindowSizeLimits(Window.handle, Engine.screenSize.x, Engine.screenSize.y, GLFW_DONT_CARE, GLFW_DONT_CARE);
         
-        glfwSetInputMode(this.handle, GLFW_LOCK_KEY_MODS, Modifier.lockMods() ? GLFW_TRUE : GLFW_FALSE);
+        glfwSetInputMode(Window.handle, GLFW_LOCK_KEY_MODS, Modifier.lockMods() ? GLFW_TRUE : GLFW_FALSE);
         
-        glfwShowWindow(this.handle);
+        glfwShowWindow(Window.handle);
+        
+        glfwSetWindowCloseCallback(Window.handle, Window::closeCallback);
+        glfwSetWindowPosCallback(Window.handle, Window::posCallback);
+        glfwSetWindowSizeCallback(Window.handle, Window::sizeCallback);
+        glfwSetWindowContentScaleCallback(Window.handle, Window::contentScaleCallback);
+        glfwSetFramebufferSizeCallback(Window.handle, Window::framebufferSizeCallback);
+        glfwSetDropCallback(Window.handle, Window::dropCallback);
     }
+    
+    static void destroy()
+    {
+        Window.LOGGER.finer("Destroy");
+        
+        glfwFreeCallbacks(Window.handle);
+        glfwDestroyWindow(Window.handle);
+        
+        org.lwjgl.opengl.GL.destroy();
+    }
+    
+    private Window() {}
     
     // -------------------- Properties -------------------- //
     
@@ -134,11 +122,11 @@ public final class Window
      *
      * @param title The new title.
      */
-    public void title(CharSequence title)
+    public static void title(CharSequence title)
     {
         Window.LOGGER.finest("Setting Title:", title);
         
-        Delegator.runTask(() -> glfwSetWindowTitle(this.handle, title));
+        Delegator.runTask(() -> glfwSetWindowTitle(Window.handle, title));
     }
     
     /**
@@ -160,7 +148,7 @@ public final class Window
      *
      * @param icons The new icons.
      */
-    public void icons(GLFWImage... icons)
+    public static void icons(GLFWImage... icons)
     {
         // TODO - Make this not depend on GLFW
         Window.LOGGER.finest("Setting Icons:", icons);
@@ -173,7 +161,7 @@ public final class Window
                 GLFWImage.Buffer buffer = GLFWImage.malloc(count, stack);
                 for (int i = 0; i < count; i++) buffer.put(i, icons[i]);
                 
-                glfwSetWindowIcon(this.handle, buffer);
+                glfwSetWindowIcon(Window.handle, buffer);
             }
         });
     }
@@ -181,9 +169,9 @@ public final class Window
     /**
      * @return Retrieves the current aspect ration of the window.
      */
-    public double aspectRatio()
+    public static double aspectRatio()
     {
-        return (double) this.fbSize.x / (double) this.fbSize.y;
+        return (double) Window.fbSize.x / (double) Window.fbSize.y;
     }
     
     /**
@@ -206,11 +194,11 @@ public final class Window
      * @param numer the numerator of the desired aspect ratio, or {@link org.lwjgl.glfw.GLFW#GLFW_DONT_CARE DONT_CARE}
      * @param denom the denominator of the desired aspect ratio, or {@link org.lwjgl.glfw.GLFW#GLFW_DONT_CARE DONT_CARE}
      */
-    public void aspectRatio(int numer, int denom)
+    public static void aspectRatio(int numer, int denom)
     {
         Window.LOGGER.finest("Setting Aspect Ratio: %s/%s", numer, denom);
         
-        Delegator.runTask(() -> glfwSetWindowAspectRatio(this.handle, numer, denom));
+        Delegator.runTask(() -> glfwSetWindowAspectRatio(Window.handle, numer, denom));
     }
     
     /**
@@ -221,18 +209,18 @@ public final class Window
      * <p>If the window is a full screen window, the resolution
      * chosen for the window is restored on the selected monitor.</p>
      */
-    public void restore()
+    public static void restore()
     {
-        Delegator.runTask(() -> glfwRestoreWindow(this.handle));
+        Delegator.runTask(() -> glfwRestoreWindow(Window.handle));
     }
     
     /**
      * @return Retrieves if the window is resizable <i>by the user</i>.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean resizable()
+    public static boolean resizable()
     {
-        return Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_RESIZABLE) == GLFW_TRUE);
+        return Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_RESIZABLE) == GLFW_TRUE);
     }
     
     /**
@@ -240,51 +228,51 @@ public final class Window
      *
      * @param resizable if the window is resizable <i>by the user</i>.
      */
-    public void resizable(boolean resizable)
+    public static void resizable(boolean resizable)
     {
         Window.LOGGER.finest("Setting Resizable Flag:", resizable);
         
-        Delegator.runTask(() -> glfwSetWindowAttrib(this.handle, GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE));
+        Delegator.runTask(() -> glfwSetWindowAttrib(Window.handle, GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves if the window is visible. Window visibility can be controlled with {@link #show} and {@link #hide}.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean visible()
+    public static boolean visible()
     {
-        return Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_VISIBLE) == GLFW_TRUE);
+        return Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_VISIBLE) == GLFW_TRUE);
     }
     
     /**
      * Makes the window visible if it was previously hidden. If the window is
      * already visible or is in full screen mode, this function does nothing.
      */
-    public void show()
+    public static void show()
     {
         Window.LOGGER.finest("Showing");
         
-        Delegator.runTask(() -> glfwShowWindow(this.handle));
+        Delegator.runTask(() -> glfwShowWindow(Window.handle));
     }
     
     /**
      * Hides the window, if it was previously visible. If the window is already
      * hidden or is in full screen mode, this function does nothing.
      */
-    public void hide()
+    public static void hide()
     {
         Window.LOGGER.finest("Hiding");
         
-        Delegator.runTask(() -> glfwHideWindow(this.handle));
+        Delegator.runTask(() -> glfwHideWindow(Window.handle));
     }
     
     /**
      * @return Retrieves if the cursor is currently directly over the content area of the window, with no other windows between.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean hovered()
+    public static boolean hovered()
     {
-        return Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_HOVERED) == GLFW_TRUE);
+        return Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_HOVERED) == GLFW_TRUE);
     }
     
     // -------------------- Callback Related Things -------------------- //
@@ -295,9 +283,10 @@ public final class Window
      *
      * @return The position of the upper-left corner of the content area
      */
-    public @NotNull Vector2ic pos()
+    @NotNull
+    public static Vector2ic pos()
     {
-        return this.pos;
+        return Window.pos;
     }
     
     /**
@@ -308,7 +297,7 @@ public final class Window
      */
     public int x()
     {
-        return this.pos.x;
+        return Window.pos.x;
     }
     
     /**
@@ -319,7 +308,7 @@ public final class Window
      */
     public int y()
     {
-        return this.pos.y;
+        return Window.pos.y;
     }
     
     /**
@@ -337,11 +326,11 @@ public final class Window
      * @param x The x-coordinate of the upper-left corner of the content area.
      * @param y The y-coordinate of the upper-left corner of the content area.
      */
-    public void pos(int x, int y)
+    public static void pos(int x, int y)
     {
         Window.LOGGER.finest("Setting Position: (%s, %s)", x, y);
         
-        Delegator.waitRunTask(() -> glfwSetWindowPos(this.handle, x, y));
+        Delegator.waitRunTask(() -> glfwSetWindowPos(Window.handle, x, y));
     }
     
     /**
@@ -358,7 +347,7 @@ public final class Window
      *
      * @param pos The position of the upper-left corner of the content area.
      */
-    public void pos(@NotNull Vector2ic pos)
+    public static void pos(@NotNull Vector2ic pos)
     {
         pos(pos.x(), pos.y());
     }
@@ -377,7 +366,7 @@ public final class Window
      *
      * @param pos The position of the upper-left corner of the content area.
      */
-    public void pos(@NotNull Vector2dc pos)
+    public static void pos(@NotNull Vector2dc pos)
     {
         pos((int) pos.x(), (int) pos.y());
     }
@@ -389,9 +378,10 @@ public final class Window
      *
      * @return The size, in screen coordinates, of the content area.
      */
-    public @NotNull Vector2ic size()
+    @NotNull
+    public static Vector2ic size()
     {
-        return this.size;
+        return Window.size;
     }
     
     /**
@@ -401,9 +391,9 @@ public final class Window
      *
      * @return The width, in screen coordinates, of the content area.
      */
-    public int width()
+    public static int width()
     {
-        return this.size.x;
+        return Window.size.x;
     }
     
     /**
@@ -413,9 +403,9 @@ public final class Window
      *
      * @return The height, in screen coordinates, of the content area.
      */
-    public int height()
+    public static int height()
     {
-        return this.size.y;
+        return Window.size.y;
     }
     
     /**
@@ -432,11 +422,11 @@ public final class Window
      * @param width  The desired width, in screen coordinates, of the window content area
      * @param height The desired height, in screen coordinates, of the window content area
      */
-    public void size(int width, int height)
+    public static void size(int width, int height)
     {
         Window.LOGGER.finest("Setting Size: (%s, %s)", width, height);
         
-        Delegator.waitRunTask(() -> glfwSetWindowSize(this.handle, width, height));
+        Delegator.waitRunTask(() -> glfwSetWindowSize(Window.handle, width, height));
     }
     
     /**
@@ -452,7 +442,7 @@ public final class Window
      *
      * @param size The desired size, in screen coordinates, of the window content area
      */
-    public void size(@NotNull Vector2ic size)
+    public static void size(@NotNull Vector2ic size)
     {
         size(size.x(), size.y());
     }
@@ -470,7 +460,7 @@ public final class Window
      *
      * @param size The desired size, in screen coordinates, of the window content area
      */
-    public void size(@NotNull Vector2dc size)
+    public static void size(@NotNull Vector2dc size)
     {
         size((int) size.x(), (int) size.y());
     }
@@ -492,9 +482,10 @@ public final class Window
      *
      * @return the content scale for the window.
      */
-    public @NotNull Vector2dc contentScale()
+    @NotNull
+    public static Vector2dc contentScale()
     {
-        return this.scale;
+        return Window.scale;
     }
     
     /**
@@ -514,9 +505,9 @@ public final class Window
      *
      * @return the horizontal content scale for the window.
      */
-    public double contentScaleX()
+    public static double contentScaleX()
     {
-        return this.scale.x;
+        return Window.scale.x;
     }
     
     /**
@@ -536,9 +527,9 @@ public final class Window
      *
      * @return the vertical content scale for the window.
      */
-    public double contentScaleY()
+    public static double contentScaleY()
     {
-        return this.scale.y;
+        return Window.scale.y;
     }
     
     /**
@@ -548,9 +539,10 @@ public final class Window
      *
      * @return The size, in pixels, of the framebuffer
      */
-    public @NotNull Vector2ic framebufferSize()
+    @NotNull
+    public static Vector2ic framebufferSize()
     {
-        return this.fbSize;
+        return Window.fbSize;
     }
     
     /**
@@ -560,9 +552,9 @@ public final class Window
      *
      * @return The width, in pixels, of the framebuffer
      */
-    public int framebufferWidth()
+    public static int framebufferWidth()
     {
-        return this.fbSize.x;
+        return Window.fbSize.x;
     }
     
     /**
@@ -572,29 +564,29 @@ public final class Window
      *
      * @return The height, in pixels, of the framebuffer
      */
-    public int framebufferHeight()
+    public static int framebufferHeight()
     {
-        return this.fbSize.y;
+        return Window.fbSize.y;
     }
     
     // -------------------- GLFW Methods -------------------- //
     
-    public void close()
+    public static void close()
     {
         Window.LOGGER.finest("Closing");
         
-        this._close = true;
+        Window._close = true;
     }
     
-    public void makeCurrent()
+    public static void makeCurrent()
     {
         Window.LOGGER.finest("Making Context Current");
         
-        glfwMakeContextCurrent(this.handle);
+        glfwMakeContextCurrent(Window.handle);
         org.lwjgl.opengl.GL.createCapabilities();
     }
     
-    public void unmakeCurrent()
+    public static void unmakeCurrent()
     {
         Window.LOGGER.finest("Unmaking Context Current");
         
@@ -602,9 +594,9 @@ public final class Window
         glfwMakeContextCurrent(MemoryUtil.NULL);
     }
     
-    public void swap()
+    public static void swap()
     {
-        glfwSwapBuffers(this.handle);
+        glfwSwapBuffers(Window.handle);
     }
     
     /**
@@ -614,9 +606,9 @@ public final class Window
      *
      * @param string a UTF-8 encoded string
      */
-    public void setClipboard(ByteBuffer string)
+    public static void setClipboard(ByteBuffer string)
     {
-        Delegator.runTask(() -> glfwSetClipboardString(this.handle, string));
+        Delegator.runTask(() -> glfwSetClipboardString(Window.handle, string));
     }
     
     /**
@@ -626,9 +618,9 @@ public final class Window
      *
      * @param string a UTF-8 encoded string
      */
-    public void setClipboard(CharSequence string)
+    public static void setClipboard(CharSequence string)
     {
-        Delegator.runTask(() -> glfwSetClipboardString(this.handle, string));
+        Delegator.runTask(() -> glfwSetClipboardString(Window.handle, string));
     }
     
     /**
@@ -642,9 +634,9 @@ public final class Window
      * {@code null} if an error occurred
      */
     @Nullable
-    public String getClipboard()
+    public static String getClipboard()
     {
-        return Delegator.waitReturnTask(() -> glfwGetClipboardString(this.handle));
+        return Delegator.waitReturnTask(() -> glfwGetClipboardString(Window.handle));
     }
     
     /**
@@ -659,9 +651,9 @@ public final class Window
      * {@code null} if an error occurred
      */
     @SuppressWarnings("ConstantConditions")
-    public long getClipboardRaw()
+    public static long getClipboardRaw()
     {
-        return Delegator.waitReturnTask(() -> nglfwGetClipboardString(this.handle));
+        return Delegator.waitReturnTask(() -> nglfwGetClipboardString(Window.handle));
     }
     
     /**
@@ -670,81 +662,81 @@ public final class Window
      *
      * @param time The system time in nanoseconds.
      */
-    void processEvents(long time)
+    static void processEvents(long time)
     {
-        if (this.close != this._close)
+        if (Window.close != Window._close)
         {
-            this.close = this._close;
+            Window.close = Window._close;
             Engine.Events.post(EventWindowClosed.create(time));
             Engine.stop();
         }
         
-        if (this.pos.x != this._pos.x || this.pos.y != this._pos.y)
+        if (Window.pos.x != Window._pos.x || Window.pos.y != Window._pos.y)
         {
-            this._pos.sub(this.pos, this.deltaI);
-            this.pos.set(this._pos);
-            Engine.Events.post(EventWindowMoved.create(time, this.pos, this.deltaI));
+            Window._pos.sub(Window.pos, Window.deltaI);
+            Window.pos.set(Window._pos);
+            Engine.Events.post(EventWindowMoved.create(time, Window.pos, Window.deltaI));
         }
         
-        if (this.size.x != this._size.x || this.size.y != this._size.y)
+        if (Window.size.x != Window._size.x || Window.size.y != Window._size.y)
         {
-            this._size.sub(this.size, this.deltaI);
-            this.size.set(this._size);
-            Engine.Events.post(EventWindowResized.create(time, this.size, this.deltaI));
+            Window._size.sub(Window.size, Window.deltaI);
+            Window.size.set(Window._size);
+            Engine.Events.post(EventWindowResized.create(time, Window.size, Window.deltaI));
         }
         
-        if (Double.compare(this.scale.x, this._scale.x) != 0 || Double.compare(this.scale.y, this._scale.y) != 0)
+        if (Double.compare(Window.scale.x, Window._scale.x) != 0 || Double.compare(Window.scale.y, Window._scale.y) != 0)
         {
-            this._scale.sub(this.scale, this.deltaD);
-            this.scale.set(this._scale);
-            Engine.Events.post(EventWindowContentScaleChanged.create(time, this.scale, this.deltaD));
+            Window._scale.sub(Window.scale, Window.deltaD);
+            Window.scale.set(Window._scale);
+            Engine.Events.post(EventWindowContentScaleChanged.create(time, Window.scale, Window.deltaD));
         }
         
-        if (this.fbSize.x != this._fbSize.x || this.fbSize.y != this._fbSize.y)
+        if (Window.fbSize.x != Window._fbSize.x || Window.fbSize.y != Window._fbSize.y)
         {
-            this._fbSize.sub(this.fbSize, this.deltaI);
-            this.fbSize.set(this._fbSize);
-            Engine.Events.post(EventWindowFramebufferResized.create(time, this.fbSize, this.deltaI));
+            Window._fbSize.sub(Window.fbSize, Window.deltaI);
+            Window.fbSize.set(Window._fbSize);
+            Engine.Events.post(EventWindowFramebufferResized.create(time, Window.fbSize, Window.deltaI));
         }
         
-        if (this._dropped != null)
+        if (Window._dropped != null)
         {
-            Path[] paths = new Path[this._dropped.length];
-            for (int i = 0; i < this._dropped.length; i++) paths[i] = Paths.get(this._dropped[i]);
-            this._dropped = null;
+            Path[] paths = new Path[Window._dropped.length];
+            for (int i = 0; i < Window._dropped.length; i++) paths[i] = Paths.get(Window._dropped[i]);
+            Window._dropped = null;
             Engine.Events.post(EventWindowDropped.create(time, paths));
         }
     }
     
     private static void closeCallback(long handle)
     {
-        Window.INSTANCE._close = true;
+        Window._close = true;
     }
     
     private static void posCallback(long handle, int x, int y)
     {
-        Window.INSTANCE._pos.set(x, y);
+        Window._pos.set(x, y);
     }
     
     private static void sizeCallback(long handle, int width, int height)
     {
-        Window.INSTANCE._size.set(width, height);
+        Window._size.set(width, height);
     }
     
     private static void contentScaleCallback(long handle, float xScale, float yScale)
     {
-        Window.INSTANCE._scale.set(xScale, yScale);
+        Window._scale.set(xScale, yScale);
     }
     
     private static void framebufferSizeCallback(long handle, int width, int height)
     {
-        Window.INSTANCE._fbSize.set(width, height);
+        Window._fbSize.set(width, height);
     }
     
     private static void dropCallback(long handle, int count, long names)
     {
-        Window.INSTANCE._dropped = new String[count];
+        Window._dropped = new String[count];
         PointerBuffer charPointers = MemoryUtil.memPointerBuffer(names, count);
-        for (int i = 0; i < count; i++) Window.INSTANCE._dropped[i] = MemoryUtil.memUTF8(charPointers.get(i));
+        for (int i = 0; i < count; i++) Window._dropped[i] = MemoryUtil.memUTF8(charPointers.get(i));
     }
 }

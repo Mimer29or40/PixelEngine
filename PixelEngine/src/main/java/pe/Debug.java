@@ -3,7 +3,6 @@ package pe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4d;
-import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
@@ -272,13 +271,10 @@ public final class Debug
                 int kx = (this.width - this.kbWidth) / 2;
                 int ky = my + (this.msHeight + this.spacing);
                 
-                Mouse    mouse    = Mouse.get();
-                Keyboard keyboard = Keyboard.get();
-                
                 for (Mouse.Button button : mouseMap.keySet())
                 {
                     Layout l = mouseMap.get(button);
-                    Colorc c = mouse.held(button) ? keyActive : keyInactive;
+                    Colorc c = Mouse.held(button) ? keyActive : keyInactive;
                     
                     drawQuad(mx + l.x, my + l.y, l.width, l.height, c);
                     drawText(mx + l.tx, my + l.ty, l.text, Color.WHITE);
@@ -286,12 +282,12 @@ public final class Debug
                 
                 long delay = 100_000_000L;
                 
-                if (mouse.dx() < 0.0)
+                if (Mouse.dx() < 0.0)
                 {
                     this.lastDirH     = 0;
                     this.lastDirHTime = Time.getNS();
                 }
-                else if (mouse.dx() > 0.0)
+                else if (Mouse.dx() > 0.0)
                 {
                     this.lastDirH     = 1;
                     this.lastDirHTime = Time.getNS();
@@ -320,12 +316,12 @@ public final class Debug
                     this.lastDirH = -1;
                 }
                 
-                if (mouse.dy() > 0.0)
+                if (Mouse.dy() > 0.0)
                 {
                     this.lastDirV     = 0;
                     this.lastDirVTime = Time.getNS();
                 }
-                else if (mouse.dy() < 0.0)
+                else if (Mouse.dy() < 0.0)
                 {
                     this.lastDirV     = 1;
                     this.lastDirVTime = Time.getNS();
@@ -354,12 +350,12 @@ public final class Debug
                     this.lastDirV = -1;
                 }
                 
-                if (mouse.scrollY() < 0.0)
+                if (Mouse.scrollY() < 0.0)
                 {
                     this.lastScroll     = 0;
                     this.lastScrollTime = Time.getNS();
                 }
-                else if (mouse.scrollY() > 0.0)
+                else if (Mouse.scrollY() > 0.0)
                 {
                     this.lastScroll     = 1;
                     this.lastScrollTime = Time.getNS();
@@ -391,7 +387,7 @@ public final class Debug
                 for (Keyboard.Key key : keyboardMap.keySet())
                 {
                     Layout l = keyboardMap.get(key);
-                    Colorc c = keyboard.held(key) ? keyActive : keyInactive;
+                    Colorc c = Keyboard.held(key) ? keyActive : keyInactive;
                     
                     drawQuad(kx + l.x, ky + l.y, l.width, l.height, c);
                     drawText(kx + l.tx, ky + l.ty, l.text, Color.WHITE);
@@ -464,33 +460,33 @@ public final class Debug
                 drawQuad(chartX, chartY, chartW, chartH, this.chartBackground);
                 drawQuad(chartX, chartY, chartW, lineThickness, this.chartLine);
                 drawQuad(chartX, chartY + (chartH >> 1), chartW, lineThickness, this.chartLine);
-    
+                
                 long min = Math.min(Time.frameTimesRaw);
                 long avg = (long) Math.mean(Time.frameTimesRaw);
                 long max = Math.max(Time.frameTimesRaw);
-    
+                
                 String text;
                 int    textW, textH;
-    
+                
                 text  = String.format("Min: %s us", min / 1_000L);
                 textH = textHeight(text);
                 drawText(chartX + 1, chartY - textH, text, Color.WHITE);
-    
+                
                 text  = String.format("Avg: %s us", avg / 1_000L);
                 textW = textWidth(text);
                 textH = textHeight(text);
                 drawText(chartX + ((chartW - textW) >> 1), chartY - textH, text, Color.WHITE);
-    
+                
                 text  = String.format("Max: %s us", max / 1_000L);
                 textW = textWidth(text);
                 textH = textHeight(text);
                 drawText(chartX + chartW - textW, chartY - textH, text, Color.WHITE);
                 
-                text = "30";
+                text  = "30";
                 textW = textWidth(text);
                 drawText(chartX + chartW - textW, chartY + lineThickness, text, Color.WHITE);
                 
-                text = "60";
+                text  = "60";
                 textW = textWidth(text);
                 drawText(chartX + chartW - textW, chartY + (chartH >> 1) + lineThickness, text, Color.WHITE);
             }
@@ -553,7 +549,7 @@ public final class Debug
             if (Debug.currentMenu < 0)
             {
                 String text = "No Menus";
-                int    x    = (Window.get().framebufferWidth() - Debug.textWidth(text)) / 2;
+                int    x    = (Window.framebufferWidth() - Debug.textWidth(text)) / 2;
                 drawTextWithBackground(x, 0, text, Color.WHITE, null);
             }
             else
@@ -570,7 +566,7 @@ public final class Debug
                 int currWidth = Debug.textWidth(menu.name) + 2;
                 int prevWidth = Debug.textWidth(prev.name) + 2;
                 
-                int currPos = (Window.get().framebufferWidth() - currWidth) / 2;
+                int currPos = (Window.framebufferWidth() - currWidth) / 2;
                 int prevPos = currPos - spacing - prevWidth;
                 int nextPos = currPos + currWidth + spacing;
                 
@@ -581,15 +577,15 @@ public final class Debug
         }
         if (Debug.notification != null && Time.getNS() - Debug.notificationTime < Debug.notificationDur)
         {
-            int x = (Window.get().framebufferWidth() - textWidth(Debug.notification)) >> 1;
-            int y = (Window.get().framebufferHeight() - textHeight(Debug.notification)) >> 1;
+            int x = (Window.framebufferWidth() - textWidth(Debug.notification)) >> 1;
+            int y = (Window.framebufferHeight() - textHeight(Debug.notification)) >> 1;
             
             drawTextWithBackground(x, y, Debug.notification, Color.WHITE, null);
         }
         if (!Debug.renderables.isEmpty())
         {
-            int fbWidth  = Window.get().framebufferWidth();
-            int fbHeight = Window.get().framebufferHeight();
+            int fbWidth  = Window.framebufferWidth();
+            int fbHeight = Window.framebufferHeight();
             
             GLState.viewport(0, 0, fbWidth, fbHeight);
             
@@ -840,8 +836,8 @@ public final class Debug
         
         protected void draw()
         {
-            this.width  = Window.get().framebufferWidth();
-            this.height = Window.get().framebufferHeight() - Debug.headerSize;
+            this.width  = Window.framebufferWidth();
+            this.height = Window.framebufferHeight() - Debug.headerSize;
             drawImpl();
         }
         

@@ -112,7 +112,7 @@ public abstract class GLBuffer
         
         this.type  = type;
         this.usage = usage;
-    
+        
         this.size = Integer.toUnsignedLong(data.remaining() * MemUtil.elementSize(data));
         
         bind(this);

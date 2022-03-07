@@ -19,8 +19,8 @@ public abstract class Window
     
     protected void draw()
     {
-        this.width  = pe.Window.get().framebufferWidth();
-        this.height = pe.Window.get().framebufferHeight() - this.headerHeight;
+        this.width  = pe.Window.framebufferWidth();
+        this.height = pe.Window.framebufferHeight() - this.headerHeight;
         drawImpl();
     }
     

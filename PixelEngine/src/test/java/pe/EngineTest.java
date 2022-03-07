@@ -18,8 +18,8 @@ public class EngineTest extends Engine
     {
         GLState.clearScreenBuffers();
         
-        // double x = Mouse.get().x();
-        // double y = Mouse.get().y();
+        // double x = Mouse.x();
+        // double y = Mouse.y();
         //
         // GLBatch.get().matrix.mode(MatrixMode.MODEL);
         // GLBatch.get().matrix.translate(x, y, 0.0);

@@ -252,11 +252,11 @@ public class OverlayGUI
                 MemoryUtil.memCopy(text, MemoryUtil.memAddress(str), len);
                 str.put(len, (byte) 0);
                 
-                Window.get().setClipboard(str);
+                Window.setClipboard(str);
             }
         });
         OverlayGUI.context.clip().paste((handle, edit) -> {
-            long text = Window.get().getClipboardRaw();
+            long text = Window.getClipboardRaw();
             if (text != MemoryUtil.NULL)
             {
                 nnk_textedit_paste(edit, text, nnk_strlen(text));
@@ -340,19 +340,19 @@ public class OverlayGUI
         NkMouse mouse = OverlayGUI.context.input().mouse();
         if (mouse.grab())
         {
-            Mouse.get().hide();
+            Mouse.hide();
         }
         else if (mouse.grabbed())
         {
             float prevX = mouse.prev().x();
             float prevY = mouse.prev().y();
-            Mouse.get().pos(prevX, prevY);
+            Mouse.pos(prevX, prevY);
             mouse.pos().x(prevX);
             mouse.pos().y(prevY);
         }
         else if (mouse.ungrab())
         {
-            Mouse.get().show();
+            Mouse.show();
         }
         
         nk_input_end(OverlayGUI.context);
@@ -456,12 +456,12 @@ public class OverlayGUI
         GLState.depthMode(DepthMode.NONE);
         
         GLState.cullFace(CullFace.NONE);
-    
-        int fbWidth  = Window.get().framebufferWidth();
-        int fbHeight = Window.get().framebufferHeight();
         
-        int width  = Window.get().width();
-        int height = Window.get().height();
+        int fbWidth  = Window.framebufferWidth();
+        int fbHeight = Window.framebufferHeight();
+        
+        int width  = Window.width();
+        int height = Window.height();
         
         GLFramebuffer.bind(null);
         GLState.viewport(0, 0, fbWidth, fbHeight);
@@ -496,12 +496,12 @@ public class OverlayGUI
         {
             if (cmd.elem_count() == 0) continue;
             GLTexture.bindRaw(GL33.GL_TEXTURE_2D, cmd.texture().id(), 0);
-    
+            
             int x = (int) (cmd.clip_rect().x() * fb_scale_x);
             int y = (int) ((height - (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y);
             int w = (int) (cmd.clip_rect().w() * fb_scale_x);
             int h = (int) (cmd.clip_rect().h() * fb_scale_y);
-
+            
             GLState.scissor(x, y, w, h);
             OverlayGUI.vertexArray.drawElements(DrawMode.TRIANGLES, offset, cmd.elem_count());
             

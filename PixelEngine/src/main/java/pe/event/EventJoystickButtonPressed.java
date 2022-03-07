@@ -8,7 +8,7 @@ public interface EventJoystickButtonPressed extends EventInputDeviceInputPressed
     {
         private final boolean doublePressed;
         
-        private _EventJoystickButtonPressed(long time, Joystick joystick, Joystick.Button button, boolean doublePressed)
+        private _EventJoystickButtonPressed(long time, Joystick.Index joystick, Joystick.Button button, boolean doublePressed)
         {
             super(time, joystick, button);
             
@@ -22,7 +22,7 @@ public interface EventJoystickButtonPressed extends EventInputDeviceInputPressed
         }
     }
     
-    static EventJoystickButtonPressed create(long time, Joystick joystick, Joystick.Button button, boolean doublePressed)
+    static EventJoystickButtonPressed create(long time, Joystick.Index joystick, Joystick.Button button, boolean doublePressed)
     {
         return new _EventJoystickButtonPressed(time, joystick, button, doublePressed);
     }

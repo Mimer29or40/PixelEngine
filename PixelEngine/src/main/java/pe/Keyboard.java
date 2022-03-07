@@ -19,37 +19,25 @@ public final class Keyboard
     
     // -------------------- Static Objects -------------------- //
     
-    private static Keyboard INSTANCE;
+    static final Map<Key, Input> keyMap = new EnumMap<>(Key.class);
     
-    public static Keyboard get()
-    {
-        return Keyboard.INSTANCE;
-    }
+    // -------------------- Callback Objects -------------------- //
+    
+    static final Queue<Integer> _charChanges = new ConcurrentLinkedQueue<>();
+    
+    static final Queue<Pair<Key, Integer>> _keyStateChanges = new ConcurrentLinkedQueue<>();
     
     static void setup()
     {
         Keyboard.LOGGER.fine("Setup");
         
-        Keyboard.INSTANCE = new Keyboard();
+        for (Key key : Key.values()) Keyboard.keyMap.put(key, new Input());
         
-        glfwSetKeyCallback(Window.get().handle, Keyboard::keyCallback);
-        glfwSetCharCallback(Window.get().handle, Keyboard::charCallback);
+        glfwSetKeyCallback(Window.handle, Keyboard::keyCallback);
+        glfwSetCharCallback(Window.handle, Keyboard::charCallback);
     }
     
-    // -------------------- Objects -------------------- //
-    
-    final Map<Key, Input> keyMap = new EnumMap<>(Key.class);
-    
-    // -------------------- Callback Objects -------------------- //
-    
-    final Queue<Integer> _charChanges = new ConcurrentLinkedQueue<>();
-    
-    final Queue<Pair<Key, Integer>> _keyStateChanges = new ConcurrentLinkedQueue<>();
-    
-    private Keyboard()
-    {
-        for (Key key : Key.values()) this.keyMap.put(key, new Input());
-    }
+    private Keyboard() {}
     
     /**
      * Sets the sticky keys flag. If sticky mouse buttons are enabled, a mouse
@@ -60,20 +48,20 @@ public final class Keyboard
      *
      * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
      */
-    public void sticky(boolean sticky)
+    public static void sticky(boolean sticky)
     {
         Keyboard.LOGGER.finest("Setting Sticky Flag:", sticky);
         
-        Delegator.runTask(() -> glfwSetInputMode(Window.get().handle, GLFW_STICKY_KEYS, sticky ? GLFW_TRUE : GLFW_FALSE));
+        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_STICKY_KEYS, sticky ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves the sticky keys flag.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean sticky()
+    public static boolean sticky()
     {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.get().handle, GLFW_STICKY_KEYS) == GLFW_TRUE);
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_STICKY_KEYS) == GLFW_TRUE);
     }
     
     /**
@@ -83,25 +71,25 @@ public final class Keyboard
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    void processEvents(long time)
+    static void processEvents(long time)
     {
         Integer codePoint;
-        while ((codePoint = this._charChanges.poll()) != null)
+        while ((codePoint = Keyboard._charChanges.poll()) != null)
         {
             Engine.Events.post(EventKeyboardTyped.create(time, codePoint));
         }
         
         Pair<Key, Integer> keyStateChange;
-        while ((keyStateChange = this._keyStateChanges.poll()) != null)
+        while ((keyStateChange = Keyboard._keyStateChanges.poll()) != null)
         {
-            Input keyObj = this.keyMap.get(keyStateChange.getA());
+            Input keyObj = Keyboard.keyMap.get(keyStateChange.getA());
             
             keyObj._state = keyStateChange.getB();
         }
         
-        for (Key key : this.keyMap.keySet())
+        for (Key key : Keyboard.keyMap.keySet())
         {
-            Input input = this.keyMap.get(key);
+            Input input = Keyboard.keyMap.get(key);
             
             input.state  = input._state;
             input._state = -1;
@@ -138,24 +126,24 @@ public final class Keyboard
         }
     }
     
-    public boolean down(Key key)
+    public static boolean down(Key key)
     {
-        return this.keyMap.get(key).state == GLFW_PRESS;
+        return Keyboard.keyMap.get(key).state == GLFW_PRESS;
     }
     
-    public boolean up(Key key)
+    public static boolean up(Key key)
     {
-        return this.keyMap.get(key).state == GLFW_RELEASE;
+        return Keyboard.keyMap.get(key).state == GLFW_RELEASE;
     }
     
-    public boolean repeat(Key key)
+    public static boolean repeat(Key key)
     {
-        return this.keyMap.get(key).state == GLFW_REPEAT;
+        return Keyboard.keyMap.get(key).state == GLFW_REPEAT;
     }
     
-    public boolean held(Key key)
+    public static boolean held(Key key)
     {
-        return this.keyMap.get(key).held;
+        return Keyboard.keyMap.get(key).held;
     }
     
     public enum Key
@@ -341,13 +329,13 @@ public final class Keyboard
     
     private static void keyCallback(long handle, int key, int scancode, int action, int mods)
     {
-        Keyboard.INSTANCE._keyStateChanges.offer(new Pair<>(Keyboard.Key.get(key, scancode), action));
+        Keyboard._keyStateChanges.offer(new Pair<>(Keyboard.Key.get(key, scancode), action));
         
         Modifier.activeMods = mods;
     }
     
     private static void charCallback(long handle, int codePoint)
     {
-        Keyboard.INSTANCE._charChanges.offer(codePoint);
+        Keyboard._charChanges.offer(codePoint);
     }
 }

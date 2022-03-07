@@ -19,7 +19,7 @@ public interface EventJoystickAxis extends EventJoystick
         private final double        value;
         private final double        delta;
         
-        private _EventJoystickAxis(long time, Joystick joystick, Joystick.Axis axis, double value, double delta)
+        private _EventJoystickAxis(long time, Joystick.Index joystick, Joystick.Axis axis, double value, double delta)
         {
             super(time, joystick);
             
@@ -47,7 +47,7 @@ public interface EventJoystickAxis extends EventJoystick
         }
     }
     
-    static EventJoystickAxis create(long time, Joystick joystick, Joystick.Axis axis, double value, double delta)
+    static EventJoystickAxis create(long time, Joystick.Index joystick, Joystick.Axis axis, double value, double delta)
     {
         return new _EventJoystickAxis(time, joystick, axis, value, delta);
     }

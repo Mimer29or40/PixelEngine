@@ -5,5 +5,5 @@ import pe.Joystick;
 public interface EventJoystick extends EventInputDevice
 {
     @EventProperty(printName = false)
-    Joystick joystick();
+    Joystick.Index joystick();
 }

@@ -146,11 +146,6 @@ public final class Joystick
     
     private static final Map<Index, Joystick> INSTANCES = new EnumMap<>(Index.class);
     
-    public static Joystick get(Index jid)
-    {
-        return Joystick.INSTANCES.get(jid);
-    }
-    
     static void setup()
     {
         Joystick.LOGGER.fine("Setup");
@@ -230,20 +225,14 @@ public final class Joystick
         Joystick.LOGGER.finer("Created", this);
     }
     
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName() + "{" + "name='" + this.name + '\'' + ", jid=" + this.jid + '}';
-    }
-    
     /**
      * Returns whether the specified joystick is both present and has a gamepad mapping.
      *
      * @return {@code true} if a joystick is both present and has a gamepad mapping or {@code false} otherwise
      */
-    public boolean isGamepad()
+    public static boolean isGamepad(Index index)
     {
-        return this.gamepad;
+        return Joystick.INSTANCES.get(index).gamepad;
     }
     
     /**
@@ -251,9 +240,10 @@ public final class Joystick
      *
      * @return the UTF-8 encoded name of the joystick, or {@code NULL} if the joystick is not present
      */
-    public @Nullable String name()
+    @Nullable
+    public static String name(Index index)
     {
-        return this.name;
+        return Joystick.INSTANCES.get(index).name;
     }
     
     /**
@@ -273,10 +263,13 @@ public final class Joystick
      *
      * @return the UTF-8 encoded GUID of the joystick, or {@code NULL} if the joystick is not present or an error occurred
      */
-    public @Nullable String guid()
+    @Nullable
+    public static String guid(Index index)
     {
-        return this.guid;
+        return Joystick.INSTANCES.get(index).guid;
     }
+    
+    // TODO - State Query Methods
     
     /**
      * This method is called by the window it is attached to. This is where
@@ -287,8 +280,10 @@ public final class Joystick
     @SuppressWarnings("ConstantConditions")
     static void processEvents(long time)
     {
-        for (Joystick joystick : Joystick.INSTANCES.values())
+        for (Index index : Joystick.INSTANCES.keySet())
         {
+            Joystick joystick = Joystick.INSTANCES.get(index);
+            
             if (joystick == null) continue;
             
             Pair<Axis, Float> axisStateChange;
@@ -303,7 +298,7 @@ public final class Joystick
                 {
                     double delta = axisObj._value - axisObj.value;
                     axisObj.value = axisObj._value;
-                    Engine.Events.post(EventJoystickAxis.create(time, joystick, axis, axisObj.value, delta));
+                    Engine.Events.post(EventJoystickAxis.create(time, index, axis, axisObj.value, delta));
                 }
             }
             
@@ -326,30 +321,30 @@ public final class Joystick
                     case GLFW_PRESS -> {
                         input.held     = true;
                         input.holdTime = time + Input.holdFrequencyL();
-                        Engine.Events.post(EventJoystickButtonDown.create(time, joystick, button));
+                        Engine.Events.post(EventJoystickButtonDown.create(time, index, button));
                     }
                     case GLFW_RELEASE -> {
                         input.held     = false;
                         input.holdTime = Long.MAX_VALUE;
-                        Engine.Events.post(EventJoystickButtonUp.create(time, joystick, button));
+                        Engine.Events.post(EventJoystickButtonUp.create(time, index, button));
                         
                         if (time - input.pressTime < Input.doublePressedDelayL())
                         {
                             input.pressTime = 0;
-                            Engine.Events.post(EventJoystickButtonPressed.create(time, joystick, button, true));
+                            Engine.Events.post(EventJoystickButtonPressed.create(time, index, button, true));
                         }
                         else
                         {
                             input.pressTime = time;
-                            Engine.Events.post(EventJoystickButtonPressed.create(time, joystick, button, false));
+                            Engine.Events.post(EventJoystickButtonPressed.create(time, index, button, false));
                         }
                     }
-                    case GLFW_REPEAT -> Engine.Events.post(EventJoystickButtonRepeated.create(time, joystick, button));
+                    case GLFW_REPEAT -> Engine.Events.post(EventJoystickButtonRepeated.create(time, index, button));
                 }
                 if (input.held && time - input.holdTime >= Input.holdFrequencyL())
                 {
                     input.holdTime += Input.holdFrequencyL();
-                    Engine.Events.post(EventJoystickButtonHeld.create(time, joystick, button));
+                    Engine.Events.post(EventJoystickButtonHeld.create(time, index, button));
                 }
             }
             
@@ -364,7 +359,7 @@ public final class Joystick
                 if (hatObj.state != hatObj._state)
                 {
                     hatObj.state = hatObj._state;
-                    Engine.Events.post(EventJoystickHat.create(time, joystick, hat, HatDirection.get(hatObj.state)));
+                    Engine.Events.post(EventJoystickHat.create(time, index, hat, HatDirection.get(hatObj.state)));
                 }
             }
         }

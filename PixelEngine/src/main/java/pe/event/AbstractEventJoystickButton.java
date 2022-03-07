@@ -6,7 +6,7 @@ abstract class AbstractEventJoystickButton extends AbstractEventJoystick impleme
 {
     private final Joystick.Button button;
     
-    AbstractEventJoystickButton(long time, Joystick joystick, Joystick.Button button)
+    AbstractEventJoystickButton(long time, Joystick.Index joystick, Joystick.Button button)
     {
         super(time, joystick);
         

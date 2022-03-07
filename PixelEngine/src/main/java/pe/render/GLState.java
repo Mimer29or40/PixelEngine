@@ -399,7 +399,7 @@ public class GLState
     public static void scissor(int x, int y, int width, int height)
     {
         GLState.LOGGER.finest("Setting Custom Scissor: [%s, %s, %s, %s]", x, y, width, height);
-    
+        
         GLState.scissorMode = GLState.scissorModeCustom;
         
         GL33.glEnable(GL33.GL_SCISSOR_TEST);

@@ -4,9 +4,9 @@ import pe.Joystick;
 
 abstract class AbstractEventJoystick extends AbstractEventInputDevice implements EventJoystick
 {
-    private final Joystick joystick;
+    private final Joystick.Index joystick;
     
-    AbstractEventJoystick(long time, Joystick joystick)
+    AbstractEventJoystick(long time, Joystick.Index joystick)
     {
         super(time);
         
@@ -14,7 +14,7 @@ abstract class AbstractEventJoystick extends AbstractEventInputDevice implements
     }
     
     @Override
-    public Joystick joystick()
+    public Joystick.Index joystick()
     {
         return this.joystick;
     }
