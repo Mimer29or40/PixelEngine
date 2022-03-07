@@ -14,7 +14,6 @@ import org.lwjgl.stb.STBTTPackedchar;
 import org.lwjgl.system.Callback;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Platform;
-import pe.GUI;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -22,7 +21,6 @@ import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Objects;
-import java.util.stream.IntStream;
 
 import static org.lwjgl.demo.util.IOUtil.ioResourceToByteBuffer;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -540,7 +538,7 @@ public class GLFWDemo
                    nnk_textedit_paste(edit, text, nnk_strlen(text));
                }
            });
-    
+        
         // nk_input_begin(ctx);
         // nk_input_end(ctx);
         setupContext();
@@ -624,8 +622,8 @@ public class GLFWDemo
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, max_element_buffer, GL_STREAM_DRAW);
             
             // load draw vertices & elements directly into vertex + element buffer
-            ByteBuffer vertices = Objects.requireNonNull(glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE, max_vertex_buffer, null)).clear();
-            ByteBuffer elements = Objects.requireNonNull(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_WRITE, max_element_buffer, null)).clear();
+            ByteBuffer vertices = Objects.requireNonNull(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY, max_vertex_buffer, null));
+            ByteBuffer elements = Objects.requireNonNull(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, max_element_buffer, null));
             try (MemoryStack stack = stackPush())
             {
                 // fill convert configuration

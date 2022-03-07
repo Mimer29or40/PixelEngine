@@ -17,7 +17,7 @@ public final class Time
     static long engineTime;       // The time that since the start of the engine (ns)
     static long engineFrameCount; // The number of frames that have been rendered
     
-    static void init()
+    static void setup()
     {
         Time.start = System.nanoTime();
         

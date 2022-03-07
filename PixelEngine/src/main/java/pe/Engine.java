@@ -144,11 +144,11 @@ public abstract class Engine
     
     public static final class Delegator
     {
-        private static final Deque<Runnable>                         run               = new ArrayDeque<>();
-        private static final Deque<Runnable>                         waitRun           = new ArrayDeque<>();
-        private static final BlockingQueue<Pair<Integer, Exception>> waitRunResults    = new SynchronousQueue<>();
-        private static final Deque<Supplier<Object>>                 waitReturn        = new ArrayDeque<>();
-        private static final BlockingQueue<Pair<Object, Exception>>  waitReturnResults = new SynchronousQueue<>();
+        private static final Deque<Runnable>                    run               = new ArrayDeque<>();
+        private static final Deque<Runnable>                    waitRun           = new ArrayDeque<>();
+        private static final BlockingQueue<Optional<Exception>> waitRunResults    = new SynchronousQueue<>();
+        private static final Deque<Supplier<?>>                 waitReturn        = new ArrayDeque<>();
+        private static final BlockingQueue<Pair<?, Exception>>  waitReturnResults = new SynchronousQueue<>();
         
         private static void runTasks()
         {
@@ -170,24 +170,22 @@ public abstract class Engine
             {
                 Runnable task = Delegator.waitRun.poll();
                 
-                int       result = 0;
-                Exception except = null;
+                Exception e = null;
                 try
                 {
                     task.run();
                 }
-                catch (Exception e)
+                catch (Exception exception)
                 {
-                    result = 1;
-                    except = e;
+                    e = exception;
                 }
-                //noinspection ResultOfMethodCallIgnored
-                Delegator.waitRunResults.offer(new Pair<>(result, except));
+                //noinspection StatementWithEmptyBody
+                while (!Delegator.waitRunResults.offer(Optional.ofNullable(e))) ;
             }
             
             while (!Delegator.waitReturn.isEmpty())
             {
-                Supplier<Object> task = Delegator.waitReturn.poll();
+                Supplier<?> task = Delegator.waitReturn.poll();
                 
                 Object    result = null;
                 Exception except = null;
@@ -199,8 +197,8 @@ public abstract class Engine
                 {
                     except = e;
                 }
-                //noinspection ResultOfMethodCallIgnored
-                Delegator.waitReturnResults.offer(new Pair<>(result, except));
+                //noinspection StatementWithEmptyBody
+                while (!Delegator.waitReturnResults.offer(new Pair<>(result, except))) ;
             }
         }
         
@@ -227,8 +225,8 @@ public abstract class Engine
             
             try
             {
-                Pair<Integer, Exception> result = Delegator.waitRunResults.take();
-                if (result.a != 0) throw new RuntimeException(result.b);
+                Optional<Exception> result = Delegator.waitRunResults.take();
+                if (result.isPresent()) throw new RuntimeException(result.get());
             }
             catch (InterruptedException e)
             {
@@ -240,12 +238,11 @@ public abstract class Engine
         {
             if (Thread.currentThread().getName().equals("main")) return task.get();
             
-            //noinspection unchecked
-            Delegator.waitReturn.offer((Supplier<Object>) task);
+            Delegator.waitReturn.offer(task);
             
             try
             {
-                Pair<Object, Exception> result = Delegator.waitReturnResults.take();
+                Pair<?, Exception> result = Delegator.waitReturnResults.take();
                 if (result.b != null) throw new RuntimeException(result.b);
                 //noinspection unchecked
                 return (T) result.a;
@@ -363,7 +360,7 @@ public abstract class Engine
             
             Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
             Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
-    
+            
             GLFramebuffer.bind(null);
             GLProgram.bind(Viewport.program);
             
@@ -501,7 +498,8 @@ public abstract class Engine
             Engine.running  = true;
             Engine.random   = new Random();
             
-            Time.init();
+            Time.setup();
+            // Delegator.setup(); // TODO
             
             Extensions.preSetup();
             
@@ -535,7 +533,7 @@ public abstract class Engine
                                 
                                 Extensions.postEvents();
                                 
-                                GUI.handleEvents();
+                                // GUI.handleEvents();
                                 Debug.handleEvents();
                                 OverlayGUI.handleEvents();
                                 
@@ -575,7 +573,7 @@ public abstract class Engine
                                 }
                                 
                                 Viewport.draw();
-                                GUI.draw();
+                                // GUI.draw();
                                 Debug.draw();
                                 OverlayGUI.draw();
                                 
@@ -637,7 +635,7 @@ public abstract class Engine
                         Extensions.renderDestroy();
                         
                         Viewport.destroy();
-                        GUI.destroy();
+                        // GUI.destroy();
                         Debug.destroy();
                         OverlayGUI.destroy();
                         
@@ -726,7 +724,7 @@ public abstract class Engine
         GLState.setup();
         
         Viewport.setup();
-        GUI.setup();
+        // GUI.setup();
         Debug.setup();
         OverlayGUI.setup();
         

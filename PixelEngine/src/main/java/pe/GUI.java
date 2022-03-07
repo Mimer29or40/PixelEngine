@@ -9,8 +9,6 @@ import org.lwjgl.stb.STBTTPackedchar;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.event.*;
-import pe.render.DrawMode;
-import pe.render.GLBatch;
 import pe.render.GLTexture;
 import rutils.IOUtil;
 
@@ -18,7 +16,6 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-import static org.lwjgl.glfw.GLFW.glfwSetWindowShouldClose;
 import static org.lwjgl.nuklear.Nuklear.*;
 import static org.lwjgl.opengl.GL11C.*;
 import static org.lwjgl.opengl.GL12C.GL_UNSIGNED_INT_8_8_8_8_REV;
@@ -207,15 +204,15 @@ public final class GUI
         {
             FloatBuffer x = stack.floats(0.0f);
             FloatBuffer y = stack.floats(0.0f);
-        
+            
             STBTTAlignedQuad q       = STBTTAlignedQuad.malloc(stack);
             IntBuffer        advance = stack.mallocInt(1);
-        
+            
             stbtt_GetPackedQuad(cdata, BITMAP_W, BITMAP_H, codePoint - 32, x, y, q, false);
             stbtt_GetCodepointHMetrics(fontInfo, codePoint, advance, null);
-        
+            
             NkUserFontGlyph ufg = NkUserFontGlyph.create(glyph);
-        
+            
             ufg.width(q.x1() - q.x0());
             ufg.height(q.y1() - q.y0());
             ufg.offset().set(q.x0(), q.y0() + (FONT_HEIGHT + descent));
@@ -410,7 +407,7 @@ public final class GUI
     static void draw()
     {
         testDraw();
-    
+        
         // vertexBuffer();
         // drawCommands();
         // Engine.stop();
@@ -443,11 +440,11 @@ public final class GUI
                                                     .global_alpha(1.0f)
                                                     .shape_AA(NK_ANTI_ALIASING_ON)
                                                     .line_AA(NK_ANTI_ALIASING_ON);
-
+            
             // setup buffers to load vertices and elements
             NkBuffer vbuf = NkBuffer.malloc(stack);
             NkBuffer ebuf = NkBuffer.malloc(stack);
-
+            
             nk_buffer_init_fixed(vbuf, GUI.vertexBuffer);
             nk_buffer_init_fixed(ebuf, GUI.elementBuffer);
             nk_convert(ctx, cmds, vbuf, ebuf, config);
@@ -456,7 +453,7 @@ public final class GUI
         // GLBatch batch = GLBatch.get();
         
         Window window = Window.get();
-    
+        
         float fb_scale_x = (float) window.framebufferWidth() / (float) window.width();
         float fb_scale_y = (float) window.framebufferHeight() / (float) window.height();
         
@@ -467,7 +464,7 @@ public final class GUI
              cmd = nk__draw_next(cmd, GUI.cmds, GUI.ctx))
         {
             if (cmd.elem_count() == 0) continue;
-
+            
             // batch.checkBuffer(cmd.elem_count() * 3);
             //
             // batch.begin(DrawMode.TRIANGLES);
@@ -517,19 +514,19 @@ public final class GUI
                     (int) (cmd.clip_rect().h() * fb_scale_y)
                      );
             glDrawElements(GL_TRIANGLES, cmd.elem_count(), GL_UNSIGNED_SHORT, offset);
-
+            
             offset += Integer.toUnsignedLong(cmd.elem_count() * Short.BYTES);
         }
         
         nk_clear(GUI.ctx);
         nk_buffer_clear(GUI.cmds);
-    
+        
         glDisable(GL_SCISSOR_TEST);
     }
     
     private static void drawCommands()
     {
-        for(NkCommand cmd = nk__begin(ctx); cmd != null; cmd = nk__next(ctx, cmd))
+        for (NkCommand cmd = nk__begin(ctx); cmd != null; cmd = nk__next(ctx, cmd))
         {
             switch (cmd.type())
             {

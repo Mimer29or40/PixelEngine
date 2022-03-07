@@ -48,6 +48,14 @@ public class GLTexture
         return GLTexture.defaultTexture;
     }
     
+    public static void bindRaw(int textureType, int textureID, int index)
+    {
+        GLTexture.LOGGER.finest("Binding textureID=%s to index=%s", textureID, index);
+        
+        GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
+        GL33.glBindTexture(textureType, textureID);
+    }
+    
     public static void bind(@Nullable GLTexture texture, int index)
     {
         if (texture == null) texture = GLTexture.defaultTexture;
