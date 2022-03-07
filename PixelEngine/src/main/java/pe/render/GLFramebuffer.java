@@ -38,12 +38,11 @@ public class GLFramebuffer
         if (framebuffer == null)
         {
             GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-            GL33.glViewport(Engine.Viewport.x(), Engine.Viewport.y(), Engine.Viewport.width(), Engine.Viewport.height());
         }
         else
         {
             GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, framebuffer.id);
-            GL33.glViewport(0, 0, framebuffer.width, framebuffer.height);
+            GLState.viewport(0, 0, framebuffer.width, framebuffer.height);
         }
     }
     

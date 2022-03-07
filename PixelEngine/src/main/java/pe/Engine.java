@@ -368,6 +368,7 @@ public abstract class Engine
             GLProgram.bind(Viewport.program);
             
             GLState.defaultState();
+            GLState.viewport(Viewport.pos.x, Viewport.pos.y, Viewport.size.x, Viewport.size.y);
             GLState.depthMode(DepthMode.NONE);
             
             GLState.clearScreenBuffers(ScreenBuffer.COLOR);

@@ -148,6 +148,21 @@ public class GLState
     }
     
     /**
+     * Specifies the viewport transformation parameters for all viewports.
+     *
+     * @param x the left viewport coordinate
+     * @param y the bottom viewport coordinate
+     * @param w the viewport width
+     * @param h the viewport height
+     */
+    public static void viewport(int x, int y, int w, int h)
+    {
+        GLState.LOGGER.finest("Setting Viewport: [%s, %s, %s, %s]", x, y, w, h);
+        
+        GL33.glViewport(x, y, w, h);
+    }
+    
+    /**
      * If enabled, the -wc≤zc≤wc plane equation is ignored by view volume
      * clipping (effectively, there is not near or far plane clipping)
      *
