@@ -112,12 +112,12 @@ public abstract class GLBuffer
         
         this.type  = type;
         this.usage = usage;
-        
+    
         this.size = Integer.toUnsignedLong(data.remaining() * MemUtil.elementSize(data));
         
         bind(this);
         
-        GL33.nglBufferData(this.type, Integer.toUnsignedLong(data.remaining() * MemUtil.elementSize(data)), MemoryUtil.memAddress(data), usage.ref);
+        GL33.nglBufferData(this.type, this.size, MemoryUtil.memAddress(data), usage.ref);
         
         GLBuffer.LOGGER.fine("Created", this);
     }
@@ -140,7 +140,7 @@ public abstract class GLBuffer
         
         bind(this);
         
-        GL33.nglBufferData(this.type, Integer.toUnsignedLong(data.remaining() * data.sizeof()), MemoryUtil.memAddress(data), usage.ref);
+        GL33.nglBufferData(this.type, this.size, MemoryUtil.memAddress(data), usage.ref);
         
         GLBuffer.LOGGER.fine("Created", this);
     }

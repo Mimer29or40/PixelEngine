@@ -7,7 +7,6 @@ import org.lwjgl.system.CustomBuffer;
 import rutils.Logger;
 
 import java.nio.Buffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -204,8 +203,6 @@ public class GLVertexArray
     
     /**
      * Draws the array in the specified mode. If an element buffer is available, it used it.
-     * <p>
-     * Make sure to bind the vertex array first.
      *
      * @param mode   The primitive type.
      * @param offset The offset into the array.
@@ -234,8 +231,6 @@ public class GLVertexArray
     
     /**
      * Draws the array in the specified mode. If an element buffer is available, it used it.
-     * <p>
-     * Make sure to bind the vertex array first.
      *
      * @param mode  The primitive type.
      * @param count The size of the buffer to draw.
@@ -248,15 +243,58 @@ public class GLVertexArray
     
     /**
      * Draws the array in the specified mode. If an element buffer is available, it used it.
-     * <p>
-     * Make sure to bind the vertex array first.
      *
      * @param mode The primitive type.
      * @return This instance for call chaining.
      */
     public GLVertexArray draw(@NotNull DrawMode mode)
     {
-        return draw(mode, 0, this.indexBuffer != null ? indexCount() : this.vertexCount);
+        return draw(mode, 0, this.vertexCount);
+    }
+    
+    /**
+     * Draws the array with elements in the specified mode.
+     *
+     * @param mode   The primitive type.
+     * @param offset The offset into the array.
+     * @param count  the number of vertices to draw.
+     * @return This instance for call chaining.
+     */
+    public GLVertexArray drawElements(@NotNull DrawMode mode, int offset, int count)
+    {
+        bind(this);
+        
+        if (this.indexBuffer == null) throw new IllegalStateException("Cannot draw elements when non are provided.");
+        
+        GLVertexArray.LOGGER.finer("Drawing Elements size=%s from %s", count, this);
+        
+        GL33.glDrawElements(mode.ref, count, this.indexBuffer.indexType().ref, Integer.toUnsignedLong(offset));
+        // GL33.glDrawElementsInstanced(int mode, int count, int type, long indices, int primcount); // TODO
+        
+        return this;
+    }
+    
+    /**
+     * Draws the array with elements in the specified mode.
+     *
+     * @param mode  The primitive type.
+     * @param count the number of vertices to draw.
+     * @return This instance for call chaining.
+     */
+    public GLVertexArray drawElements(@NotNull DrawMode mode, int count)
+    {
+        return drawElements(mode, 0, count);
+    }
+    
+    /**
+     * Draws the array with elements in the specified mode.
+     *
+     * @param mode The primitive type.
+     * @return This instance for call chaining.
+     */
+    public GLVertexArray drawElements(@NotNull DrawMode mode)
+    {
+        return drawElements(mode, 0, indexCount());
     }
     
     //-----------------------------
@@ -322,13 +360,37 @@ public class GLVertexArray
             return this;
         }
         
+        public Builder indexBuffer(int indexCount, @NotNull Usage usage, @NotNull GLType indexType)
+        {
+            this.indexBuffer = new GLBufferElementArray(indexCount, usage, indexType);
+            return this;
+        }
+        
         public Builder indexBuffer(int indexCount, @NotNull Usage usage)
         {
             this.indexBuffer = new GLBufferElementArray(indexCount, usage);
             return this;
         }
         
-        public Builder indexBuffer(@NotNull IntBuffer data, @NotNull Usage usage)
+        public Builder indexBuffer(@NotNull Buffer data, @NotNull Usage usage, @NotNull GLType indexType)
+        {
+            this.indexBuffer = new GLBufferElementArray(data, usage, indexType);
+            return this;
+        }
+        
+        public Builder indexBuffer(@NotNull Buffer data, @NotNull Usage usage)
+        {
+            this.indexBuffer = new GLBufferElementArray(data, usage);
+            return this;
+        }
+        
+        public Builder indexBuffer(@NotNull CustomBuffer<?> data, @NotNull Usage usage, @NotNull GLType indexType)
+        {
+            this.indexBuffer = new GLBufferElementArray(data, usage, indexType);
+            return this;
+        }
+        
+        public Builder indexBuffer(@NotNull CustomBuffer<?> data, @NotNull Usage usage)
         {
             this.indexBuffer = new GLBufferElementArray(data, usage);
             return this;

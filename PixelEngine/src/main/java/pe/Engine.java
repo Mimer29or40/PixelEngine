@@ -374,7 +374,7 @@ public abstract class Engine
             GLState.clearScreenBuffers(ScreenBuffer.COLOR);
             
             GLTexture.bind(Viewport.framebuffer.color());
-            Viewport.vertexArray.draw(DrawMode.TRIANGLES, 0, 6);
+            Viewport.vertexArray.drawElements(DrawMode.TRIANGLES, 6);
         }
     }
     

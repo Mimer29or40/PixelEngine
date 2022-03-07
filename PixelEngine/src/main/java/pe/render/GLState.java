@@ -7,7 +7,6 @@ import pe.Engine;
 import pe.color.BlendMode;
 import rutils.Logger;
 
-import java.util.EnumSet;
 import java.util.Objects;
 
 public class GLState
