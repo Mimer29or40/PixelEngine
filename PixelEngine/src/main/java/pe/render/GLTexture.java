@@ -48,14 +48,34 @@ public class GLTexture
         return GLTexture.defaultTexture;
     }
     
-    public static void bind(@Nullable GLTexture texture)
+    public static void bind(@Nullable GLTexture texture, int index)
     {
         if (texture == null) texture = GLTexture.defaultTexture;
         
-        GLTexture.LOGGER.finest("Binding Texture:", texture);
+        GLTexture.LOGGER.finest("Binding %s to index=%s", texture, index);
         
-        GL33.glActiveTexture(GL33.GL_TEXTURE0);
+        GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
         GL33.glBindTexture(texture.type, texture.id);
+    }
+    
+    public static void bind(@Nullable GLTexture texture)
+    {
+        bind(texture, 0);
+    }
+    
+    public static void unbind(@Nullable GLTexture texture, int index)
+    {
+        if (texture == null) texture = GLTexture.defaultTexture;
+        
+        GLTexture.LOGGER.finest("Unbinding %s from index=%s", texture, index);
+        
+        GL33.glActiveTexture(GL33.GL_TEXTURE0 + index);
+        GL33.glBindTexture(texture.type, 0);
+    }
+    
+    public static void unbind(@Nullable GLTexture texture)
+    {
+        unbind(texture, 0);
     }
     
     // --------------------

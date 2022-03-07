@@ -61,4 +61,12 @@ public class GLBufferElementArray extends GLBuffer
     {
         return this.indexType;
     }
+    
+    /**
+     * @return The number of elements in this buffer.
+     */
+    public long elementCount()
+    {
+        return this.size / this.indexType.bytes;
+    }
 }

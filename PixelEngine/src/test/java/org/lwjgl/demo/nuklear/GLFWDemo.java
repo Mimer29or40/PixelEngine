@@ -4,24 +4,34 @@
  */
 package org.lwjgl.demo.nuklear;
 
-import org.lwjgl.glfw.*;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.opengl.*;
-import org.lwjgl.stb.*;
-import org.lwjgl.system.*;
+import org.lwjgl.stb.STBTTAlignedQuad;
+import org.lwjgl.stb.STBTTFontinfo;
+import org.lwjgl.stb.STBTTPackContext;
+import org.lwjgl.stb.STBTTPackedchar;
+import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.Platform;
+import pe.GUI;
 
-import java.io.*;
-import java.nio.*;
-import java.util.*;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Objects;
+import java.util.stream.IntStream;
 
-import static org.lwjgl.demo.util.IOUtil.*;
-import static org.lwjgl.glfw.Callbacks.*;
+import static org.lwjgl.demo.util.IOUtil.ioResourceToByteBuffer;
+import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.nuklear.Nuklear.*;
 import static org.lwjgl.opengl.ARBDebugOutput.*;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.stb.STBTruetype.*;
-import static org.lwjgl.system.MemoryStack.*;
+import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -30,7 +40,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  * <p>This demo is a Java port of
  * <a href="https://github.com/vurtun/nuklear/tree/master/demo/glfw_opengl3">https://github.com/vurtun/nuklear/tree/master/demo/glfw_opengl3</a>.</p>
  */
-public class GLFWDemo {
+public class GLFWDemo
+{
     
     private static final int BUFFER_INITIAL_SIZE = 4 * 1024;
     
@@ -41,7 +52,8 @@ public class GLFWDemo {
     
     private static final NkDrawVertexLayoutElement.Buffer VERTEX_LAYOUT;
     
-    static {
+    static
+    {
         ALLOCATOR = NkAllocator.create()
                                .alloc((handle, old, size) -> nmemAllocChecked(size))
                                .mfree((handle, ptr) -> nmemFree(ptr));
@@ -54,7 +66,8 @@ public class GLFWDemo {
                                                  .flip();
     }
     
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         new GLFWDemo().run();
     }
     
@@ -70,11 +83,11 @@ public class GLFWDemo {
             display_width,
             display_height;
     
-    private NkContext  ctx          = NkContext.create();
-    private NkUserFont default_font = NkUserFont.create();
+    private final NkContext  ctx          = NkContext.create();
+    private final NkUserFont default_font = NkUserFont.create();
     
-    private NkBuffer          cmds         = NkBuffer.create();
-    private NkDrawNullTexture null_texture = NkDrawNullTexture.create();
+    private final NkBuffer          cmds         = NkBuffer.create();
+    private final NkDrawNullTexture null_texture = NkDrawNullTexture.create();
     
     private int vbo, vao, ebo;
     private int prog;
@@ -86,17 +99,23 @@ public class GLFWDemo {
     private final Demo       demo = new Demo();
     private final Calculator calc = new Calculator();
     
-    public GLFWDemo() {
-        try {
+    public GLFWDemo()
+    {
+        try
+        {
             this.ttf = ioResourceToByteBuffer("demo/FiraSans-Regular.ttf", 512 * 1024);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             throw new RuntimeException(e);
         }
     }
     
-    private void run() {
+    private void run()
+    {
         GLFWErrorCallback.createPrint().set();
-        if (!glfwInit()) {
+        if (!glfwInit())
+        {
             throw new IllegalStateException("Unable to initialize glfw");
         }
         
@@ -105,16 +124,18 @@ public class GLFWDemo {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        if (Platform.get() == Platform.MACOSX) {
+        if (Platform.get() == Platform.MACOSX)
+        {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         }
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
         
-        int WINDOW_WIDTH  = 640;
-        int WINDOW_HEIGHT = 640;
+        int WINDOW_WIDTH  = 800;
+        int WINDOW_HEIGHT = 800;
         
         win = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "GLFW Nuklear Demo", NULL, NULL);
-        if (win == NULL) {
+        if (win == NULL)
+        {
             throw new RuntimeException("Failed to create the GLFW window");
         }
         
@@ -122,18 +143,23 @@ public class GLFWDemo {
         GLCapabilities caps      = GL.createCapabilities();
         Callback       debugProc = GLUtil.setupDebugMessageCallback();
         
-        if (caps.OpenGL43) {
-            GL43.glDebugMessageControl(GL43.GL_DEBUG_SOURCE_API, GL43.GL_DEBUG_TYPE_OTHER, GL43.GL_DEBUG_SEVERITY_NOTIFICATION, (IntBuffer)null, false);
-        } else if (caps.GL_KHR_debug) {
+        if (caps.OpenGL43)
+        {
+            GL43.glDebugMessageControl(GL43.GL_DEBUG_SOURCE_API, GL43.GL_DEBUG_TYPE_OTHER, GL43.GL_DEBUG_SEVERITY_NOTIFICATION, (IntBuffer) null, false);
+        }
+        else if (caps.GL_KHR_debug)
+        {
             KHRDebug.glDebugMessageControl(
                     KHRDebug.GL_DEBUG_SOURCE_API,
                     KHRDebug.GL_DEBUG_TYPE_OTHER,
                     KHRDebug.GL_DEBUG_SEVERITY_NOTIFICATION,
-                    (IntBuffer)null,
+                    (IntBuffer) null,
                     false
                                           );
-        } else if (caps.GL_ARB_debug_output) {
-            glDebugMessageControlARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW_ARB, (IntBuffer)null, false);
+        }
+        else if (caps.GL_ARB_debug_output)
+        {
+            glDebugMessageControlARB(GL_DEBUG_SOURCE_API_ARB, GL_DEBUG_TYPE_OTHER_ARB, GL_DEBUG_SEVERITY_LOW_ARB, (IntBuffer) null, false);
         }
         
         NkContext ctx = setupWindow(win);
@@ -150,7 +176,8 @@ public class GLFWDemo {
         float scale;
         float descent;
         
-        try (MemoryStack stack = stackPush()) {
+        try (MemoryStack stack = stackPush())
+        {
             stbtt_InitFont(fontInfo, ttf);
             scale = stbtt_ScaleForPixelHeight(fontInfo, FONT_HEIGHT);
             
@@ -168,7 +195,8 @@ public class GLFWDemo {
             
             // Convert R8 to RGBA8
             ByteBuffer texture = memAlloc(BITMAP_W * BITMAP_H * 4);
-            for (int i = 0; i < bitmap.capacity(); i++) {
+            for (int i = 0; i < bitmap.capacity(); i++)
+            {
                 texture.putInt((bitmap.get(i) << 24) | 0x00FFFFFF);
             }
             texture.flip();
@@ -185,19 +213,23 @@ public class GLFWDemo {
         default_font
                 .width((handle, h, text, len) -> {
                     float text_width = 0;
-                    try (MemoryStack stack = stackPush()) {
+                    try (MemoryStack stack = stackPush())
+                    {
                         IntBuffer unicode = stack.mallocInt(1);
                         
                         int glyph_len = nnk_utf_decode(text, memAddress(unicode), len);
                         int text_len  = glyph_len;
                         
-                        if (glyph_len == 0) {
+                        if (glyph_len == 0)
+                        {
                             return 0;
                         }
                         
                         IntBuffer advance = stack.mallocInt(1);
-                        while (text_len <= len && glyph_len != 0) {
-                            if (unicode.get(0) == NK_UTF_INVALID) {
+                        while (text_len <= len && glyph_len != 0)
+                        {
+                            if (unicode.get(0) == NK_UTF_INVALID)
+                            {
                                 break;
                             }
                             
@@ -214,7 +246,8 @@ public class GLFWDemo {
                 })
                 .height(FONT_HEIGHT)
                 .query((handle, font_height, glyph, codepoint, next_codepoint) -> {
-                    try (MemoryStack stack = stackPush()) {
+                    try (MemoryStack stack = stackPush())
+                    {
                         FloatBuffer x = stack.floats(0.0f);
                         FloatBuffer y = stack.floats(0.0f);
                         
@@ -240,14 +273,16 @@ public class GLFWDemo {
         nk_style_set_font(ctx, default_font);
         
         glfwShowWindow(win);
-        while (!glfwWindowShouldClose(win)) {
+        while (!glfwWindowShouldClose(win))
+        {
             /* Input */
             newFrame();
             
             demo.layout(ctx, 50, 50);
-            calc.layout(ctx, 300, 50);
+            // calc.layout(ctx, 300, 50);
             
-            try (MemoryStack stack = stackPush()) {
+            try (MemoryStack stack = stackPush())
+            {
                 IntBuffer width  = stack.mallocInt(1);
                 IntBuffer height = stack.mallocInt(1);
                 
@@ -272,14 +307,16 @@ public class GLFWDemo {
         shutdown();
         
         glfwFreeCallbacks(win);
-        if (debugProc != null) {
+        if (debugProc != null)
+        {
             debugProc.free();
         }
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
     }
     
-    private void setupContext() {
+    private void setupContext()
+    {
         String NK_SHADER_VERSION = Platform.get() == Platform.MACOSX ? "#version 150\n" : "#version 300 es\n";
         String vertex_shader =
                 NK_SHADER_VERSION +
@@ -306,27 +343,30 @@ public class GLFWDemo {
                 "}\n";
         
         nk_buffer_init(cmds, ALLOCATOR, BUFFER_INITIAL_SIZE);
-        prog = glCreateProgram();
+        prog      = glCreateProgram();
         vert_shdr = glCreateShader(GL_VERTEX_SHADER);
         frag_shdr = glCreateShader(GL_FRAGMENT_SHADER);
         glShaderSource(vert_shdr, vertex_shader);
         glShaderSource(frag_shdr, fragment_shader);
         glCompileShader(vert_shdr);
         glCompileShader(frag_shdr);
-        if (glGetShaderi(vert_shdr, GL_COMPILE_STATUS) != GL_TRUE) {
+        if (glGetShaderi(vert_shdr, GL_COMPILE_STATUS) != GL_TRUE)
+        {
             throw new IllegalStateException();
         }
-        if (glGetShaderi(frag_shdr, GL_COMPILE_STATUS) != GL_TRUE) {
+        if (glGetShaderi(frag_shdr, GL_COMPILE_STATUS) != GL_TRUE)
+        {
             throw new IllegalStateException();
         }
         glAttachShader(prog, vert_shdr);
         glAttachShader(prog, frag_shdr);
         glLinkProgram(prog);
-        if (glGetProgrami(prog, GL_LINK_STATUS) != GL_TRUE) {
+        if (glGetProgrami(prog, GL_LINK_STATUS) != GL_TRUE)
+        {
             throw new IllegalStateException();
         }
         
-        uniform_tex = glGetUniformLocation(prog, "Texture");
+        uniform_tex  = glGetUniformLocation(prog, "Texture");
         uniform_proj = glGetUniformLocation(prog, "ProjMtx");
         int attrib_pos = glGetAttribLocation(prog, "Position");
         int attrib_uv  = glGetAttribLocation(prog, "TexCoord");
@@ -359,7 +399,8 @@ public class GLFWDemo {
             null_texture.uv().set(0.5f, 0.5f);
             
             glBindTexture(GL_TEXTURE_2D, nullTexID);
-            try (MemoryStack stack = stackPush()) {
+            try (MemoryStack stack = stackPush())
+            {
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, stack.ints(0xFFFFFFFF));
             }
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -372,19 +413,22 @@ public class GLFWDemo {
         glBindVertexArray(0);
     }
     
-    private NkContext setupWindow(long win) {
+    private NkContext setupWindow(long win)
+    {
         glfwSetScrollCallback(win, (window, xoffset, yoffset) -> {
-            try (MemoryStack stack = stackPush()) {
+            try (MemoryStack stack = stackPush())
+            {
                 NkVec2 scroll = NkVec2.malloc(stack)
-                                      .x((float)xoffset)
-                                      .y((float)yoffset);
+                                      .x((float) xoffset)
+                                      .y((float) yoffset);
                 nk_input_scroll(ctx, scroll);
             }
         });
         glfwSetCharCallback(win, (window, codepoint) -> nk_input_unicode(ctx, codepoint));
         glfwSetKeyCallback(win, (window, key, scancode, action, mods) -> {
             boolean press = action == GLFW_PRESS;
-            switch (key) {
+            switch (key)
+            {
                 case GLFW_KEY_ESCAPE:
                     glfwSetWindowShouldClose(window, true);
                     break;
@@ -426,7 +470,8 @@ public class GLFWDemo {
                     break;
                 case GLFW_KEY_LEFT_CONTROL:
                 case GLFW_KEY_RIGHT_CONTROL:
-                    if (press) {
+                    if (press)
+                    {
                         nk_input_key(ctx, NK_KEY_COPY, glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS);
                         nk_input_key(ctx, NK_KEY_PASTE, glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS);
                         nk_input_key(ctx, NK_KEY_CUT, glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS);
@@ -436,7 +481,9 @@ public class GLFWDemo {
                         nk_input_key(ctx, NK_KEY_TEXT_WORD_RIGHT, glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS);
                         nk_input_key(ctx, NK_KEY_TEXT_LINE_START, glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS);
                         nk_input_key(ctx, NK_KEY_TEXT_LINE_END, glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS);
-                    } else {
+                    }
+                    else
+                    {
                         nk_input_key(ctx, NK_KEY_LEFT, glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS);
                         nk_input_key(ctx, NK_KEY_RIGHT, glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS);
                         nk_input_key(ctx, NK_KEY_COPY, false);
@@ -447,28 +494,24 @@ public class GLFWDemo {
                     break;
             }
         });
-        glfwSetCursorPosCallback(win, (window, xpos, ypos) -> nk_input_motion(ctx, (int)xpos, (int)ypos));
+        glfwSetCursorPosCallback(win, (window, xpos, ypos) -> nk_input_motion(ctx, (int) xpos, (int) ypos));
         glfwSetMouseButtonCallback(win, (window, button, action, mods) -> {
-            try (MemoryStack stack = stackPush()) {
+            try (MemoryStack stack = stackPush())
+            {
                 DoubleBuffer cx = stack.mallocDouble(1);
                 DoubleBuffer cy = stack.mallocDouble(1);
                 
                 glfwGetCursorPos(window, cx, cy);
                 
-                int x = (int)cx.get(0);
-                int y = (int)cy.get(0);
+                int x = (int) cx.get(0);
+                int y = (int) cy.get(0);
                 
-                int nkButton;
-                switch (button) {
-                    case GLFW_MOUSE_BUTTON_RIGHT:
-                        nkButton = NK_BUTTON_RIGHT;
-                        break;
-                    case GLFW_MOUSE_BUTTON_MIDDLE:
-                        nkButton = NK_BUTTON_MIDDLE;
-                        break;
-                    default:
-                        nkButton = NK_BUTTON_LEFT;
-                }
+                int nkButton = switch (button)
+                        {
+                            case GLFW_MOUSE_BUTTON_RIGHT -> NK_BUTTON_RIGHT;
+                            case GLFW_MOUSE_BUTTON_MIDDLE -> NK_BUTTON_MIDDLE;
+                            default -> NK_BUTTON_LEFT;
+                        };
                 nk_input_button(ctx, nkButton, x, y, action == GLFW_PRESS);
             }
         });
@@ -476,40 +519,47 @@ public class GLFWDemo {
         nk_init(ctx, ALLOCATOR, null);
         ctx.clip()
            .copy((handle, text, len) -> {
-               if (len == 0) {
+               if (len == 0)
+               {
                    return;
                }
             
-               try (MemoryStack stack = stackPush()) {
+               try (MemoryStack stack = stackPush())
+               {
                    ByteBuffer str = stack.malloc(len + 1);
                    memCopy(text, memAddress(str), len);
-                   str.put(len, (byte)0);
+                   str.put(len, (byte) 0);
                 
                    glfwSetClipboardString(win, str);
                }
            })
            .paste((handle, edit) -> {
                long text = nglfwGetClipboardString(win);
-               if (text != NULL) {
+               if (text != NULL)
+               {
                    nnk_textedit_paste(edit, text, nnk_strlen(text));
                }
            });
-        
+    
+        // nk_input_begin(ctx);
+        // nk_input_end(ctx);
         setupContext();
         return ctx;
     }
     
-    private void newFrame() {
-        try (MemoryStack stack = stackPush()) {
+    private void newFrame()
+    {
+        try (MemoryStack stack = stackPush())
+        {
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             
             glfwGetWindowSize(win, w, h);
-            width = w.get(0);
+            width  = w.get(0);
             height = h.get(0);
             
             glfwGetFramebufferSize(win, w, h);
-            display_width = w.get(0);
+            display_width  = w.get(0);
             display_height = h.get(0);
         }
         
@@ -517,23 +567,30 @@ public class GLFWDemo {
         glfwPollEvents();
         
         NkMouse mouse = ctx.input().mouse();
-        if (mouse.grab()) {
+        if (mouse.grab())
+        {
             glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        } else if (mouse.grabbed()) {
+        }
+        else if (mouse.grabbed())
+        {
             float prevX = mouse.prev().x();
             float prevY = mouse.prev().y();
             glfwSetCursorPos(win, prevX, prevY);
             mouse.pos().x(prevX);
             mouse.pos().y(prevY);
-        } else if (mouse.ungrab()) {
+        }
+        else if (mouse.ungrab())
+        {
             glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         }
         
         nk_input_end(ctx);
     }
     
-    private void render(int AA, int max_vertex_buffer, int max_element_buffer) {
-        try (MemoryStack stack = stackPush()) {
+    private void render(int AA, int max_vertex_buffer, int max_element_buffer)
+    {
+        try (MemoryStack stack = stackPush())
+        {
             // setup global state
             glEnable(GL_BLEND);
             glBlendEquation(GL_FUNC_ADD);
@@ -567,9 +624,10 @@ public class GLFWDemo {
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, max_element_buffer, GL_STREAM_DRAW);
             
             // load draw vertices & elements directly into vertex + element buffer
-            ByteBuffer vertices = Objects.requireNonNull(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY, max_vertex_buffer, null));
-            ByteBuffer elements = Objects.requireNonNull(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY, max_element_buffer, null));
-            try (MemoryStack stack = stackPush()) {
+            ByteBuffer vertices = Objects.requireNonNull(glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE, max_vertex_buffer, null)).clear();
+            ByteBuffer elements = Objects.requireNonNull(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_WRITE, max_element_buffer, null)).clear();
+            try (MemoryStack stack = stackPush())
+            {
                 // fill convert configuration
                 NkConvertConfig config = NkConvertConfig.calloc(stack)
                                                         .vertex_layout(VERTEX_LAYOUT)
@@ -591,27 +649,70 @@ public class GLFWDemo {
                 nk_buffer_init_fixed(ebuf, elements/*, max_element_buffer*/);
                 nk_convert(ctx, cmds, vbuf, ebuf, config);
             }
+            
+            long offset = NULL;
+            for (NkDrawCommand cmd = nk__draw_begin(ctx, cmds);
+                 cmd != null;
+                 cmd = nk__draw_next(cmd, cmds, ctx))
+            {
+                if (cmd.elem_count() == 0) continue;
+                
+                System.out.printf("elem_count=%s, rect=[x=%s, y=%s, w=%s, h=%s]%n",
+                                  cmd.elem_count(),
+                                  cmd.clip_rect().x(),
+                                  cmd.clip_rect().y(),
+                                  cmd.clip_rect().w(),
+                                  cmd.clip_rect().h()
+                                 );
+                elements.position((int) offset);
+                for (int i = 0, n = cmd.elem_count(); i < n; i++)
+                {
+                    // int element = elements.getShort((int) (offset + i)) & 0xFFFF;
+                    int element = elements.getShort() & 0xFFFF;
+                    
+                    vertices.position(element * 20);
+                    float x = vertices.getFloat();
+                    float y = vertices.getFloat();
+                    float u = vertices.getFloat();
+                    float v = vertices.getFloat();
+                    int   r = vertices.get() & 0xFF;
+                    int   g = vertices.get() & 0xFF;
+                    int   b = vertices.get() & 0xFF;
+                    int   a = vertices.get() & 0xFF;
+                    
+                    System.out.printf("element=%s Vertex[pos=(%.3f,%.3f), uv=(%.3f,%.3f), color=(%s,%s,%s,%s)]%n",
+                                      element,
+                                      x, y,
+                                      u, v,
+                                      r, g, b, a);
+                }
+                offset += Integer.toUnsignedLong(cmd.elem_count() * Short.BYTES);
+            }
+            vertices.clear();
+            elements.clear();
+            
             glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
             glUnmapBuffer(GL_ARRAY_BUFFER);
             
             // iterate over and execute each draw command
-            float fb_scale_x = (float)display_width / (float)width;
-            float fb_scale_y = (float)display_height / (float)height;
+            float fb_scale_x = (float) display_width / (float) width;
+            float fb_scale_y = (float) display_height / (float) height;
             
-            long offset = NULL;
-            for (NkDrawCommand cmd = nk__draw_begin(ctx, cmds); cmd != null; cmd = nk__draw_next(cmd, cmds, ctx)) {
-                if (cmd.elem_count() == 0) {
-                    continue;
-                }
+            offset = NULL;
+            for (NkDrawCommand cmd = nk__draw_begin(ctx, cmds);
+                 cmd != null;
+                 cmd = nk__draw_next(cmd, cmds, ctx))
+            {
+                if (cmd.elem_count() == 0) continue;
                 glBindTexture(GL_TEXTURE_2D, cmd.texture().id());
                 glScissor(
-                        (int)(cmd.clip_rect().x() * fb_scale_x),
-                        (int)((height - (int)(cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
-                        (int)(cmd.clip_rect().w() * fb_scale_x),
-                        (int)(cmd.clip_rect().h() * fb_scale_y)
+                        (int) (cmd.clip_rect().x() * fb_scale_x),
+                        (int) ((height - (int) (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
+                        (int) (cmd.clip_rect().w() * fb_scale_x),
+                        (int) (cmd.clip_rect().h() * fb_scale_y)
                          );
                 glDrawElements(GL_TRIANGLES, cmd.elem_count(), GL_UNSIGNED_SHORT, offset);
-                offset += cmd.elem_count() * 2;
+                offset += cmd.elem_count() * 2L;
             }
             nk_clear(ctx);
             nk_buffer_clear(cmds);
@@ -623,10 +724,13 @@ public class GLFWDemo {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         glDisable(GL_BLEND);
+        
+        glfwSetWindowShouldClose(win, true);
         glDisable(GL_SCISSOR_TEST);
     }
     
-    private void destroy() {
+    private void destroy()
+    {
         glDetachShader(prog, vert_shdr);
         glDetachShader(prog, frag_shdr);
         glDeleteShader(vert_shdr);
@@ -641,7 +745,8 @@ public class GLFWDemo {
         GL.setCapabilities(null);
     }
     
-    private void shutdown() {
+    private void shutdown()
+    {
         Objects.requireNonNull(ctx.clip().copy()).free();
         Objects.requireNonNull(ctx.clip().paste()).free();
         nk_free(ctx);

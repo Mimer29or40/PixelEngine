@@ -6,7 +6,6 @@ import org.joml.Matrix4d;
 import org.joml.Matrix4dc;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
-import org.lwjgl.opengl.GL33;
 import org.lwjgl.system.MemoryUtil;
 import pe.util.buffer.Byte4;
 import pe.util.buffer.Float3;
@@ -415,11 +414,11 @@ public class GLBatch
                 
                 if (drawCall.mode == DrawMode.QUADS)
                 {
-                    GL33.glDrawElements(GL33.GL_TRIANGLES, drawCall.vertexCount / 4 * 6, GL33.GL_UNSIGNED_INT, Integer.toUnsignedLong(offset / 4 * 6 * Integer.BYTES));
+                    this.vertexArray.drawElements(DrawMode.TRIANGLES, Integer.toUnsignedLong(offset / 4 * 6), drawCall.vertexCount / 4 * 6);
                 }
                 else
                 {
-                    GL33.glDrawArrays(drawCall.mode.ref, offset, drawCall.vertexCount);
+                    this.vertexArray.draw(drawCall.mode, offset, drawCall.vertexCount);
                 }
                 
                 offset += drawCall.vertexCount + drawCall.alignment;
@@ -794,8 +793,7 @@ public class GLBatch
         
         for (int i = 0; i < this.textureIndex; i++)
         {
-            GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
-            GL33.glBindTexture(this.textureActive[i].type, this.textureActive[i].id());
+            GLTexture.bind(this.textureActive[i], i + 1);
             GLProgram.Uniform.int1(this.textureNames[i], i + 1);
         }
     }
@@ -806,8 +804,7 @@ public class GLBatch
         
         for (int i = 0; i < this.textureIndex; i++)
         {
-            GL33.glActiveTexture(GL33.GL_TEXTURE1 + i);
-            GL33.glBindTexture(this.textureActive[i].type, 0);
+            GLTexture.unbind(this.textureActive[i], i + 1);
             
             this.textureNames[i]  = null;
             this.textureActive[i] = null;

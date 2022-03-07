@@ -537,6 +537,7 @@ public abstract class Engine
                                 
                                 GUI.handleEvents();
                                 Debug.handleEvents();
+                                OverlayGUI.handleEvents();
                                 
                                 if (!Time.paused)
                                 {
@@ -576,6 +577,7 @@ public abstract class Engine
                                 Viewport.draw();
                                 GUI.draw();
                                 Debug.draw();
+                                OverlayGUI.draw();
                                 
                                 Window.get().swap();
                                 
@@ -637,6 +639,7 @@ public abstract class Engine
                         Viewport.destroy();
                         GUI.destroy();
                         Debug.destroy();
+                        OverlayGUI.destroy();
                         
                         GLState.destroy();
                         
@@ -725,6 +728,7 @@ public abstract class Engine
         Viewport.setup();
         GUI.setup();
         Debug.setup();
+        OverlayGUI.setup();
         
         Engine.windowEnabled = true;
     }

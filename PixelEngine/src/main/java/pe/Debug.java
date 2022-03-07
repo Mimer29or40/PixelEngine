@@ -17,7 +17,6 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 
-import static org.lwjgl.nuklear.Nuklear.*;
 import static org.lwjgl.stb.STBEasyFont.*;
 
 public final class Debug

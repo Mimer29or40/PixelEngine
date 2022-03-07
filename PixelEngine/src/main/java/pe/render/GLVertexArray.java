@@ -162,7 +162,7 @@ public class GLVertexArray
      */
     public int indexCount()
     {
-        return this.indexBuffer != null ? (int) this.indexBuffer.size() / Integer.BYTES : 0;
+        return this.indexBuffer != null ? (int) this.indexBuffer.elementCount() : 0;
     }
     
     /**
@@ -213,19 +213,11 @@ public class GLVertexArray
     {
         bind(this);
         
-        if (this.indexBuffer != null)
-        {
-            GLVertexArray.LOGGER.finer("Drawing Elements size=%s from %s", count, this);
-            
-            GL33.glDrawElements(mode.ref, count, GL33.GL_UNSIGNED_INT, Integer.toUnsignedLong(offset));
-        }
-        else
-        {
-            GLVertexArray.LOGGER.finer("Drawing Arrays size=%s from %s", count, this);
-            
-            GL33.glDrawArrays(mode.ref, offset, count);
-            // glDrawArraysInstanced(int mode, int first, int count, int primcount) // TODO
-        }
+        GLVertexArray.LOGGER.finer("Drawing Arrays size=%s from %s", count, this);
+        
+        GL33.glDrawArrays(mode.ref, offset, count);
+        // glDrawArraysInstanced(int mode, int first, int count, int primcount) // TODO
+        
         return this;
     }
     
@@ -260,7 +252,7 @@ public class GLVertexArray
      * @param count  the number of vertices to draw.
      * @return This instance for call chaining.
      */
-    public GLVertexArray drawElements(@NotNull DrawMode mode, int offset, int count)
+    public GLVertexArray drawElements(@NotNull DrawMode mode, long offset, int count)
     {
         bind(this);
         
@@ -268,7 +260,9 @@ public class GLVertexArray
         
         GLVertexArray.LOGGER.finer("Drawing Elements size=%s from %s", count, this);
         
-        GL33.glDrawElements(mode.ref, count, this.indexBuffer.indexType().ref, Integer.toUnsignedLong(offset));
+        GLType indexType = this.indexBuffer.indexType();
+        
+        GL33.glDrawElements(mode.ref, count, indexType.ref, offset * indexType.bytes);
         // GL33.glDrawElementsInstanced(int mode, int count, int type, long indices, int primcount); // TODO
         
         return this;
@@ -283,7 +277,7 @@ public class GLVertexArray
      */
     public GLVertexArray drawElements(@NotNull DrawMode mode, int count)
     {
-        return drawElements(mode, 0, count);
+        return drawElements(mode, 0L, count);
     }
     
     /**
@@ -294,7 +288,7 @@ public class GLVertexArray
      */
     public GLVertexArray drawElements(@NotNull DrawMode mode)
     {
-        return drawElements(mode, 0, indexCount());
+        return drawElements(mode, 0L, indexCount());
     }
     
     //-----------------------------
