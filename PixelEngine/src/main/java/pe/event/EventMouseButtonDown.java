@@ -7,14 +7,14 @@ public interface EventMouseButtonDown extends EventInputDeviceInputDown, EventMo
 {
     final class _EventMouseButtonDown extends AbstractEventMouseButton implements EventMouseButtonDown
     {
-        private _EventMouseButtonDown(long time, Mouse.Button button, Vector2dc pos)
+        private _EventMouseButtonDown(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos)
         {
-            super(time, button, pos);
+            super(time, button, absPos, pos);
         }
     }
     
-    static EventMouseButtonDown create(long time, Mouse.Button button, Vector2dc pos)
+    static EventMouseButtonDown create(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos)
     {
-        return new _EventMouseButtonDown(time, button, pos);
+        return new _EventMouseButtonDown(time, button, absPos, pos);
     }
 }

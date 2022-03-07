@@ -36,8 +36,8 @@ public interface EventMouseScrolled extends EventMouse
         }
     }
     
-    static EventMouseScrolled create(long time, Vector2dc pos)
+    static EventMouseScrolled create(long time, Vector2dc scroll)
     {
-        return new _EventMouseScrolled(time, pos);
+        return new _EventMouseScrolled(time, scroll);
     }
 }

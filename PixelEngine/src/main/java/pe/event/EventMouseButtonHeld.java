@@ -7,14 +7,14 @@ public interface EventMouseButtonHeld extends EventInputDeviceInputHeld, EventMo
 {
     final class _EventMouseButtonHeld extends AbstractEventMouseButton implements EventMouseButtonHeld
     {
-        private _EventMouseButtonHeld(long time, Mouse.Button button, Vector2dc pos)
+        private _EventMouseButtonHeld(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos)
         {
-            super(time, button, pos);
+            super(time, button, absPos, pos);
         }
     }
     
-    static EventMouseButtonHeld create(long time, Mouse.Button button, Vector2dc pos)
+    static EventMouseButtonHeld create(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos)
     {
-        return new _EventMouseButtonHeld(time, button, pos);
+        return new _EventMouseButtonHeld(time, button, absPos, pos);
     }
 }

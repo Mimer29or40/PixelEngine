@@ -22,6 +22,7 @@ import java.nio.IntBuffer;
 import java.util.Objects;
 
 import static org.lwjgl.nuklear.Nuklear.*;
+import static org.lwjgl.nuklear.Nuklear.nk_layout_row_dynamic;
 import static org.lwjgl.stb.STBTruetype.*;
 
 public class OverlayGUI
@@ -295,29 +296,29 @@ public class OverlayGUI
         {
             for (Event event : Engine.Events.get())
             {
-                if (event instanceof EventMouseMoved mMoved)
+                if (event instanceof EventMouseMoved)
                 {
-                    nk_input_motion(OverlayGUI.context, (int) mMoved.x(), (int) mMoved.y());
+                    nk_input_motion(OverlayGUI.context, (int) Mouse.absX(), (int) Mouse.absY());
                 }
-                else if (event instanceof EventMouseScrolled mScrolled)
+                else if (event instanceof EventMouseScrolled)
                 {
-                    NkVec2 scroll = NkVec2.malloc(stack).x((float) mScrolled.dx()).y((float) mScrolled.dx());
+                    NkVec2 scroll = NkVec2.malloc(stack).x((float) Mouse.scrollX()).y((float) Mouse.scrollX());
                     nk_input_scroll(OverlayGUI.context, scroll);
                 }
                 else if (event instanceof EventMouseButtonDown mbDown)
                 {
-                    mouseButtonInput(mbDown.button(), mbDown.x(), mbDown.y(), true);
+                    mouseButtonInput(mbDown.button(), Mouse.absX(), Mouse.absY(), true);
                 }
                 else if (event instanceof EventMouseButtonUp mbUp)
                 {
-                    mouseButtonInput(mbUp.button(), mbUp.x(), mbUp.y(), false);
-                    nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) mbUp.x(), (int) mbUp.y(), false);
+                    mouseButtonInput(mbUp.button(), Mouse.absX(), Mouse.absY(), false);
+                    nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), false);
                 }
                 else if (event instanceof EventMouseButtonPressed mbPressed)
                 {
                     if (mbPressed.doublePressed())
                     {
-                        nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) mbPressed.x(), (int) mbPressed.y(), true);
+                        nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), true);
                     }
                 }
                 else if (event instanceof EventKeyboardKeyDown kkDown)
@@ -420,6 +421,10 @@ public class OverlayGUI
             {
                 nk_layout_row_static(context, 30, 80, 1);
                 if (nk_button_label(context, "button")) System.out.println("button pressed");
+    
+                nk_layout_row_dynamic(context, 30, 1);
+                nk_label(context, String.format("Mouse Pos: [%.3f, %.3f]", Mouse.x(), Mouse.y()), NK_TEXT_LEFT);
+                nk_label(context, String.format("Mouse Abs Pos: [%.3f, %.3f]", Mouse.absX(), Mouse.absY()), NK_TEXT_LEFT);
                 
                 nk_layout_row_dynamic(context, 30, 2);
                 if (nk_option_label(context, "easy", op == EASY)) op = EASY;

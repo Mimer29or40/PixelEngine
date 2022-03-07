@@ -1,5 +1,6 @@
 package pe;
 
+import pe.color.Color;
 import pe.render.*;
 import rutils.Logger;
 
@@ -16,7 +17,7 @@ public class EngineTest extends Engine
     @Override
     protected void draw(double elapsedTime)
     {
-        GLState.clearScreenBuffers();
+        Draw.clearBackground(Color.BACKGROUND_GRAY);
         
         // double x = Mouse.x();
         // double y = Mouse.y();
@@ -39,6 +40,9 @@ public class EngineTest extends Engine
             .point2(75.0, 25.0)
             .thickness(1.0)
             .draw();
+        
+        if (Keyboard.down(Keyboard.Key.R)) Mouse.pos(10, 10);
+        if (Keyboard.down(Keyboard.Key.A)) Mouse.absPos(10, 10);
     }
     
     @Override

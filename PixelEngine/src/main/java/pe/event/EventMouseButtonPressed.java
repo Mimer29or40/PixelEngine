@@ -9,9 +9,9 @@ public interface EventMouseButtonPressed extends EventInputDeviceInputPressed, E
     {
         private final boolean doublePressed;
         
-        private _EventMouseButtonPressed(long time, Mouse.Button button, Vector2dc pos, boolean doublePressed)
+        private _EventMouseButtonPressed(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos, boolean doublePressed)
         {
-            super(time, button, pos);
+            super(time, button, absPos, pos);
             
             this.doublePressed = doublePressed;
         }
@@ -23,8 +23,8 @@ public interface EventMouseButtonPressed extends EventInputDeviceInputPressed, E
         }
     }
     
-    static EventMouseButtonPressed create(long time, Mouse.Button button, Vector2dc pos, boolean doublePressed)
+    static EventMouseButtonPressed create(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos, boolean doublePressed)
     {
-        return new _EventMouseButtonPressed(time, button, pos, doublePressed);
+        return new _EventMouseButtonPressed(time, button, absPos, pos, doublePressed);
     }
 }

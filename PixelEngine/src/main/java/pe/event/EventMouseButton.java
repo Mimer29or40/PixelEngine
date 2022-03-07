@@ -9,6 +9,19 @@ public interface EventMouseButton extends EventInputDeviceInput, EventMouse
     Mouse.Button button();
     
     @EventProperty
+    Vector2dc absPos();
+    
+    default double absX()
+    {
+        return absPos().x();
+    }
+    
+    default double absY()
+    {
+        return absPos().y();
+    }
+    
+    @EventProperty
     Vector2dc pos();
     
     default double x()
