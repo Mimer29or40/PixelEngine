@@ -40,11 +40,11 @@ public final class Keyboard
     private Keyboard() {}
     
     /**
-     * Sets the sticky keys flag. If sticky mouse buttons are enabled, a mouse
-     * button press will ensure that {@link EventKeyboardKeyPressed} is posted
-     * even if the mouse button had been released before the call. This is
-     * useful when you are only interested in whether mouse buttons have been
-     * pressed but not when or in which order.
+     * Sets the sticky keys flag. If sticky key are enabled, a keyboard key
+     * press will ensure that {@link EventKeyboardKeyUp} is posted with a
+     * {@link EventKeyboardKeyDown} even if the key had been released before
+     * the call. This is useful when you are only interested in whether keys
+     * have been pressed but not when or in which order.
      *
      * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
      */
@@ -96,31 +96,24 @@ public final class Keyboard
             switch (input.state)
             {
                 case GLFW_PRESS -> {
+                    boolean inc = time - input.downTime < Input.doublePressedDelayL();
+    
                     input.held     = true;
-                    input.holdTime = time + Input.holdFrequencyL();
-                    Engine.Events.post(EventKeyboardKeyDown.create(time, key));
+                    input.heldTime = time + Input.holdFrequencyL();
+                    input.downTime = time;
+                    input.downCount = inc ? input.downCount + 1 : 1;
+                    Engine.Events.post(EventKeyboardKeyDown.create(time, key, input.downCount));
                 }
                 case GLFW_RELEASE -> {
                     input.held     = false;
-                    input.holdTime = Long.MAX_VALUE;
+                    input.heldTime = Long.MAX_VALUE;
                     Engine.Events.post(EventKeyboardKeyUp.create(time, key));
-                    
-                    if (time - input.pressTime < Input.doublePressedDelayL())
-                    {
-                        input.pressTime = 0;
-                        Engine.Events.post(EventKeyboardKeyPressed.create(time, key, true));
-                    }
-                    else
-                    {
-                        input.pressTime = time;
-                        Engine.Events.post(EventKeyboardKeyPressed.create(time, key, false));
-                    }
                 }
                 case GLFW_REPEAT -> Engine.Events.post(EventKeyboardKeyRepeated.create(time, key));
             }
-            if (input.held && time - input.holdTime >= Input.holdFrequencyL())
+            if (input.held && time - input.heldTime >= Input.holdFrequencyL())
             {
-                input.holdTime += Input.holdFrequencyL();
+                input.heldTime += Input.holdFrequencyL();
                 Engine.Events.post(EventKeyboardKeyHeld.create(time, key));
             }
         }

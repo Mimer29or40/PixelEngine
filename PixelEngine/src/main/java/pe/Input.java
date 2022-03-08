@@ -62,6 +62,8 @@ public class Input
     protected int state = -1, _state = -1;
     
     protected boolean held;
+    protected long    heldTime = Long.MAX_VALUE;
     
-    protected long holdTime = Long.MAX_VALUE, pressTime;
+    protected long downTime;
+    protected int  downCount;
 }

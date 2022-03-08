@@ -10,7 +10,9 @@ import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import pe.color.Color;
 import pe.event.*;
+import pe.texture.Image;
 import rutils.Logger;
 
 import java.nio.ByteBuffer;
@@ -148,9 +150,8 @@ public final class Window
      *
      * @param icons The new icons.
      */
-    public static void icons(GLFWImage... icons)
+    public static void icons(Image... icons)
     {
-        // TODO - Make this not depend on GLFW
         Window.LOGGER.finest("Setting Icons:", icons);
         
         Delegator.runTask(() -> {
@@ -159,7 +160,26 @@ public final class Window
                 int count = icons.length;
                 
                 GLFWImage.Buffer buffer = GLFWImage.malloc(count, stack);
-                for (int i = 0; i < count; i++) buffer.put(i, icons[i]);
+                for (int i = 0; i < count; i++)
+                {
+                    int width = icons[i].width();
+                    int height = icons[i].height();
+                    int sizeof = icons[i].format().sizeof;
+                    
+                    GLFWImage icon = buffer.get(i);
+                    icon.width(width);
+                    icon.height(height);
+                    
+                    Color.Buffer data = icons[i].data();
+                    if (data == null)
+                    {
+                        icon.pixels(width * height * sizeof);
+                    }
+                    else
+                    {
+                        icon.pixels(data.toBuffer());
+                    }
+                }
                 
                 glfwSetWindowIcon(Window.handle, buffer);
             }

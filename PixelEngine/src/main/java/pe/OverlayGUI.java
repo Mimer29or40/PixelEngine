@@ -307,19 +307,12 @@ public class OverlayGUI
                 }
                 else if (event instanceof EventMouseButtonDown mbDown)
                 {
-                    mouseButtonInput(mbDown.button(), Mouse.absX(), Mouse.absY(), true);
+                    mouseButtonInput(mbDown.button(), Mouse.absX(), Mouse.absY(), mbDown.downCount());
                 }
                 else if (event instanceof EventMouseButtonUp mbUp)
                 {
-                    mouseButtonInput(mbUp.button(), Mouse.absX(), Mouse.absY(), false);
+                    mouseButtonInput(mbUp.button(), Mouse.absX(), Mouse.absY(), 0);
                     nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), false);
-                }
-                else if (event instanceof EventMouseButtonPressed mbPressed)
-                {
-                    if (mbPressed.doublePressed())
-                    {
-                        nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), true);
-                    }
                 }
                 else if (event instanceof EventKeyboardKeyDown kkDown)
                 {
@@ -336,8 +329,6 @@ public class OverlayGUI
             }
         }
         
-        // TODO - Mouse Position needs to be transformed before its passed
-        
         NkMouse mouse = OverlayGUI.context.input().mouse();
         if (mouse.grab())
         {
@@ -347,7 +338,7 @@ public class OverlayGUI
         {
             float prevX = mouse.prev().x();
             float prevY = mouse.prev().y();
-            Mouse.pos(prevX, prevY);
+            Mouse.absPos(prevX, prevY);
             mouse.pos().x(prevX);
             mouse.pos().y(prevY);
         }
@@ -359,14 +350,15 @@ public class OverlayGUI
         nk_input_end(OverlayGUI.context);
     }
     
-    private static void mouseButtonInput(Mouse.Button button, double x, double y, boolean down)
+    private static void mouseButtonInput(Mouse.Button button, double x, double y, int downCount)
     {
         switch (button)
         {
-            case LEFT -> nk_input_button(OverlayGUI.context, NK_BUTTON_LEFT, (int) x, (int) y, down);
-            case RIGHT -> nk_input_button(OverlayGUI.context, NK_BUTTON_RIGHT, (int) x, (int) y, down);
-            case MIDDLE -> nk_input_button(OverlayGUI.context, NK_BUTTON_MIDDLE, (int) x, (int) y, down);
+            case LEFT -> nk_input_button(OverlayGUI.context, NK_BUTTON_LEFT, (int) x, (int) y, downCount > 0);
+            case RIGHT -> nk_input_button(OverlayGUI.context, NK_BUTTON_RIGHT, (int) x, (int) y, downCount > 0);
+            case MIDDLE -> nk_input_button(OverlayGUI.context, NK_BUTTON_MIDDLE, (int) x, (int) y, downCount > 0);
         }
+        nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) x, (int) y, downCount > 1);
     }
     
     private static void keyboardKeyInput(Keyboard.Key key, boolean down)

@@ -319,31 +319,24 @@ public final class Joystick
                 switch (input.state)
                 {
                     case GLFW_PRESS -> {
+                        boolean inc = time - input.downTime < Input.doublePressedDelayL();
+    
                         input.held     = true;
-                        input.holdTime = time + Input.holdFrequencyL();
-                        Engine.Events.post(EventJoystickButtonDown.create(time, index, button));
+                        input.heldTime = time + Input.holdFrequencyL();
+                        input.downTime = time;
+                        input.downCount = inc ? input.downCount + 1 : 1;
+                        Engine.Events.post(EventJoystickButtonDown.create(time, index, button, input.downCount));
                     }
                     case GLFW_RELEASE -> {
                         input.held     = false;
-                        input.holdTime = Long.MAX_VALUE;
+                        input.heldTime = Long.MAX_VALUE;
                         Engine.Events.post(EventJoystickButtonUp.create(time, index, button));
-                        
-                        if (time - input.pressTime < Input.doublePressedDelayL())
-                        {
-                            input.pressTime = 0;
-                            Engine.Events.post(EventJoystickButtonPressed.create(time, index, button, true));
-                        }
-                        else
-                        {
-                            input.pressTime = time;
-                            Engine.Events.post(EventJoystickButtonPressed.create(time, index, button, false));
-                        }
                     }
                     case GLFW_REPEAT -> Engine.Events.post(EventJoystickButtonRepeated.create(time, index, button));
                 }
-                if (input.held && time - input.holdTime >= Input.holdFrequencyL())
+                if (input.held && time - input.heldTime >= Input.holdFrequencyL())
                 {
-                    input.holdTime += Input.holdFrequencyL();
+                    input.heldTime += Input.holdFrequencyL();
                     Engine.Events.post(EventJoystickButtonHeld.create(time, index, button));
                 }
             }

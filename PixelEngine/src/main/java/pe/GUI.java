@@ -258,18 +258,15 @@ public final class GUI
                 else if (event instanceof EventMouseButtonDown mbDown)
                 {
                     mouseButtonInput(mbDown.button(), mbDown.x(), mbDown.y(), true);
+                    if (mbDown.downCount() > 1)
+                    {
+                        nk_input_button(GUI.ctx, NK_BUTTON_DOUBLE, (int) mbDown.x(), (int) mbDown.y(), true);
+                    }
                 }
                 else if (event instanceof EventMouseButtonUp mbUp)
                 {
                     mouseButtonInput(mbUp.button(), mbUp.x(), mbUp.y(), false);
                     nk_input_button(GUI.ctx, NK_BUTTON_DOUBLE, (int) mbUp.x(), (int) mbUp.y(), false);
-                }
-                else if (event instanceof EventMouseButtonPressed mbPressed)
-                {
-                    if (mbPressed.doublePressed())
-                    {
-                        nk_input_button(GUI.ctx, NK_BUTTON_DOUBLE, (int) mbPressed.x(), (int) mbPressed.y(), true);
-                    }
                 }
                 else if (event instanceof EventKeyboardKeyDown kkDown)
                 {

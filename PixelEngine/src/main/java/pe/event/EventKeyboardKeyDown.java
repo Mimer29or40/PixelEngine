@@ -6,14 +6,24 @@ public interface EventKeyboardKeyDown extends EventInputDeviceInputDown, EventKe
 {
     final class _EventKeyboardKeyDown extends AbstractEventKeyboardKey implements EventKeyboardKeyDown
     {
-        private _EventKeyboardKeyDown(long time, Keyboard.Key key)
+        private final int downCount;
+        
+        private _EventKeyboardKeyDown(long time, Keyboard.Key key, int downCount)
         {
             super(time, key);
+            
+            this.downCount = downCount;
+        }
+        
+        @Override
+        public int downCount()
+        {
+            return this.downCount;
         }
     }
     
-    static EventKeyboardKeyDown create(long time, Keyboard.Key key)
+    static EventKeyboardKeyDown create(long time, Keyboard.Key key, int downCount)
     {
-        return new _EventKeyboardKeyDown(time, key);
+        return new _EventKeyboardKeyDown(time, key, downCount);
     }
 }

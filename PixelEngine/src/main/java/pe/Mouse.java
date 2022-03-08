@@ -174,10 +174,11 @@ public final class Mouse
     
     /**
      * Sets the sticky mouse buttons flag. If sticky mouse buttons are enabled,
-     * a mouse button press will ensure that {@link EventMouseButtonPressed}
-     * is posted even if the mouse button had been released before the call.
-     * This is useful when you are only interested in whether mouse buttons
-     * have been pressed but not when or in which order.
+     * a mouse button press will ensure that a {@link EventMouseButtonUp} is
+     * posted with a {@link EventMouseButtonDown} even if the mouse button had
+     * been released before the call. This is useful when you are only
+     * interested in whether mouse buttons have been pressed but not when or in
+     * which order.
      *
      * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
      */
@@ -739,46 +740,35 @@ public final class Mouse
             switch (input.state)
             {
                 case GLFW_PRESS -> {
-                    // TODO - Removed Pressed/Clicked and add double to down
+                    int tolerance = 2;
+                    
+                    boolean inc = Math.abs(Mouse.absPos.x - input.absDownPos.x) < tolerance &&
+                                  Math.abs(Mouse.absPos.y - input.absDownPos.y) < tolerance &&
+                                  time - input.downTime < Input.doublePressedDelayL();
                     
                     input.held     = true;
-                    input.holdTime = time + Input.holdFrequencyL();
-                    Engine.Events.post(EventMouseButtonDown.create(time, button, Mouse.absPos, Mouse.pos));
-    
-                    input.absClickPos.set(Mouse.absPos);
-                    input.clickPos.set(Mouse.pos);
+                    input.heldTime = time + Input.holdFrequencyL();
+                    input.downTime = time;
+                    input.downCount = inc ? input.downCount + 1 : 1;
+                    input.absDownPos.set(Mouse.absPos);
+                    input.downPos.set(Mouse.pos);
+                    Engine.Events.post(EventMouseButtonDown.create(time, button, Mouse.absPos, Mouse.pos, input.downCount));
                 }
                 case GLFW_RELEASE -> {
                     input.held     = false;
-                    input.holdTime = Long.MAX_VALUE;
+                    input.heldTime = Long.MAX_VALUE;
                     Engine.Events.post(EventMouseButtonUp.create(time, button, Mouse.absPos, Mouse.pos));
-                    
-                    boolean inClickRange  = Math.abs(Mouse.absPos.x - input.absClickPos.x) < 2 && Math.abs(Mouse.absPos.y - input.absClickPos.y) < 2;
-                    boolean inDClickRange = Math.abs(Mouse.absPos.x - input.absDClickPos.x) < 2 && Math.abs(Mouse.absPos.y - input.absDClickPos.y) < 2;
-                    
-                    if (inDClickRange && time - input.pressTime < Input.doublePressedDelayL())
-                    {
-                        input.pressTime = 0;
-                        Engine.Events.post(EventMouseButtonPressed.create(time, button, Mouse.absPos, Mouse.pos, true));
-                    }
-                    else if (inClickRange)
-                    {
-                        input.absDClickPos.set(Mouse.absPos);
-                        input.dClickPos.set(Mouse.pos);
-                        input.pressTime = time;
-                        Engine.Events.post(EventMouseButtonPressed.create(time, button, Mouse.absPos, Mouse.pos, false));
-                    }
                 }
                 case GLFW_REPEAT -> Engine.Events.post(EventMouseButtonRepeated.create(time, button, Mouse.absPos, Mouse.pos));
             }
             if (input.held)
             {
-                if (time - input.holdTime >= Input.holdFrequencyL())
+                if (time - input.heldTime >= Input.holdFrequencyL())
                 {
-                    input.holdTime += Input.holdFrequencyL();
+                    input.heldTime += Input.holdFrequencyL();
                     Engine.Events.post(EventMouseButtonHeld.create(time, button, Mouse.absPos, Mouse.pos));
                 }
-                if (Mouse.rel.x != 0 || Mouse.rel.y != 0) Engine.Events.post(EventMouseButtonDragged.create(time, button, Mouse.absPos, Mouse.pos, Mouse.absRel, Mouse.rel, input.absClickPos, input.clickPos));
+                if (Mouse.rel.x != 0 || Mouse.rel.y != 0) Engine.Events.post(EventMouseButtonDragged.create(time, button, Mouse.absPos, Mouse.pos, Mouse.absRel, Mouse.rel, input.absDownPos, input.downPos));
             }
         }
     }
@@ -805,10 +795,8 @@ public final class Mouse
     
     protected static final class ButtonInput extends Input
     {
-        final Vector2d absClickPos  = new Vector2d();
-        final Vector2d absDClickPos = new Vector2d();
-        final Vector2d clickPos     = new Vector2d();
-        final Vector2d dClickPos    = new Vector2d();
+        final Vector2d absDownPos = new Vector2d();
+        final Vector2d downPos    = new Vector2d();
     }
     
     public enum Button
