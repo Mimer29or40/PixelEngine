@@ -226,24 +226,40 @@ public final class Joystick
     }
     
     /**
+     * Returns whether the specified joystick is present.
+     *
+     * @param index The joystick to query
+     * @return {@code true} if the joystick is present, or {@code false} otherwise
+     */
+    public static boolean isPresent(Index index)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick != null;
+    }
+    
+    /**
      * Returns whether the specified joystick is both present and has a gamepad mapping.
      *
+     * @param index The joystick to query
      * @return {@code true} if a joystick is both present and has a gamepad mapping or {@code false} otherwise
      */
     public static boolean isGamepad(Index index)
     {
-        return Joystick.INSTANCES.get(index).gamepad;
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick != null && joystick.gamepad;
     }
     
     /**
      * Returns the name, encoded as UTF-8, of the specified joystick.
      *
-     * @return the UTF-8 encoded name of the joystick, or {@code NULL} if the joystick is not present
+     * @param index The joystick to query
+     * @return the UTF-8 encoded name of the joystick, or {@code null} if the joystick is not present
      */
     @Nullable
     public static String name(Index index)
     {
-        return Joystick.INSTANCES.get(index).name;
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick == null ? null : joystick.name;
     }
     
     /**
@@ -261,15 +277,15 @@ public final class Joystick
      * depending on what hardware information the platform specific APIs
      * provide.
      *
+     * @param index The joystick to query
      * @return the UTF-8 encoded GUID of the joystick, or {@code NULL} if the joystick is not present or an error occurred
      */
     @Nullable
     public static String guid(Index index)
     {
-        return Joystick.INSTANCES.get(index).guid;
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick == null ? null : joystick.guid;
     }
-    
-    // TODO - State Query Methods
     
     /**
      * This method is called by the window it is attached to. This is where
@@ -320,10 +336,10 @@ public final class Joystick
                 {
                     case GLFW_PRESS -> {
                         boolean inc = time - input.downTime < Input.doublePressedDelayL();
-    
-                        input.held     = true;
-                        input.heldTime = time + Input.holdFrequencyL();
-                        input.downTime = time;
+                        
+                        input.held      = true;
+                        input.heldTime  = time + Input.holdFrequencyL();
+                        input.downTime  = time;
                         input.downCount = inc ? input.downCount + 1 : 1;
                         Engine.Events.post(EventJoystickButtonDown.create(time, index, button, input.downCount));
                     }
@@ -356,6 +372,65 @@ public final class Joystick
                 }
             }
         }
+    }
+    
+    /**
+     * Returns the value of the specified axes of the specified joystick. The
+     * value will be between -1.0 and 1.0.
+     * <p>
+     * If the specified joystick is not present this function will return
+     * {@code 0.0} but will not generate an error.
+     * {@link Joystick#isPresent(Index) isPresent} should be used to check first
+     * before this is called.
+     *
+     * @param index the joystick to query
+     * @return the axis values, or {@code 0.0} if the joystick is not present
+     */
+    public static double axis(Index index, Axis axis)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick == null ? 0.0 : joystick.axisMap.get(axis).value;
+    }
+    
+    public static boolean down(Index index, Button button)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick != null && joystick.buttonMap.get(button).state == GLFW_PRESS;
+    }
+    
+    public static boolean up(Index index, Button button)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick != null && joystick.buttonMap.get(button).state == GLFW_RELEASE;
+    }
+    
+    public static boolean repeat(Index index, Button button)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick != null && joystick.buttonMap.get(button).state == GLFW_REPEAT;
+    }
+    
+    public static boolean held(Index index, Button button)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick != null && joystick.buttonMap.get(button).held;
+    }
+    
+    /**
+     * Returns the state of the specified hat of the specified joystick.
+     * <p>
+     * If the specified joystick is not present this function will return
+     * {@link HatDirection#CENTERED} but will not generate an error.
+     * {@link Joystick#isPresent(Index) isPresent} should be used to check first
+     * before this is called.
+     *
+     * @param index the joystick to query
+     * @return the hat state, or {@link HatDirection#CENTERED} if the joystick is not present
+     */
+    public static HatDirection hat(Index index, Hat hat)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(index);
+        return joystick == null ? HatDirection.CENTERED : HatDirection.get(joystick.hatMap.get(hat).state);
     }
     
     protected static final class AxisInput
