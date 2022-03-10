@@ -1,7 +1,7 @@
 package pe;
 
+import org.jetbrains.annotations.NotNull;
 import org.joml.Matrix4d;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.stb.STBTTAlignedQuad;
@@ -12,6 +12,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.BlendMode;
 import pe.event.*;
+import pe.gui.GUIWindow;
 import pe.render.*;
 import rutils.IOUtil;
 import rutils.Logger;
@@ -19,10 +20,9 @@ import rutils.Logger;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.Objects;
+import java.util.*;
 
 import static org.lwjgl.nuklear.Nuklear.*;
-import static org.lwjgl.nuklear.Nuklear.nk_layout_row_dynamic;
 import static org.lwjgl.stb.STBTruetype.*;
 
 public class OverlayGUI
@@ -30,8 +30,6 @@ public class OverlayGUI
     private static final Logger LOGGER = new Logger();
     
     private static GLProgram     program;
-    private static ByteBuffer    vertexBuffer;
-    private static ByteBuffer    elementBuffer;
     private static GLVertexArray vertexArray;
     private static Matrix4d      pv;
     
@@ -42,15 +40,17 @@ public class OverlayGUI
     private static NkConvertConfig                  config;
     private static NkBuffer                         commandBuffer;
     
-    private static NkContext  context;
+    private static NkContext  ctx;
     private static NkUserFont defaultFont;
+    
+    private static final Set<GUIWindow> windows = new LinkedHashSet<>();
     
     static ByteBuffer ttf;
     
     static int BITMAP_W = 1024;
     static int BITMAP_H = 1024;
     
-    static int FONT_HEIGHT = 18;
+    static int FONT_HEIGHT = 12;
     static int fontTexID   = GL33.glGenTextures();
     
     static STBTTFontinfo          fontInfo = STBTTFontinfo.create();
@@ -58,15 +58,6 @@ public class OverlayGUI
     
     static float scale;
     static float descent;
-    
-    static final int EASY = 0;
-    static final int HARD = 1;
-    
-    static final NkColorf background = NkColorf.create().r(0.10f).g(0.18f).b(0.24f).a(1.0f);
-    
-    static int op = EASY;
-    
-    static final IntBuffer compression = BufferUtils.createIntBuffer(1).put(0, 20);
     
     static void setup()
     {
@@ -103,16 +94,19 @@ public class OverlayGUI
         int vertexSize  = Float.BYTES * 2 + Float.BYTES * 2 + Byte.BYTES * 4;
         int elementSize = Short.BYTES;
         
-        OverlayGUI.vertexBuffer  = MemoryUtil.memAlloc((1 << 15) * vertexSize);
-        OverlayGUI.elementBuffer = MemoryUtil.memAlloc((1 << 15) * elementSize);
+        ByteBuffer vertexBuffer  = MemoryUtil.memAlloc((1 << 15) * vertexSize);
+        ByteBuffer elementBuffer = MemoryUtil.memAlloc((1 << 15) * elementSize);
         
         OverlayGUI.vertexArray = GLVertexArray.builder()
-                                              .buffer(OverlayGUI.vertexBuffer, Usage.DYNAMIC_DRAW,
+                                              .buffer(vertexBuffer, Usage.DYNAMIC_DRAW,
                                                       new GLAttribute(GLType.FLOAT, 2, false),
                                                       new GLAttribute(GLType.FLOAT, 2, false),
                                                       new GLAttribute(GLType.UNSIGNED_BYTE, 4, true))
-                                              .indexBuffer(OverlayGUI.elementBuffer, Usage.DYNAMIC_DRAW, GLType.UNSIGNED_SHORT)
+                                              .indexBuffer(elementBuffer, Usage.DYNAMIC_DRAW, GLType.UNSIGNED_SHORT)
                                               .build();
+        
+        MemoryUtil.memFree(vertexBuffer);
+        MemoryUtil.memFree(elementBuffer);
         
         OverlayGUI.pv = new Matrix4d();
         
@@ -146,7 +140,7 @@ public class OverlayGUI
         OverlayGUI.commandBuffer = NkBuffer.calloc();
         nk_buffer_init(OverlayGUI.commandBuffer, OverlayGUI.allocator, 4 * 1024);
         
-        ttf = IOUtil.readFromFile("demo/FiraSans-Regular.ttf");
+        ttf = IOUtil.readFromFile("demo/ProggyClean/ProggyClean.ttf");
         
         try (MemoryStack stack = MemoryStack.stackPush())
         {
@@ -192,18 +186,12 @@ public class OverlayGUI
                 int glyph_len = nnk_utf_decode(text, MemoryUtil.memAddress(unicode), len);
                 int text_len  = glyph_len;
                 
-                if (glyph_len == 0)
-                {
-                    return 0;
-                }
+                if (glyph_len == 0) return 0;
                 
                 IntBuffer advance = stack.mallocInt(1);
                 while (text_len <= len && glyph_len != 0)
                 {
-                    if (unicode.get(0) == NK_UTF_INVALID)
-                    {
-                        break;
-                    }
+                    if (unicode.get(0) == NK_UTF_INVALID) break;
                     
                     /* query currently drawn glyph information */
                     stbtt_GetCodepointHMetrics(fontInfo, unicode.get(0), advance, null);
@@ -241,10 +229,10 @@ public class OverlayGUI
         });
         OverlayGUI.defaultFont.texture(it -> it.id(fontTexID));
         
-        OverlayGUI.context = NkContext.calloc();
+        OverlayGUI.ctx = NkContext.calloc();
         
-        nk_init(OverlayGUI.context, OverlayGUI.allocator, OverlayGUI.defaultFont);
-        OverlayGUI.context.clip().copy((handle, text, len) -> {
+        nk_init(OverlayGUI.ctx, OverlayGUI.allocator, OverlayGUI.defaultFont);
+        OverlayGUI.ctx.clip().copy((handle, text, len) -> {
             if (len == 0) return;
             
             try (MemoryStack stack = MemoryStack.stackPush())
@@ -256,7 +244,7 @@ public class OverlayGUI
                 Window.setClipboard(str);
             }
         });
-        OverlayGUI.context.clip().paste((handle, edit) -> {
+        OverlayGUI.ctx.clip().paste((handle, edit) -> {
             long text = Window.getClipboardRaw();
             if (text != MemoryUtil.NULL)
             {
@@ -269,7 +257,8 @@ public class OverlayGUI
     {
         OverlayGUI.LOGGER.fine("Destroy");
         
-        OverlayGUI.context.free();
+        nk_free(OverlayGUI.ctx);
+        OverlayGUI.ctx.free();
         
         OverlayGUI.defaultFont.free();
         
@@ -282,15 +271,12 @@ public class OverlayGUI
         
         OverlayGUI.vertexArray.delete();
         
-        MemoryUtil.memFree(OverlayGUI.vertexBuffer);
-        MemoryUtil.memFree(OverlayGUI.elementBuffer);
-        
         OverlayGUI.program.delete();
     }
     
     static void handleEvents()
     {
-        nk_input_begin(OverlayGUI.context);
+        nk_input_begin(OverlayGUI.ctx);
         
         try (MemoryStack stack = MemoryStack.stackPush())
         {
@@ -298,12 +284,12 @@ public class OverlayGUI
             {
                 if (event instanceof EventMouseMoved)
                 {
-                    nk_input_motion(OverlayGUI.context, (int) Mouse.absX(), (int) Mouse.absY());
+                    nk_input_motion(OverlayGUI.ctx, (int) Mouse.absX(), (int) Mouse.absY());
                 }
                 else if (event instanceof EventMouseScrolled)
                 {
-                    NkVec2 scroll = NkVec2.malloc(stack).x((float) Mouse.scrollX()).y((float) Mouse.scrollX());
-                    nk_input_scroll(OverlayGUI.context, scroll);
+                    NkVec2 scroll = NkVec2.malloc(stack).x((float) Mouse.scrollX()).y((float) Mouse.scrollY());
+                    nk_input_scroll(OverlayGUI.ctx, scroll);
                 }
                 else if (event instanceof EventMouseButtonDown mbDown)
                 {
@@ -312,7 +298,7 @@ public class OverlayGUI
                 else if (event instanceof EventMouseButtonUp mbUp)
                 {
                     mouseButtonInput(mbUp.button(), Mouse.absX(), Mouse.absY(), 0);
-                    nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), false);
+                    nk_input_button(OverlayGUI.ctx, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), false);
                 }
                 else if (event instanceof EventKeyboardKeyDown kkDown)
                 {
@@ -324,12 +310,12 @@ public class OverlayGUI
                 }
                 else if (event instanceof EventKeyboardTyped kTyped)
                 {
-                    nk_input_unicode(OverlayGUI.context, kTyped.codePoint());
+                    nk_input_unicode(OverlayGUI.ctx, kTyped.codePoint());
                 }
             }
         }
         
-        NkMouse mouse = OverlayGUI.context.input().mouse();
+        NkMouse mouse = OverlayGUI.ctx.input().mouse();
         if (mouse.grab())
         {
             Mouse.hide();
@@ -347,18 +333,18 @@ public class OverlayGUI
             Mouse.show();
         }
         
-        nk_input_end(OverlayGUI.context);
+        nk_input_end(OverlayGUI.ctx);
     }
     
     private static void mouseButtonInput(Mouse.Button button, double x, double y, int downCount)
     {
         switch (button)
         {
-            case LEFT -> nk_input_button(OverlayGUI.context, NK_BUTTON_LEFT, (int) x, (int) y, downCount > 0);
-            case RIGHT -> nk_input_button(OverlayGUI.context, NK_BUTTON_RIGHT, (int) x, (int) y, downCount > 0);
-            case MIDDLE -> nk_input_button(OverlayGUI.context, NK_BUTTON_MIDDLE, (int) x, (int) y, downCount > 0);
+            case LEFT -> nk_input_button(OverlayGUI.ctx, NK_BUTTON_LEFT, (int) x, (int) y, downCount > 0);
+            case RIGHT -> nk_input_button(OverlayGUI.ctx, NK_BUTTON_RIGHT, (int) x, (int) y, downCount > 0);
+            case MIDDLE -> nk_input_button(OverlayGUI.ctx, NK_BUTTON_MIDDLE, (int) x, (int) y, downCount > 0);
         }
-        nk_input_button(OverlayGUI.context, NK_BUTTON_DOUBLE, (int) x, (int) y, downCount > 1);
+        nk_input_button(OverlayGUI.ctx, NK_BUTTON_DOUBLE, (int) x, (int) y, downCount > 1);
     }
     
     private static void keyboardKeyInput(Keyboard.Key key, boolean down)
@@ -369,84 +355,38 @@ public class OverlayGUI
         
         switch (key)
         {
-            case L_SHIFT, R_SHIFT -> nk_input_key(OverlayGUI.context, NK_KEY_SHIFT, down);
-            case L_CONTROL, R_CONTROL -> nk_input_key(OverlayGUI.context, NK_KEY_CTRL, down);
-            case DELETE -> nk_input_key(OverlayGUI.context, NK_KEY_DEL, down);
-            case ENTER, KP_ENTER -> nk_input_key(OverlayGUI.context, NK_KEY_ENTER, down);
-            case TAB -> nk_input_key(OverlayGUI.context, NK_KEY_TAB, down);
-            case BACKSPACE -> nk_input_key(OverlayGUI.context, NK_KEY_BACKSPACE, down);
-            case UP -> nk_input_key(OverlayGUI.context, NK_KEY_UP, down);
-            case DOWN -> nk_input_key(OverlayGUI.context, NK_KEY_DOWN, down);
-            case LEFT -> nk_input_key(context, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_LEFT : NK_KEY_LEFT, down);
-            case RIGHT -> nk_input_key(OverlayGUI.context, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_RIGHT : NK_KEY_RIGHT, down);
+            case L_SHIFT, R_SHIFT -> nk_input_key(OverlayGUI.ctx, NK_KEY_SHIFT, down);
+            case L_CONTROL, R_CONTROL -> nk_input_key(OverlayGUI.ctx, NK_KEY_CTRL, down);
+            case DELETE -> nk_input_key(OverlayGUI.ctx, NK_KEY_DEL, down);
+            case ENTER, KP_ENTER -> nk_input_key(OverlayGUI.ctx, NK_KEY_ENTER, down);
+            case TAB -> nk_input_key(OverlayGUI.ctx, NK_KEY_TAB, down);
+            case BACKSPACE -> nk_input_key(OverlayGUI.ctx, NK_KEY_BACKSPACE, down);
+            case UP -> nk_input_key(OverlayGUI.ctx, NK_KEY_UP, down);
+            case DOWN -> nk_input_key(OverlayGUI.ctx, NK_KEY_DOWN, down);
+            case LEFT -> nk_input_key(ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_LEFT : NK_KEY_LEFT, down);
+            case RIGHT -> nk_input_key(OverlayGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_RIGHT : NK_KEY_RIGHT, down);
             case HOME -> {
-                nk_input_key(OverlayGUI.context, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_START : NK_KEY_TEXT_LINE_START, down);
-                nk_input_key(OverlayGUI.context, NK_KEY_SCROLL_START, down);
+                nk_input_key(OverlayGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_START : NK_KEY_TEXT_LINE_START, down);
+                nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_START, down);
             }
             case END -> {
-                nk_input_key(OverlayGUI.context, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_END : NK_KEY_TEXT_LINE_END, down);
-                nk_input_key(OverlayGUI.context, NK_KEY_SCROLL_END, down);
+                nk_input_key(OverlayGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_END : NK_KEY_TEXT_LINE_END, down);
+                nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_END, down);
             }
-            case PAGE_UP -> nk_input_key(OverlayGUI.context, NK_KEY_SCROLL_UP, down);
-            case PAGE_DOWN -> nk_input_key(OverlayGUI.context, NK_KEY_SCROLL_DOWN, down);
-            case C -> nk_input_key(OverlayGUI.context, NK_KEY_COPY, Modifier.only(Modifier.CONTROL) && down);
-            case X -> nk_input_key(OverlayGUI.context, NK_KEY_CUT, Modifier.only(Modifier.CONTROL) && down);
-            case V -> nk_input_key(OverlayGUI.context, NK_KEY_PASTE, Modifier.only(Modifier.CONTROL) && down);
-            case Z -> nk_input_key(OverlayGUI.context, NK_KEY_TEXT_UNDO, Modifier.only(Modifier.CONTROL) && down);
-            case Y -> nk_input_key(OverlayGUI.context, NK_KEY_TEXT_REDO, Modifier.only(Modifier.CONTROL) && down);
-            case A -> nk_input_key(OverlayGUI.context, NK_KEY_TEXT_SELECT_ALL, Modifier.only(Modifier.CONTROL) && down);
-        }
-    }
-    
-    private static void layout()
-    {
-        int x = 30;
-        int y = 30;
-        
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            NkRect rect = nk_rect(x, y, 230, 250, NkRect.malloc(stack));
-            
-            int flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
-            // int flags = 0;
-            if (nk_begin(context, "Demo", rect, flags))
-            {
-                nk_layout_row_static(context, 30, 80, 1);
-                if (nk_button_label(context, "button")) System.out.println("button pressed");
-    
-                nk_layout_row_dynamic(context, 30, 1);
-                nk_label(context, String.format("Mouse Pos: [%.3f, %.3f]", Mouse.x(), Mouse.y()), NK_TEXT_LEFT);
-                nk_label(context, String.format("Mouse Abs Pos: [%.3f, %.3f]", Mouse.absX(), Mouse.absY()), NK_TEXT_LEFT);
-                
-                nk_layout_row_dynamic(context, 30, 2);
-                if (nk_option_label(context, "easy", op == EASY)) op = EASY;
-                if (nk_option_label(context, "hard", op == HARD)) op = HARD;
-                
-                nk_layout_row_dynamic(context, 25, 1);
-                nk_property_int(context, "Compression:", 0, compression, 100, 10, 1);
-                
-                nk_layout_row_dynamic(context, 20, 1);
-                nk_label(context, "background:", NK_TEXT_LEFT);
-                nk_layout_row_dynamic(context, 25, 1);
-                if (nk_combo_begin_color(context, nk_rgb_cf(background, NkColor.malloc(stack)), NkVec2.malloc(stack).set(nk_widget_width(context), 400)))
-                {
-                    nk_layout_row_dynamic(context, 120, 1);
-                    nk_color_picker(context, background, NK_RGBA);
-                    nk_layout_row_dynamic(context, 25, 1);
-                    background.r(nk_propertyf(context, "#R:", 0, background.r(), 1.0f, 0.01f, 0.005f))
-                              .g(nk_propertyf(context, "#G:", 0, background.g(), 1.0f, 0.01f, 0.005f))
-                              .b(nk_propertyf(context, "#B:", 0, background.b(), 1.0f, 0.01f, 0.005f))
-                              .a(nk_propertyf(context, "#A:", 0, background.a(), 1.0f, 0.01f, 0.005f));
-                    nk_combo_end(context);
-                }
-            }
-            nk_end(context);
+            case PAGE_UP -> nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_UP, down);
+            case PAGE_DOWN -> nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_DOWN, down);
+            case C -> nk_input_key(OverlayGUI.ctx, NK_KEY_COPY, Modifier.only(Modifier.CONTROL) && down);
+            case X -> nk_input_key(OverlayGUI.ctx, NK_KEY_CUT, Modifier.only(Modifier.CONTROL) && down);
+            case V -> nk_input_key(OverlayGUI.ctx, NK_KEY_PASTE, Modifier.only(Modifier.CONTROL) && down);
+            case Z -> nk_input_key(OverlayGUI.ctx, NK_KEY_TEXT_UNDO, Modifier.only(Modifier.CONTROL) && down);
+            case Y -> nk_input_key(OverlayGUI.ctx, NK_KEY_TEXT_REDO, Modifier.only(Modifier.CONTROL) && down);
+            case A -> nk_input_key(OverlayGUI.ctx, NK_KEY_TEXT_SELECT_ALL, Modifier.only(Modifier.CONTROL) && down);
         }
     }
     
     static void draw()
     {
-        layout();
+        for (GUIWindow window : OverlayGUI.windows) window.layout(OverlayGUI.ctx);
         
         // setup global state
         GLState.blendMode(BlendMode.ALPHA);
@@ -477,7 +417,7 @@ public class OverlayGUI
             
             nk_buffer_init_fixed(vbuf, vertices);
             nk_buffer_init_fixed(ebuf, elements);
-            nk_convert(OverlayGUI.context, OverlayGUI.commandBuffer, vbuf, ebuf, OverlayGUI.config);
+            nk_convert(OverlayGUI.ctx, OverlayGUI.commandBuffer, vbuf, ebuf, OverlayGUI.config);
         }
         OverlayGUI.vertexArray.buffer(0).unmap();
         OverlayGUI.vertexArray.indexBuffer().unmap();
@@ -487,9 +427,9 @@ public class OverlayGUI
         float fb_scale_y = (float) fbHeight / (float) height;
         
         long offset = 0L;
-        for (NkDrawCommand cmd = nk__draw_begin(OverlayGUI.context, OverlayGUI.commandBuffer);
+        for (NkDrawCommand cmd = nk__draw_begin(OverlayGUI.ctx, OverlayGUI.commandBuffer);
              cmd != null;
-             cmd = nk__draw_next(cmd, OverlayGUI.commandBuffer, OverlayGUI.context))
+             cmd = nk__draw_next(cmd, OverlayGUI.commandBuffer, OverlayGUI.ctx))
         {
             if (cmd.elem_count() == 0) continue;
             GLTexture.bindRaw(GL33.GL_TEXTURE_2D, cmd.texture().id(), 0);
@@ -504,7 +444,13 @@ public class OverlayGUI
             
             offset += cmd.elem_count();
         }
-        nk_clear(context);
+        nk_clear(ctx);
         nk_buffer_clear(commandBuffer);
+    }
+    
+    public static void addWindow(@NotNull GUIWindow window)
+    {
+        boolean result = OverlayGUI.windows.add(window);
+        if (!result) throw new IllegalStateException("Window already present.");
     }
 }

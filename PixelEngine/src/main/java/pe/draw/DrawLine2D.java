@@ -118,6 +118,8 @@ public class DrawLine2D extends Draw2D
         return this;
     }
     
+    // TODO - public DrawLine2D color(float r, float g, float b, float a)
+    
     public DrawLine2D color(@NotNull Colorc color)
     {
         return color(color.r(), color.g(), color.b(), color.a());

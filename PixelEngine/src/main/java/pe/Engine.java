@@ -574,7 +574,7 @@ public abstract class Engine
                                 
                                 Viewport.draw();
                                 // GUI.draw();
-                                Debug.draw();
+                                // Debug.draw();
                                 OverlayGUI.draw();
                                 
                                 Window.swap();

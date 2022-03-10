@@ -7,6 +7,8 @@ package org.lwjgl.demo.nuklear;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.system.MemoryStack;
+import pe.Mouse;
+import pe.OverlayGUI;
 
 import java.nio.IntBuffer;
 
@@ -46,6 +48,22 @@ class Demo
             int flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
             if (nk_begin(ctx, "Demo", rect, flags))
             {
+                nk_layout_row_dynamic(ctx, 200, 1);
+                flags = NK_WINDOW_BORDER | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
+                if (nk_group_begin(ctx, "MOUSE", flags))
+                {
+                    nk_layout_row_dynamic(ctx, 0, 1);
+                    nk_label(ctx, String.format("Mouse Pos: [%.3f, %.3f]", Mouse.x(), Mouse.y()), NK_TEXT_LEFT);
+        
+                    nk_layout_row_dynamic(ctx, 0, 1);
+                    nk_label(ctx, String.format("Mouse Abs Pos: [%.3f, %.3f]", Mouse.absX(), Mouse.absY()), NK_TEXT_LEFT);
+        
+                    nk_layout_row_static(ctx, 0, 80, 1);
+                    if (nk_button_label(ctx, "button")) System.out.println("button pressed");
+    
+                    nk_group_end(ctx);
+                }
+                
                 nk_layout_row_static(ctx, 30, 80, 1);
                 if (nk_button_label(ctx, "button")) System.out.println("button pressed");
                 

@@ -101,7 +101,7 @@ public class GLFWDemo
     {
         try
         {
-            this.ttf = ioResourceToByteBuffer("demo/FiraSans-Regular.ttf", 512 * 1024);
+            this.ttf = ioResourceToByteBuffer("demo/FiraSans/FiraSans-Regular.ttf", 512 * 1024);
         }
         catch (IOException e)
         {
@@ -277,7 +277,7 @@ public class GLFWDemo
             newFrame();
             
             demo.layout(ctx, 50, 50);
-            // calc.layout(ctx, 300, 50);
+            calc.layout(ctx, 300, 50);
             
             try (MemoryStack stack = stackPush())
             {
@@ -647,48 +647,6 @@ public class GLFWDemo
                 nk_buffer_init_fixed(ebuf, elements/*, max_element_buffer*/);
                 nk_convert(ctx, cmds, vbuf, ebuf, config);
             }
-            
-            long offset = NULL;
-            for (NkDrawCommand cmd = nk__draw_begin(ctx, cmds);
-                 cmd != null;
-                 cmd = nk__draw_next(cmd, cmds, ctx))
-            {
-                if (cmd.elem_count() == 0) continue;
-                
-                System.out.printf("elem_count=%s, rect=[x=%s, y=%s, w=%s, h=%s]%n",
-                                  cmd.elem_count(),
-                                  cmd.clip_rect().x(),
-                                  cmd.clip_rect().y(),
-                                  cmd.clip_rect().w(),
-                                  cmd.clip_rect().h()
-                                 );
-                elements.position((int) offset);
-                for (int i = 0, n = cmd.elem_count(); i < n; i++)
-                {
-                    // int element = elements.getShort((int) (offset + i)) & 0xFFFF;
-                    int element = elements.getShort() & 0xFFFF;
-                    
-                    vertices.position(element * 20);
-                    float x = vertices.getFloat();
-                    float y = vertices.getFloat();
-                    float u = vertices.getFloat();
-                    float v = vertices.getFloat();
-                    int   r = vertices.get() & 0xFF;
-                    int   g = vertices.get() & 0xFF;
-                    int   b = vertices.get() & 0xFF;
-                    int   a = vertices.get() & 0xFF;
-                    
-                    System.out.printf("element=%s Vertex[pos=(%.3f,%.3f), uv=(%.3f,%.3f), color=(%s,%s,%s,%s)]%n",
-                                      element,
-                                      x, y,
-                                      u, v,
-                                      r, g, b, a);
-                }
-                offset += Integer.toUnsignedLong(cmd.elem_count() * Short.BYTES);
-            }
-            vertices.clear();
-            elements.clear();
-            
             glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
             glUnmapBuffer(GL_ARRAY_BUFFER);
             
@@ -696,7 +654,7 @@ public class GLFWDemo
             float fb_scale_x = (float) display_width / (float) width;
             float fb_scale_y = (float) display_height / (float) height;
             
-            offset = NULL;
+            long offset = NULL;
             for (NkDrawCommand cmd = nk__draw_begin(ctx, cmds);
                  cmd != null;
                  cmd = nk__draw_next(cmd, cmds, ctx))
@@ -722,8 +680,6 @@ public class GLFWDemo
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
         glDisable(GL_BLEND);
-        
-        glfwSetWindowShouldClose(win, true);
         glDisable(GL_SCISSOR_TEST);
     }
     
