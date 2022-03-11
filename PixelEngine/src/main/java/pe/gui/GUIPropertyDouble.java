@@ -2,6 +2,7 @@ package pe.gui;
 
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.nuklear.NkContext;
+import pe.util.Property;
 
 import java.util.function.Supplier;
 
@@ -9,37 +10,35 @@ import static org.lwjgl.nuklear.Nuklear.nk_property_double;
 
 public class GUIPropertyDouble extends GUIProperty
 {
-    protected final double[] val = new double[1];
+    protected final double[]         internal;
+    protected final Supplier<Double> supplier;
     
-    protected double min, max, step, inc;
+    public final Property<Double> value, min, max, step, inc;
     
     public GUIPropertyDouble(@NotNull Supplier<@NotNull String> name, double initial, double min, double max, double step, double inc)
     {
         super(name);
         
-        this.val[0] = initial;
+        this.internal = new double[] {initial};
+        this.supplier = () -> this.internal[0];
         
-        this.min  = min;
-        this.max  = max;
-        this.step = step;
-        this.inc  = inc;
+        this.value = new Property<>("value", this.supplier);
+        this.min   = new Property<>("min", min);
+        this.max   = new Property<>("max", max);
+        this.step  = new Property<>("step", step);
+        this.inc   = new Property<>("inc", inc);
     }
     
     public GUIPropertyDouble(@NotNull String name, double initial, double min, double max, double step, double inc)
     {
-        super(name);
-        
-        this.val[0] = initial;
-        
-        this.min  = min;
-        this.max  = max;
-        this.step = step;
-        this.inc  = inc;
+        this(() -> name, initial, min, max, step, inc);
     }
     
     @Override
     public void layout(@NotNull NkContext ctx)
     {
-        nk_property_double(ctx, '#' + this.name.get(), this.min, this.val, this.max, this.step, (float) this.inc);
+        this.internal[0] = this.value.get();
+        nk_property_double(ctx, '#' + this.name.get(), this.min.get(), this.internal, this.max.get(), this.step.get(), (float) (double) this.inc.get());
+        this.value.set(this.supplier);
     }
 }

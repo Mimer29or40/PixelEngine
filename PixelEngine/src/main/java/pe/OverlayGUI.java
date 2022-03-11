@@ -20,7 +20,9 @@ import rutils.Logger;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 
 import static org.lwjgl.nuklear.Nuklear.*;
 import static org.lwjgl.stb.STBTruetype.*;
@@ -278,6 +280,8 @@ public class OverlayGUI
     {
         nk_input_begin(OverlayGUI.ctx);
         
+        
+        
         try (MemoryStack stack = MemoryStack.stackPush())
         {
             for (Event event : Engine.Events.get())
@@ -298,7 +302,6 @@ public class OverlayGUI
                 else if (event instanceof EventMouseButtonUp mbUp)
                 {
                     mouseButtonInput(mbUp.button(), Mouse.absX(), Mouse.absY(), 0);
-                    nk_input_button(OverlayGUI.ctx, NK_BUTTON_DOUBLE, (int) Mouse.absX(), (int) Mouse.absY(), false);
                 }
                 else if (event instanceof EventKeyboardKeyDown kkDown)
                 {
@@ -334,6 +337,12 @@ public class OverlayGUI
         }
         
         nk_input_end(OverlayGUI.ctx);
+        
+        for (GUIWindow window : OverlayGUI.windows) window.layout(OverlayGUI.ctx);
+    
+    
+        // TODO - nk_window_is_any_hovered
+        // TODO - nk_item_is_any_active
     }
     
     private static void mouseButtonInput(Mouse.Button button, double x, double y, int downCount)
@@ -386,8 +395,6 @@ public class OverlayGUI
     
     static void draw()
     {
-        for (GUIWindow window : OverlayGUI.windows) window.layout(OverlayGUI.ctx);
-        
         // setup global state
         GLState.blendMode(BlendMode.ALPHA);
         GLState.depthMode(DepthMode.NONE);

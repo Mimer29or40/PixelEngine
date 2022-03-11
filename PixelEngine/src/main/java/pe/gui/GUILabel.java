@@ -7,6 +7,8 @@ import org.lwjgl.nuklear.NkContext;
 import pe.color.Color;
 import pe.color.Color_RGBA;
 import pe.color.Colorc;
+import pe.util.NotNullProperty;
+import pe.util.Property;
 
 import java.util.function.Supplier;
 
@@ -14,41 +16,22 @@ import static org.lwjgl.nuklear.Nuklear.*;
 
 public class GUILabel extends GUIElement
 {
-    protected Supplier<String> name;
+    public final Property<String>    text;
+    public final Property<Alignment> alignment;
+    public final Property<Boolean>   wrap;
     
     protected Color color = null;
     
-    protected Alignment alignment = Alignment.LEFT;
-    protected boolean   wrap      = false;
-    
-    public GUILabel(@NotNull Supplier<@NotNull String> name)
+    public GUILabel(@NotNull Supplier<@NotNull String> text)
     {
-        this.name = name;
+        this.text      = new NotNullProperty<>("text", text);
+        this.alignment = new NotNullProperty<>("alignment", Alignment.LEFT);
+        this.wrap      = new NotNullProperty<>("wrap", false);
     }
     
-    public GUILabel(@NotNull String name)
+    public GUILabel(@NotNull String text)
     {
-        this(() -> name);
-    }
-    
-    @NotNull
-    public String name()
-    {
-        return this.name.get();
-    }
-    
-    @NotNull
-    public GUILabel name(@NotNull Supplier<@NotNull String> name)
-    {
-        this.name = name;
-        return this;
-    }
-    
-    @NotNull
-    public GUILabel name(@NotNull String name)
-    {
-        this.name = () -> name;
-        return this;
+        this(() -> text);
     }
     
     @Nullable
@@ -73,31 +56,6 @@ public class GUILabel extends GUIElement
         return this;
     }
     
-    @NotNull
-    public Alignment alignment()
-    {
-        return this.alignment;
-    }
-    
-    @NotNull
-    public GUILabel alignment(@NotNull Alignment alignment)
-    {
-        this.alignment = alignment;
-        return this;
-    }
-    
-    public boolean wrap()
-    {
-        return this.wrap;
-    }
-    
-    @NotNull
-    public GUILabel wrap(boolean wrap)
-    {
-        this.wrap = wrap;
-        return this;
-    }
-    
     @Override
     public void layout(@NotNull NkContext ctx)
     {
@@ -105,24 +63,24 @@ public class GUILabel extends GUIElement
         {
             NkColor color = NkColor.create(this.color.address());
             
-            if (this.wrap)
+            if (this.wrap.get())
             {
-                nk_label_colored_wrap(ctx, this.name.get(), color);
+                nk_label_colored_wrap(ctx, this.text.get(), color);
             }
             else
             {
-                nk_label_colored(ctx, this.name.get(), this.alignment.value, color);
+                nk_label_colored(ctx, this.text.get(), this.alignment.get().value, color);
             }
         }
         else
         {
-            if (this.wrap)
+            if (this.wrap.get())
             {
-                nk_label_wrap(ctx, this.name.get());
+                nk_label_wrap(ctx, this.text.get());
             }
             else
             {
-                nk_label(ctx, this.name.get(), this.alignment.value);
+                nk_label(ctx, this.text.get(), this.alignment.get().value);
             }
         }
     }

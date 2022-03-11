@@ -2,7 +2,9 @@ package pe.gui;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public abstract class GUIContainer extends GUIElement
 {
@@ -14,15 +16,11 @@ public abstract class GUIContainer extends GUIElement
         return Collections.unmodifiableSet(this.children);
     }
     
-    public void add(@NotNull GUILayout child)
+    public <T extends GUILayout> T add(@NotNull T child)
     {
         if (child.parent != null) throw new IllegalStateException("Child cannot have multiple parents");
         this.children.add(child);
         child.parent = this;
-    }
-    
-    public boolean contains(@NotNull GUILayout query)
-    {
-        return this.children.contains(query);
+        return child;
     }
 }
