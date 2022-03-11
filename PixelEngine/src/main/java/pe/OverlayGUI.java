@@ -280,12 +280,16 @@ public class OverlayGUI
     {
         nk_input_begin(OverlayGUI.ctx);
         
-        
+        Set<Event> mouseEvents    = new LinkedHashSet<>();
+        Set<Event> keyboardEvents = new LinkedHashSet<>();
         
         try (MemoryStack stack = MemoryStack.stackPush())
         {
             for (Event event : Engine.Events.get())
             {
+                if (event instanceof EventMouse) mouseEvents.add(event);
+                if (event instanceof EventKeyboard) keyboardEvents.add(event);
+                
                 if (event instanceof EventMouseMoved)
                 {
                     nk_input_motion(OverlayGUI.ctx, (int) Mouse.absX(), (int) Mouse.absY());
@@ -339,10 +343,9 @@ public class OverlayGUI
         nk_input_end(OverlayGUI.ctx);
         
         for (GUIWindow window : OverlayGUI.windows) window.layout(OverlayGUI.ctx);
-    
-    
-        // TODO - nk_window_is_any_hovered
-        // TODO - nk_item_is_any_active
+        
+        if (nk_window_is_any_hovered(OverlayGUI.ctx)) mouseEvents.forEach(Event::consume);
+        if (nk_item_is_any_active(OverlayGUI.ctx)) keyboardEvents.forEach(Event::consume);
     }
     
     private static void mouseButtonInput(Mouse.Button button, double x, double y, int downCount)

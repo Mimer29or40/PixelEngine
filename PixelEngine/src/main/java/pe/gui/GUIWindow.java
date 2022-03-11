@@ -23,7 +23,8 @@ public class GUIWindow extends GUIContainer
     public final Vector2i pos, size;
     private final Vector2i _pos, _size;
     
-    private final Vector2i contentPos, contentSize;
+    // TODO - Need to have public Vector2ic
+    public final Vector2i contentPos, contentSize;
     
     public final  Vector2i scroll;
     private final Vector2i _scroll;

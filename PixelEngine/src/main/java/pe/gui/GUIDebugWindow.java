@@ -44,8 +44,8 @@ public class GUIDebugWindow extends GUIWindow
                     {
                         GUILayout treeContentBoundsRows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
                         {
-                            treeContentBoundsRows.add(new GUILabel(() -> "Content Pos:   " + (this.target == null ? "NULL" : this.target.contentPos())));
-                            treeContentBoundsRows.add(new GUILabel(() -> "Content Size:  " + (this.target == null ? "NULL" : this.target.contentSize())));
+                            treeContentBoundsRows.add(new GUILabel(() -> "Content Pos:   " + (this.target == null ? "NULL" : this.target.contentPos)));
+                            treeContentBoundsRows.add(new GUILabel(() -> "Content Size:  " + (this.target == null ? "NULL" : this.target.contentSize)));
                         }
                         treeContentBounds.add(treeContentBoundsRows);
                     }

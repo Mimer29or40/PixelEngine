@@ -2,6 +2,8 @@ package pe;
 
 import org.joml.Vector2d;
 import pe.color.Color;
+import pe.color.Colorc;
+import pe.event.EventMouseButtonHeld;
 import pe.gui.*;
 import pe.util.Property;
 import rutils.Logger;
@@ -36,6 +38,7 @@ public class OverlayGUITest extends Engine
                           WindowFlag.SCALABLE,
                           WindowFlag.MINIMIZABLE,
                           WindowFlag.TITLE);
+        OverlayGUI.addWindow(testWindow);
     
         testWindow1 = new GUIWindow("Test GUIWindow1", 90, 30, 230, 250);
         testWindow1.enable(WindowFlag.BORDER,
@@ -43,91 +46,15 @@ public class OverlayGUITest extends Engine
                            WindowFlag.SCALABLE,
                            WindowFlag.MINIMIZABLE,
                            WindowFlag.TITLE);
-        
-        // GUILayout rows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
-        // {
-        //     rows.add(new GUILabel(() -> "Title: " + testWindow.title()));
-        //
-        //     GUITree treeBounds = new GUITree(GUITree.Type.TAB, "Bounds");
-        //     {
-        //         GUILayout treeBoundsRows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
-        //         {
-        //             GUIPropertyInt intProp;
-        //
-        //             intProp = treeBoundsRows.add(new GUIPropertyInt("X Pos", testWindow1.pos.x, 0, Window.framebufferWidth(), 10, 1));
-        //             propX   = intProp.value;
-        //             intProp.max.set(Window::framebufferWidth);
-        //             intProp = treeBoundsRows.add(new GUIPropertyInt("Y Pos", testWindow1.pos.y, 0, Window.framebufferHeight(), 10, 1));
-        //             propY   = intProp.value;
-        //             intProp.max.set(Window::framebufferHeight);
-        //             intProp = treeBoundsRows.add(new GUIPropertyInt("Width", testWindow1.size.x, 0, Window.framebufferWidth(), 10, 1));
-        //             propW   = intProp.value;
-        //             intProp.max.set(Window::framebufferWidth);
-        //             intProp = treeBoundsRows.add(new GUIPropertyInt("Height", testWindow1.size.y, 0, Window.framebufferHeight(), 10, 1));
-        //             propH   = intProp.value;
-        //             intProp.max.set(Window::framebufferHeight);
-        //
-        //             GUITree treeContentBounds = new GUITree(GUITree.Type.TAB, "Content Bounds");
-        //             {
-        //                 GUILayout treeContentBoundsRows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
-        //                 {
-        //                     treeContentBoundsRows.add(new GUILabel(() -> "Content Pos:   " + testWindow1.contentPos()));
-        //                     treeContentBoundsRows.add(new GUILabel(() -> "Content Size:  " + testWindow1.contentSize()));
-        //                 }
-        //                 treeContentBounds.add(treeContentBoundsRows);
-        //             }
-        //             treeBoundsRows.add(treeContentBounds);
-        //         }
-        //         treeBounds.add(treeBoundsRows);
-        //     }
-        //     rows.add(treeBounds);
-        //
-        //     GUITree treeScroll = new GUITree(GUITree.Type.TAB, "Scroll");
-        //     {
-        //         GUILayout treeScrollRows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
-        //         {
-        //             treeScrollRows.add(new GUIPropertyDouble("X Scroll", 0, 0, testWindow1.size.x, 10, 1));
-        //             treeScrollRows.add(new GUIPropertyDouble("Y Scroll", 0, 0, testWindow1.size.y, 10, 1));
-        //         }
-        //         treeScroll.add(treeScrollRows);
-        //     }
-        //     rows.add(treeScroll);
-        //
-        //     GUITree treeState = new GUITree(GUITree.Type.TAB, "State");
-        //     {
-        //         GUILayout treeStateRows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
-        //         {
-        //             treeStateRows.add(new GUILabel(() -> "Focused: " + testWindow1.focused()));
-        //             treeStateRows.add(new GUILabel(() -> "Hovered: " + testWindow1.hovered()));
-        //         }
-        //         treeState.add(treeStateRows);
-        //     }
-        //     rows.add(treeState);
-        //
-        //     GUITree treeFlags = new GUITree(GUITree.Type.TAB, "State");
-        //     {
-        //         GUILayout treeFlagsRows = new GUILayoutSimple(20, LayoutMode.DYNAMIC, 1.0);
-        //         {
-        //             for (WindowFlag flag : WindowFlag.values())
-        //             {
-        //                 treeFlagsRows.add(new GUILabel(() -> String.format("%s: %s", flag.name(), testWindow.isEnabled(flag))));
-        //             }
-        //         }
-        //         treeFlags.add(treeFlagsRows);
-        //     }
-        //     rows.add(treeFlags);
-        // }
-        // testWindow.add(rows);
-        
-        OverlayGUI.addWindow(testWindow);
         OverlayGUI.addWindow(testWindow1);
+        
         GUIDebugWindow debugWindow = new GUIDebugWindow("Debug", 0, 0, 300, 500);
-        debugWindow.target = testWindow;
         debugWindow.enable(WindowFlag.BORDER,
                            WindowFlag.MOVABLE,
                            WindowFlag.SCALABLE,
                            WindowFlag.MINIMIZABLE,
                            WindowFlag.TITLE);
+        debugWindow.target = testWindow;
         OverlayGUI.addWindow(debugWindow);
         
     }
@@ -165,9 +92,14 @@ public class OverlayGUITest extends Engine
         
         // testWindow.pos.set(propX.get(), propY.get());
         // testWindow.size.set(propW.get(), propH.get());
-        
-        
-        Draw.clearBackground(Color.BLACK);
+    
+        Colorc color = Color.BLACK;
+        for (EventMouseButtonHeld event : Events.get(EventMouseButtonHeld.class))
+        {
+            color = Color.GREEN;
+            break;
+        }
+        Draw.clearBackground(color);
         
         double time = Time.get() * 0.5;
         
