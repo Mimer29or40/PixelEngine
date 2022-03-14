@@ -5,7 +5,6 @@ import pe.color.Color;
 import pe.color.Colorc;
 import pe.event.EventMouseButtonHeld;
 import pe.gui.*;
-import pe.util.Property;
 import rutils.Logger;
 import rutils.Math;
 import rutils.group.Pair;
@@ -38,7 +37,7 @@ public class OverlayGUITest extends Engine
                           WindowFlag.SCALABLE,
                           WindowFlag.MINIMIZABLE,
                           WindowFlag.TITLE);
-        OverlayGUI.addWindow(testWindow);
+        NuklearGUI.addWindow(testWindow);
     
         testWindow1 = new GUIWindow("Test GUIWindow1", 90, 30, 230, 250);
         testWindow1.enable(WindowFlag.BORDER,
@@ -46,7 +45,7 @@ public class OverlayGUITest extends Engine
                            WindowFlag.SCALABLE,
                            WindowFlag.MINIMIZABLE,
                            WindowFlag.TITLE);
-        OverlayGUI.addWindow(testWindow1);
+        NuklearGUI.addWindow(testWindow1);
         
         GUIDebugWindow debugWindow = new GUIDebugWindow("Debug", 0, 0, 300, 500);
         debugWindow.enable(WindowFlag.BORDER,
@@ -55,7 +54,7 @@ public class OverlayGUITest extends Engine
                            WindowFlag.MINIMIZABLE,
                            WindowFlag.TITLE);
         debugWindow.target = testWindow;
-        OverlayGUI.addWindow(debugWindow);
+        NuklearGUI.addWindow(debugWindow);
         
     }
     

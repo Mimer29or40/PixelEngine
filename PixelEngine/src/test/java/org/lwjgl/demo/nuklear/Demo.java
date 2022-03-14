@@ -8,7 +8,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.nuklear.*;
 import org.lwjgl.system.MemoryStack;
 import pe.Mouse;
-import pe.OverlayGUI;
 
 import java.nio.IntBuffer;
 

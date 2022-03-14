@@ -27,7 +27,7 @@ import java.util.Set;
 import static org.lwjgl.nuklear.Nuklear.*;
 import static org.lwjgl.stb.STBTruetype.*;
 
-public class OverlayGUI
+public class NuklearGUI
 {
     private static final Logger LOGGER = new Logger();
     
@@ -63,7 +63,7 @@ public class OverlayGUI
     
     static void setup()
     {
-        OverlayGUI.LOGGER.fine("Setup");
+        NuklearGUI.LOGGER.fine("Setup");
         
         String vert = """
                       #version 330
@@ -89,7 +89,7 @@ public class OverlayGUI
                           FragColor = color * texture(tex, uv);
                       }
                       """;
-        OverlayGUI.program = GLProgram.loadFromCode(vert, null, frag);
+        NuklearGUI.program = GLProgram.loadFromCode(vert, null, frag);
         
         GLProgram.Uniform.int1("tex", 0);
         
@@ -98,8 +98,8 @@ public class OverlayGUI
         
         ByteBuffer vertexBuffer  = MemoryUtil.memAlloc((1 << 15) * vertexSize);
         ByteBuffer elementBuffer = MemoryUtil.memAlloc((1 << 15) * elementSize);
-        
-        OverlayGUI.vertexArray = GLVertexArray.builder()
+    
+        NuklearGUI.vertexArray = GLVertexArray.builder()
                                               .buffer(vertexBuffer, Usage.DYNAMIC_DRAW,
                                                       new GLAttribute(GLType.FLOAT, 2, false),
                                                       new GLAttribute(GLType.FLOAT, 2, false),
@@ -109,38 +109,38 @@ public class OverlayGUI
         
         MemoryUtil.memFree(vertexBuffer);
         MemoryUtil.memFree(elementBuffer);
-        
-        OverlayGUI.pv = new Matrix4d();
-        
-        OverlayGUI.allocator = NkAllocator.calloc();
-        OverlayGUI.allocator.alloc((handle, old, size) -> MemoryUtil.nmemAllocChecked(size))
+    
+        NuklearGUI.pv = new Matrix4d();
+    
+        NuklearGUI.allocator = NkAllocator.calloc();
+        NuklearGUI.allocator.alloc((handle, old, size) -> MemoryUtil.nmemAllocChecked(size))
                             .mfree((handle, ptr) -> MemoryUtil.nmemFree(ptr));
-        
-        OverlayGUI.vertexLayout = NkDrawVertexLayoutElement.calloc(4);
-        OverlayGUI.vertexLayout.position(0).attribute(NK_VERTEX_POSITION).format(NK_FORMAT_FLOAT).offset(0)
+    
+        NuklearGUI.vertexLayout = NkDrawVertexLayoutElement.calloc(4);
+        NuklearGUI.vertexLayout.position(0).attribute(NK_VERTEX_POSITION).format(NK_FORMAT_FLOAT).offset(0)
                                .position(1).attribute(NK_VERTEX_TEXCOORD).format(NK_FORMAT_FLOAT).offset(8)
                                .position(2).attribute(NK_VERTEX_COLOR).format(NK_FORMAT_R8G8B8A8).offset(16)
                                .position(3).attribute(NK_VERTEX_ATTRIBUTE_COUNT).format(NK_FORMAT_COUNT).offset(0)
                                .flip();
-        
-        OverlayGUI.nullTexture = NkDrawNullTexture.calloc();
-        OverlayGUI.nullTexture.texture().id(GLTexture.getDefault().id());
-        OverlayGUI.nullTexture.uv().set(0.5f, 0.5f);
-        
-        OverlayGUI.config = NkConvertConfig.calloc();
-        OverlayGUI.config.vertex_layout(OverlayGUI.vertexLayout)
+    
+        NuklearGUI.nullTexture = NkDrawNullTexture.calloc();
+        NuklearGUI.nullTexture.texture().id(GLTexture.getDefault().id());
+        NuklearGUI.nullTexture.uv().set(0.5f, 0.5f);
+    
+        NuklearGUI.config = NkConvertConfig.calloc();
+        NuklearGUI.config.vertex_layout(NuklearGUI.vertexLayout)
                          .vertex_size(20)
                          .vertex_alignment(4)
-                         .null_texture(OverlayGUI.nullTexture)
+                         .null_texture(NuklearGUI.nullTexture)
                          .circle_segment_count(22) // TODO - Have setter methods
                          .curve_segment_count(22) // TODO - Have setter methods
                          .arc_segment_count(22) // TODO - Have setter methods
                          .global_alpha(1.0f) // TODO - Have setter methods
                          .shape_AA(NK_ANTI_ALIASING_ON) // TODO - Have setter methods
                          .line_AA(NK_ANTI_ALIASING_ON); // TODO - Have setter methods
-        
-        OverlayGUI.commandBuffer = NkBuffer.calloc();
-        nk_buffer_init(OverlayGUI.commandBuffer, OverlayGUI.allocator, 4 * 1024);
+    
+        NuklearGUI.commandBuffer = NkBuffer.calloc();
+        nk_buffer_init(NuklearGUI.commandBuffer, NuklearGUI.allocator, 4 * 1024);
         
         ttf = IOUtil.readFromFile("demo/ProggyClean/ProggyClean.ttf");
         
@@ -177,9 +177,9 @@ public class OverlayGUI
             MemoryUtil.memFree(texture);
             MemoryUtil.memFree(bitmap);
         }
-        
-        OverlayGUI.defaultFont = NkUserFont.calloc();
-        OverlayGUI.defaultFont.width((handle, h, text, len) -> {
+    
+        NuklearGUI.defaultFont = NkUserFont.calloc();
+        NuklearGUI.defaultFont.width((handle, h, text, len) -> {
             float text_width = 0;
             try (MemoryStack stack = MemoryStack.stackPush())
             {
@@ -206,8 +206,8 @@ public class OverlayGUI
             }
             return text_width;
         });
-        OverlayGUI.defaultFont.height(FONT_HEIGHT);
-        OverlayGUI.defaultFont.query((handle, font_height, glyph, codepoint, next_codepoint) -> {
+        NuklearGUI.defaultFont.height(FONT_HEIGHT);
+        NuklearGUI.defaultFont.query((handle, font_height, glyph, codepoint, next_codepoint) -> {
             try (MemoryStack stack = MemoryStack.stackPush())
             {
                 FloatBuffer x = stack.floats(0.0f);
@@ -229,12 +229,12 @@ public class OverlayGUI
                 ufg.uv(1).set(q.s1(), q.t1());
             }
         });
-        OverlayGUI.defaultFont.texture(it -> it.id(fontTexID));
+        NuklearGUI.defaultFont.texture(it -> it.id(fontTexID));
+    
+        NuklearGUI.ctx = NkContext.calloc();
         
-        OverlayGUI.ctx = NkContext.calloc();
-        
-        nk_init(OverlayGUI.ctx, OverlayGUI.allocator, OverlayGUI.defaultFont);
-        OverlayGUI.ctx.clip().copy((handle, text, len) -> {
+        nk_init(NuklearGUI.ctx, NuklearGUI.allocator, NuklearGUI.defaultFont);
+        NuklearGUI.ctx.clip().copy((handle, text, len) -> {
             if (len == 0) return;
             
             try (MemoryStack stack = MemoryStack.stackPush())
@@ -246,7 +246,7 @@ public class OverlayGUI
                 Window.setClipboard(str);
             }
         });
-        OverlayGUI.ctx.clip().paste((handle, edit) -> {
+        NuklearGUI.ctx.clip().paste((handle, edit) -> {
             long text = Window.getClipboardRaw();
             if (text != MemoryUtil.NULL)
             {
@@ -257,28 +257,28 @@ public class OverlayGUI
     
     static void destroy()
     {
-        OverlayGUI.LOGGER.fine("Destroy");
+        NuklearGUI.LOGGER.fine("Destroy");
         
-        nk_free(OverlayGUI.ctx);
-        OverlayGUI.ctx.free();
+        nk_free(NuklearGUI.ctx);
+        NuklearGUI.ctx.free();
         
-        OverlayGUI.defaultFont.free();
+        NuklearGUI.defaultFont.free();
         
-        OverlayGUI.commandBuffer.free();
-        OverlayGUI.config.free();
-        OverlayGUI.nullTexture.free();
-        OverlayGUI.vertexLayout.free();
+        NuklearGUI.commandBuffer.free();
+        NuklearGUI.config.free();
+        NuklearGUI.nullTexture.free();
+        NuklearGUI.vertexLayout.free();
         
-        OverlayGUI.allocator.free();
+        NuklearGUI.allocator.free();
         
-        OverlayGUI.vertexArray.delete();
+        NuklearGUI.vertexArray.delete();
         
-        OverlayGUI.program.delete();
+        NuklearGUI.program.delete();
     }
     
     static void handleEvents()
     {
-        nk_input_begin(OverlayGUI.ctx);
+        nk_input_begin(NuklearGUI.ctx);
         
         Set<Event> mouseEvents    = new LinkedHashSet<>();
         Set<Event> keyboardEvents = new LinkedHashSet<>();
@@ -292,12 +292,12 @@ public class OverlayGUI
                 
                 if (event instanceof EventMouseMoved)
                 {
-                    nk_input_motion(OverlayGUI.ctx, (int) Mouse.absX(), (int) Mouse.absY());
+                    nk_input_motion(NuklearGUI.ctx, (int) Mouse.absX(), (int) Mouse.absY());
                 }
                 else if (event instanceof EventMouseScrolled)
                 {
                     NkVec2 scroll = NkVec2.malloc(stack).x((float) Mouse.scrollX()).y((float) Mouse.scrollY());
-                    nk_input_scroll(OverlayGUI.ctx, scroll);
+                    nk_input_scroll(NuklearGUI.ctx, scroll);
                 }
                 else if (event instanceof EventMouseButtonDown mbDown)
                 {
@@ -315,14 +315,18 @@ public class OverlayGUI
                 {
                     keyboardKeyInput(kkUp.key(), false);
                 }
+                else if (event instanceof EventKeyboardKeyRepeated kkRepeated)
+                {
+                    keyboardKeyInput(kkRepeated.key(), true);
+                }
                 else if (event instanceof EventKeyboardTyped kTyped)
                 {
-                    nk_input_unicode(OverlayGUI.ctx, kTyped.codePoint());
+                    nk_input_unicode(NuklearGUI.ctx, kTyped.codePoint());
                 }
             }
         }
         
-        NkMouse mouse = OverlayGUI.ctx.input().mouse();
+        NkMouse mouse = NuklearGUI.ctx.input().mouse();
         if (mouse.grab())
         {
             Mouse.hide();
@@ -340,26 +344,26 @@ public class OverlayGUI
             Mouse.show();
         }
         
-        nk_input_end(OverlayGUI.ctx);
+        nk_input_end(NuklearGUI.ctx);
         
-        for (GUIWindow window : OverlayGUI.windows) window.layout(OverlayGUI.ctx);
+        for (GUIWindow window : NuklearGUI.windows) window.layout(NuklearGUI.ctx);
         
-        if (nk_window_is_any_hovered(OverlayGUI.ctx)) mouseEvents.forEach(Event::consume);
-        if (nk_item_is_any_active(OverlayGUI.ctx)) keyboardEvents.forEach(Event::consume);
+        if (nk_window_is_any_hovered(NuklearGUI.ctx)) mouseEvents.forEach(Event::consume);
+        if (nk_item_is_any_active(NuklearGUI.ctx)) keyboardEvents.forEach(Event::consume);
     }
     
-    private static void mouseButtonInput(Mouse.Button button, double x, double y, int downCount)
+    private static void mouseButtonInput(@NotNull Mouse.Button button, double x, double y, int downCount)
     {
         switch (button)
         {
-            case LEFT -> nk_input_button(OverlayGUI.ctx, NK_BUTTON_LEFT, (int) x, (int) y, downCount > 0);
-            case RIGHT -> nk_input_button(OverlayGUI.ctx, NK_BUTTON_RIGHT, (int) x, (int) y, downCount > 0);
-            case MIDDLE -> nk_input_button(OverlayGUI.ctx, NK_BUTTON_MIDDLE, (int) x, (int) y, downCount > 0);
+            case LEFT -> nk_input_button(NuklearGUI.ctx, NK_BUTTON_LEFT, (int) x, (int) y, downCount > 0);
+            case RIGHT -> nk_input_button(NuklearGUI.ctx, NK_BUTTON_RIGHT, (int) x, (int) y, downCount > 0);
+            case MIDDLE -> nk_input_button(NuklearGUI.ctx, NK_BUTTON_MIDDLE, (int) x, (int) y, downCount > 0);
         }
-        nk_input_button(OverlayGUI.ctx, NK_BUTTON_DOUBLE, (int) x, (int) y, downCount > 1);
+        nk_input_button(NuklearGUI.ctx, NK_BUTTON_DOUBLE, (int) x, (int) y, downCount > 1);
     }
     
-    private static void keyboardKeyInput(Keyboard.Key key, boolean down)
+    private static void keyboardKeyInput(@NotNull Keyboard.Key key, boolean down)
     {
         // NK_KEY_TEXT_INSERT_MODE
         // NK_KEY_TEXT_REPLACE_MODE
@@ -367,32 +371,32 @@ public class OverlayGUI
         
         switch (key)
         {
-            case L_SHIFT, R_SHIFT -> nk_input_key(OverlayGUI.ctx, NK_KEY_SHIFT, down);
-            case L_CONTROL, R_CONTROL -> nk_input_key(OverlayGUI.ctx, NK_KEY_CTRL, down);
-            case DELETE -> nk_input_key(OverlayGUI.ctx, NK_KEY_DEL, down);
-            case ENTER, KP_ENTER -> nk_input_key(OverlayGUI.ctx, NK_KEY_ENTER, down);
-            case TAB -> nk_input_key(OverlayGUI.ctx, NK_KEY_TAB, down);
-            case BACKSPACE -> nk_input_key(OverlayGUI.ctx, NK_KEY_BACKSPACE, down);
-            case UP -> nk_input_key(OverlayGUI.ctx, NK_KEY_UP, down);
-            case DOWN -> nk_input_key(OverlayGUI.ctx, NK_KEY_DOWN, down);
+            case L_SHIFT, R_SHIFT -> nk_input_key(NuklearGUI.ctx, NK_KEY_SHIFT, down);
+            case L_CONTROL, R_CONTROL -> nk_input_key(NuklearGUI.ctx, NK_KEY_CTRL, down);
+            case DELETE -> nk_input_key(NuklearGUI.ctx, NK_KEY_DEL, down);
+            case ENTER, KP_ENTER -> nk_input_key(NuklearGUI.ctx, NK_KEY_ENTER, down);
+            case TAB -> nk_input_key(NuklearGUI.ctx, NK_KEY_TAB, down);
+            case BACKSPACE -> nk_input_key(NuklearGUI.ctx, NK_KEY_BACKSPACE, down);
+            case UP -> nk_input_key(NuklearGUI.ctx, NK_KEY_UP, down);
+            case DOWN -> nk_input_key(NuklearGUI.ctx, NK_KEY_DOWN, down);
             case LEFT -> nk_input_key(ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_LEFT : NK_KEY_LEFT, down);
-            case RIGHT -> nk_input_key(OverlayGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_RIGHT : NK_KEY_RIGHT, down);
+            case RIGHT -> nk_input_key(NuklearGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_RIGHT : NK_KEY_RIGHT, down);
             case HOME -> {
-                nk_input_key(OverlayGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_START : NK_KEY_TEXT_LINE_START, down);
-                nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_START, down);
+                nk_input_key(NuklearGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_START : NK_KEY_TEXT_LINE_START, down);
+                nk_input_key(NuklearGUI.ctx, NK_KEY_SCROLL_START, down);
             }
             case END -> {
-                nk_input_key(OverlayGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_END : NK_KEY_TEXT_LINE_END, down);
-                nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_END, down);
+                nk_input_key(NuklearGUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_END : NK_KEY_TEXT_LINE_END, down);
+                nk_input_key(NuklearGUI.ctx, NK_KEY_SCROLL_END, down);
             }
-            case PAGE_UP -> nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_UP, down);
-            case PAGE_DOWN -> nk_input_key(OverlayGUI.ctx, NK_KEY_SCROLL_DOWN, down);
-            case C -> nk_input_key(OverlayGUI.ctx, NK_KEY_COPY, Modifier.only(Modifier.CONTROL) && down);
-            case X -> nk_input_key(OverlayGUI.ctx, NK_KEY_CUT, Modifier.only(Modifier.CONTROL) && down);
-            case V -> nk_input_key(OverlayGUI.ctx, NK_KEY_PASTE, Modifier.only(Modifier.CONTROL) && down);
-            case Z -> nk_input_key(OverlayGUI.ctx, NK_KEY_TEXT_UNDO, Modifier.only(Modifier.CONTROL) && down);
-            case Y -> nk_input_key(OverlayGUI.ctx, NK_KEY_TEXT_REDO, Modifier.only(Modifier.CONTROL) && down);
-            case A -> nk_input_key(OverlayGUI.ctx, NK_KEY_TEXT_SELECT_ALL, Modifier.only(Modifier.CONTROL) && down);
+            case PAGE_UP -> nk_input_key(NuklearGUI.ctx, NK_KEY_SCROLL_UP, down);
+            case PAGE_DOWN -> nk_input_key(NuklearGUI.ctx, NK_KEY_SCROLL_DOWN, down);
+            case C -> nk_input_key(NuklearGUI.ctx, NK_KEY_COPY, Modifier.only(Modifier.CONTROL) && down);
+            case X -> nk_input_key(NuklearGUI.ctx, NK_KEY_CUT, Modifier.only(Modifier.CONTROL) && down);
+            case V -> nk_input_key(NuklearGUI.ctx, NK_KEY_PASTE, Modifier.only(Modifier.CONTROL) && down);
+            case Z -> nk_input_key(NuklearGUI.ctx, NK_KEY_TEXT_UNDO, Modifier.only(Modifier.CONTROL) && down);
+            case Y -> nk_input_key(NuklearGUI.ctx, NK_KEY_TEXT_REDO, Modifier.only(Modifier.CONTROL) && down);
+            case A -> nk_input_key(NuklearGUI.ctx, NK_KEY_TEXT_SELECT_ALL, Modifier.only(Modifier.CONTROL) && down);
         }
     }
     
@@ -413,12 +417,12 @@ public class OverlayGUI
         GLFramebuffer.bind(null);
         GLState.viewport(0, 0, fbWidth, fbHeight);
         
-        GLProgram.bind(OverlayGUI.program);
-        GLProgram.Uniform.mat4("pv", OverlayGUI.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
+        GLProgram.bind(NuklearGUI.program);
+        GLProgram.Uniform.mat4("pv", NuklearGUI.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
         
-        GLVertexArray.bind(OverlayGUI.vertexArray);
-        ByteBuffer vertices = Objects.requireNonNull(OverlayGUI.vertexArray.buffer(0).map(GLBuffer.Access.WRITE_ONLY));
-        ByteBuffer elements = Objects.requireNonNull(OverlayGUI.vertexArray.indexBuffer().map(GLBuffer.Access.WRITE_ONLY));
+        GLVertexArray.bind(NuklearGUI.vertexArray);
+        ByteBuffer vertices = Objects.requireNonNull(NuklearGUI.vertexArray.buffer(0).map(GLBuffer.Access.WRITE_ONLY));
+        ByteBuffer elements = Objects.requireNonNull(NuklearGUI.vertexArray.indexBuffer().map(GLBuffer.Access.WRITE_ONLY));
         try (MemoryStack stack = MemoryStack.stackPush())
         {
             // setup buffers to load vertices and elements
@@ -427,19 +431,19 @@ public class OverlayGUI
             
             nk_buffer_init_fixed(vbuf, vertices);
             nk_buffer_init_fixed(ebuf, elements);
-            nk_convert(OverlayGUI.ctx, OverlayGUI.commandBuffer, vbuf, ebuf, OverlayGUI.config);
+            nk_convert(NuklearGUI.ctx, NuklearGUI.commandBuffer, vbuf, ebuf, NuklearGUI.config);
         }
-        OverlayGUI.vertexArray.buffer(0).unmap();
-        OverlayGUI.vertexArray.indexBuffer().unmap();
+        NuklearGUI.vertexArray.buffer(0).unmap();
+        NuklearGUI.vertexArray.indexBuffer().unmap();
         
         // iterate over and execute each draw command
         float fb_scale_x = (float) fbWidth / (float) width;
         float fb_scale_y = (float) fbHeight / (float) height;
         
         long offset = 0L;
-        for (NkDrawCommand cmd = nk__draw_begin(OverlayGUI.ctx, OverlayGUI.commandBuffer);
+        for (NkDrawCommand cmd = nk__draw_begin(NuklearGUI.ctx, NuklearGUI.commandBuffer);
              cmd != null;
-             cmd = nk__draw_next(cmd, OverlayGUI.commandBuffer, OverlayGUI.ctx))
+             cmd = nk__draw_next(cmd, NuklearGUI.commandBuffer, NuklearGUI.ctx))
         {
             if (cmd.elem_count() == 0) continue;
             GLTexture.bindRaw(GL33.GL_TEXTURE_2D, cmd.texture().id(), 0);
@@ -450,7 +454,7 @@ public class OverlayGUI
             int h = (int) (cmd.clip_rect().h() * fb_scale_y);
             
             GLState.scissor(x, y, w, h);
-            OverlayGUI.vertexArray.drawElements(DrawMode.TRIANGLES, offset, cmd.elem_count());
+            NuklearGUI.vertexArray.drawElements(DrawMode.TRIANGLES, offset, cmd.elem_count());
             
             offset += cmd.elem_count();
         }
@@ -460,7 +464,7 @@ public class OverlayGUI
     
     public static void addWindow(@NotNull GUIWindow window)
     {
-        boolean result = OverlayGUI.windows.add(window);
+        boolean result = NuklearGUI.windows.add(window);
         if (!result) throw new IllegalStateException("Window already present.");
     }
 }

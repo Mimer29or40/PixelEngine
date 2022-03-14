@@ -535,7 +535,7 @@ public abstract class Engine
                                 
                                 // GUI.handleEvents();
                                 Debug.handleEvents();
-                                OverlayGUI.handleEvents();
+                                NuklearGUI.handleEvents();
                                 
                                 if (!Time.paused)
                                 {
@@ -575,7 +575,7 @@ public abstract class Engine
                                 Viewport.draw();
                                 // GUI.draw();
                                 // Debug.draw();
-                                OverlayGUI.draw();
+                                NuklearGUI.draw();
                                 
                                 Window.swap();
                                 
@@ -637,7 +637,7 @@ public abstract class Engine
                         Viewport.destroy();
                         // GUI.destroy();
                         Debug.destroy();
-                        OverlayGUI.destroy();
+                        NuklearGUI.destroy();
                         
                         GLState.destroy();
                         
@@ -726,7 +726,7 @@ public abstract class Engine
         Viewport.setup();
         // GUI.setup();
         Debug.setup();
-        OverlayGUI.setup();
+        NuklearGUI.setup();
         
         Engine.windowEnabled = true;
     }

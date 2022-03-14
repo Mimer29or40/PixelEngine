@@ -29,16 +29,16 @@ public class GUIDebugWindow extends GUIWindow
                     
                     intProp    = treeBoundsRows.add(new GUIPropertyInt("X Pos", 0, 0, Window.framebufferWidth(), 10, 1));
                     this.propX = intProp.value;
-                    intProp.max.set(Window::framebufferWidth);
+                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferWidth() - this.target.size.x);
                     intProp    = treeBoundsRows.add(new GUIPropertyInt("Y Pos", 0, 0, Window.framebufferHeight(), 10, 1));
                     this.propY = intProp.value;
-                    intProp.max.set(Window::framebufferHeight);
+                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferHeight() - this.target.size.y);
                     intProp    = treeBoundsRows.add(new GUIPropertyInt("Width", 0, 0, Window.framebufferWidth(), 10, 1));
                     this.propW = intProp.value;
-                    intProp.max.set(Window::framebufferWidth);
+                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferWidth() - this.target.pos.x);
                     intProp    = treeBoundsRows.add(new GUIPropertyInt("Height", 0, 0, Window.framebufferHeight(), 10, 1));
                     this.propH = intProp.value;
-                    intProp.max.set(Window::framebufferHeight);
+                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferHeight() - this.target.pos.y);
                     
                     GUITree treeContentBounds = new GUITree(GUITree.Type.TAB, "Content Bounds");
                     {

@@ -94,8 +94,13 @@ public class GLFWDemo
     private int uniform_tex;
     private int uniform_proj;
     
-    private final Demo       demo = new Demo();
-    private final Calculator calc = new Calculator();
+    private final Demo       demo       = new Demo();
+    private final Calculator calc       = new Calculator();
+    private final Overview   overview   = new Overview();
+    private final Canvas     canvas     = new Canvas();
+    private final NodeEditor nodeEditor = new NodeEditor();
+    
+    private Theming.Theme theme = Theming.Theme.THEME_BLACK;
     
     public GLFWDemo()
     {
@@ -277,7 +282,10 @@ public class GLFWDemo
             newFrame();
             
             demo.layout(ctx, 50, 50);
-            calc.layout(ctx, 300, 50);
+            calc.layout(ctx, 150, 50);
+            overview.layout(ctx, 250, 50);
+            canvas.layout(ctx, 350, 50);
+            nodeEditor.layout(ctx, 350, 50);
             
             try (MemoryStack stack = stackPush())
             {
@@ -305,10 +313,7 @@ public class GLFWDemo
         shutdown();
         
         glfwFreeCallbacks(win);
-        if (debugProc != null)
-        {
-            debugProc.free();
-        }
+        if (debugProc != null) debugProc.free();
         glfwTerminate();
         Objects.requireNonNull(glfwSetErrorCallback(null)).free();
     }
@@ -490,6 +495,21 @@ public class GLFWDemo
                         nk_input_key(ctx, NK_KEY_SHIFT, false);
                     }
                     break;
+                case GLFW_KEY_F1:
+                    if (press) theme = Theming.Theme.THEME_BLACK;
+                    break;
+                case GLFW_KEY_F2:
+                    if (press) theme = Theming.Theme.THEME_WHITE;
+                    break;
+                case GLFW_KEY_F3:
+                    if (press) theme = Theming.Theme.THEME_RED;
+                    break;
+                case GLFW_KEY_F4:
+                    if (press) theme = Theming.Theme.THEME_BLUE;
+                    break;
+                case GLFW_KEY_F5:
+                    if (press) theme = Theming.Theme.THEME_DARK;
+                    break;
             }
         });
         glfwSetCursorPosCallback(win, (window, xpos, ypos) -> nk_input_motion(ctx, (int) xpos, (int) ypos));
@@ -583,6 +603,8 @@ public class GLFWDemo
         }
         
         nk_input_end(ctx);
+        
+        Theming.set_style(ctx, theme);
     }
     
     private void render(int AA, int max_vertex_buffer, int max_element_buffer)
