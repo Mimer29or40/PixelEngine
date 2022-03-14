@@ -12,6 +12,8 @@
 		
 		<lwjgl.version>3.3.1</lwjgl.version>
 		<lwjgl.natives>natives-windows</lwjgl.natives>
+		
+		<imgui.java.version>1.86.4</imgui.java.version>
 	</properties>
 	
 	<groupId>com.github.Mimer29or40</groupId>
@@ -40,14 +42,14 @@
 		<dependency>
 			<groupId>org.jetbrains</groupId>
 			<artifactId>annotations</artifactId>
-			<version>22.0.0</version>
+			<version>23.0.0</version>
 			<scope>compile</scope>
 		</dependency>
 		
 		<dependency>
 			<groupId>org.joml</groupId>
 			<artifactId>joml</artifactId>
-			<version>1.10.2</version>
+			<version>1.10.4</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
@@ -122,6 +124,22 @@
 			<artifactId>lwjgl-stb</artifactId>
 			<classifier>${lwjgl.natives}</classifier>
 			<scope>compile</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>io.github.spair</groupId>
+			<artifactId>imgui-java-binding</artifactId>
+			<version>${imgui.java.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.spair</groupId>
+			<artifactId>imgui-java-lwjgl3</artifactId>
+			<version>${imgui.java.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.spair</groupId>
+			<artifactId>imgui-java-natives-windows</artifactId>
+			<version>${imgui.java.version}</version>
 		</dependency>
 		
 		<dependency>
