@@ -98,7 +98,7 @@ public class NuklearGUI
         
         ByteBuffer vertexBuffer  = MemoryUtil.memAlloc((1 << 15) * vertexSize);
         ByteBuffer elementBuffer = MemoryUtil.memAlloc((1 << 15) * elementSize);
-    
+        
         NuklearGUI.vertexArray = GLVertexArray.builder()
                                               .buffer(vertexBuffer, Usage.DYNAMIC_DRAW,
                                                       new GLAttribute(GLType.FLOAT, 2, false),
@@ -109,24 +109,24 @@ public class NuklearGUI
         
         MemoryUtil.memFree(vertexBuffer);
         MemoryUtil.memFree(elementBuffer);
-    
+        
         NuklearGUI.pv = new Matrix4d();
-    
+        
         NuklearGUI.allocator = NkAllocator.calloc();
         NuklearGUI.allocator.alloc((handle, old, size) -> MemoryUtil.nmemAllocChecked(size))
                             .mfree((handle, ptr) -> MemoryUtil.nmemFree(ptr));
-    
+        
         NuklearGUI.vertexLayout = NkDrawVertexLayoutElement.calloc(4);
         NuklearGUI.vertexLayout.position(0).attribute(NK_VERTEX_POSITION).format(NK_FORMAT_FLOAT).offset(0)
                                .position(1).attribute(NK_VERTEX_TEXCOORD).format(NK_FORMAT_FLOAT).offset(8)
                                .position(2).attribute(NK_VERTEX_COLOR).format(NK_FORMAT_R8G8B8A8).offset(16)
                                .position(3).attribute(NK_VERTEX_ATTRIBUTE_COUNT).format(NK_FORMAT_COUNT).offset(0)
                                .flip();
-    
+        
         NuklearGUI.nullTexture = NkDrawNullTexture.calloc();
         NuklearGUI.nullTexture.texture().id(GLTexture.getDefault().id());
         NuklearGUI.nullTexture.uv().set(0.5f, 0.5f);
-    
+        
         NuklearGUI.config = NkConvertConfig.calloc();
         NuklearGUI.config.vertex_layout(NuklearGUI.vertexLayout)
                          .vertex_size(20)
@@ -138,7 +138,7 @@ public class NuklearGUI
                          .global_alpha(1.0f) // TODO - Have setter methods
                          .shape_AA(NK_ANTI_ALIASING_ON) // TODO - Have setter methods
                          .line_AA(NK_ANTI_ALIASING_ON); // TODO - Have setter methods
-    
+        
         NuklearGUI.commandBuffer = NkBuffer.calloc();
         nk_buffer_init(NuklearGUI.commandBuffer, NuklearGUI.allocator, 4 * 1024);
         
@@ -177,7 +177,7 @@ public class NuklearGUI
             MemoryUtil.memFree(texture);
             MemoryUtil.memFree(bitmap);
         }
-    
+        
         NuklearGUI.defaultFont = NkUserFont.calloc();
         NuklearGUI.defaultFont.width((handle, h, text, len) -> {
             float text_width = 0;
@@ -230,7 +230,7 @@ public class NuklearGUI
             }
         });
         NuklearGUI.defaultFont.texture(it -> it.id(fontTexID));
-    
+        
         NuklearGUI.ctx = NkContext.calloc();
         
         nk_init(NuklearGUI.ctx, NuklearGUI.allocator, NuklearGUI.defaultFont);
@@ -243,11 +243,11 @@ public class NuklearGUI
                 MemoryUtil.memCopy(text, MemoryUtil.memAddress(str), len);
                 str.put(len, (byte) 0);
                 
-                Window.setClipboard(str);
+                Window.primary.setClipboard(str);
             }
         });
         NuklearGUI.ctx.clip().paste((handle, edit) -> {
-            long text = Window.getClipboardRaw();
+            long text = Window.primary.getClipboardRaw();
             if (text != MemoryUtil.NULL)
             {
                 nnk_textedit_paste(edit, text, nnk_strlen(text));
@@ -292,7 +292,7 @@ public class NuklearGUI
                 
                 if (event instanceof EventMouseMoved)
                 {
-                    nk_input_motion(NuklearGUI.ctx, (int) Mouse.absX(), (int) Mouse.absY());
+                    nk_input_motion(NuklearGUI.ctx, (int) Mouse.x(), (int) Mouse.y());
                 }
                 else if (event instanceof EventMouseScrolled)
                 {
@@ -301,11 +301,11 @@ public class NuklearGUI
                 }
                 else if (event instanceof EventMouseButtonDown mbDown)
                 {
-                    mouseButtonInput(mbDown.button(), Mouse.absX(), Mouse.absY(), mbDown.downCount());
+                    mouseButtonInput(mbDown.button(), Mouse.x(), Mouse.y(), mbDown.downCount());
                 }
                 else if (event instanceof EventMouseButtonUp mbUp)
                 {
-                    mouseButtonInput(mbUp.button(), Mouse.absX(), Mouse.absY(), 0);
+                    mouseButtonInput(mbUp.button(), Mouse.x(), Mouse.y(), 0);
                 }
                 else if (event instanceof EventKeyboardKeyDown kkDown)
                 {
@@ -335,7 +335,7 @@ public class NuklearGUI
         {
             float prevX = mouse.prev().x();
             float prevY = mouse.prev().y();
-            Mouse.absPos(prevX, prevY);
+            Mouse.pos(prevX, prevY);
             mouse.pos().x(prevX);
             mouse.pos().y(prevY);
         }
@@ -408,11 +408,11 @@ public class NuklearGUI
         
         GLState.cullFace(CullFace.NONE);
         
-        int fbWidth  = Window.framebufferWidth();
-        int fbHeight = Window.framebufferHeight();
+        int fbWidth  = Window.primary().framebufferWidth();
+        int fbHeight = Window.primary().framebufferHeight();
         
-        int width  = Window.width();
-        int height = Window.height();
+        int width  = Window.primary().width();
+        int height = Window.primary().height();
         
         GLFramebuffer.bind(null);
         GLState.viewport(0, 0, fbWidth, fbHeight);

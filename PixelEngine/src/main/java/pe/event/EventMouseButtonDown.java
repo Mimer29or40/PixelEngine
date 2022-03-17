@@ -2,6 +2,7 @@ package pe.event;
 
 import org.joml.Vector2dc;
 import pe.Mouse;
+import pe.Window;
 
 public interface EventMouseButtonDown extends EventInputDeviceInputDown, EventMouseButton
 {
@@ -9,9 +10,9 @@ public interface EventMouseButtonDown extends EventInputDeviceInputDown, EventMo
     {
         private final int downCount;
         
-        private _EventMouseButtonDown(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos, int downCount)
+        private _EventMouseButtonDown(long time, Window window, Mouse.Button button, Vector2dc pos, int downCount)
         {
-            super(time, button, absPos, pos);
+            super(time, window, button, pos);
             
             this.downCount = downCount;
         }
@@ -23,8 +24,8 @@ public interface EventMouseButtonDown extends EventInputDeviceInputDown, EventMo
         }
     }
     
-    static EventMouseButtonDown create(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos, int downCount)
+    static EventMouseButtonDown create(long time, Window window, Mouse.Button button, Vector2dc pos, int downCount)
     {
-        return new _EventMouseButtonDown(time, button, absPos, pos, downCount);
+        return new _EventMouseButtonDown(time, window, button, pos, downCount);
     }
 }

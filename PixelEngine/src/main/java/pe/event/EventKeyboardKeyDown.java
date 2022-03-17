@@ -1,6 +1,7 @@
 package pe.event;
 
 import pe.Keyboard;
+import pe.Window;
 
 public interface EventKeyboardKeyDown extends EventInputDeviceInputDown, EventKeyboardKey
 {
@@ -8,9 +9,9 @@ public interface EventKeyboardKeyDown extends EventInputDeviceInputDown, EventKe
     {
         private final int downCount;
         
-        private _EventKeyboardKeyDown(long time, Keyboard.Key key, int downCount)
+        private _EventKeyboardKeyDown(long time, Window window, Keyboard.Key key, int downCount)
         {
-            super(time, key);
+            super(time, window, key);
             
             this.downCount = downCount;
         }
@@ -22,8 +23,8 @@ public interface EventKeyboardKeyDown extends EventInputDeviceInputDown, EventKe
         }
     }
     
-    static EventKeyboardKeyDown create(long time, Keyboard.Key key, int downCount)
+    static EventKeyboardKeyDown create(long time, Window window, Keyboard.Key key, int downCount)
     {
-        return new _EventKeyboardKeyDown(time, key, downCount);
+        return new _EventKeyboardKeyDown(time, window, key, downCount);
     }
 }

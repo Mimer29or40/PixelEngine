@@ -4,9 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.lwjgl.nuklear.NkContext;
 import org.lwjgl.system.MemoryStack;
 
-import java.nio.FloatBuffer;
-import java.util.Arrays;
-
 import static org.lwjgl.nuklear.Nuklear.nk_layout_row;
 
 /**

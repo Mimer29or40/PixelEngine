@@ -1,14 +1,15 @@
 package pe.event;
 
 import pe.Keyboard;
+import pe.Window;
 
-abstract class AbstractEventKeyboardKey extends AbstractEventInputDevice implements EventKeyboardKey
+abstract class AbstractEventKeyboardKey extends AbstractEventKeyboard implements EventKeyboardKey
 {
     private final Keyboard.Key key;
     
-    AbstractEventKeyboardKey(long time, Keyboard.Key key)
+    AbstractEventKeyboardKey(long time, Window window, Keyboard.Key key)
     {
-        super(time);
+        super(time, window);
         
         this.key = key;
     }

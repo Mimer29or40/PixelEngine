@@ -152,15 +152,146 @@ public final class Joystick
         
         glfwSetJoystickCallback(Joystick::callback);
         
-        for (int jid = GLFW_JOYSTICK_1; jid < GLFW_JOYSTICK_LAST; jid++)
+        for (Index idx : Index.values())
         {
-            Joystick.INSTANCES.put(Index.get(jid), glfwJoystickPresent(jid) ? new Joystick(jid) : null);
+            int jid = idx.index;
+            Joystick.INSTANCES.put(idx, glfwJoystickPresent(jid) ? new Joystick(jid) : null);
         }
         
         setupCallbackEmulation();
     }
     
-    // -------------------- Instance Objects -------------------- //
+    public static void destroy()
+    {
+        Joystick.LOGGER.fine("Destroy");
+    }
+    
+    /**
+     * This method is called by the window it is attached to. This is where
+     * events should be posted to when something has changed.
+     *
+     * @param time The system time in nanoseconds.
+     */
+    @SuppressWarnings("ConstantConditions")
+    static void processEvents(long time)
+    {
+        for (Index index : Joystick.INSTANCES.keySet())
+        {
+            Joystick joystick = Joystick.INSTANCES.get(index);
+            
+            if (joystick == null) continue;
+            
+            Pair<Axis, Float> axisStateChange;
+            while ((axisStateChange = joystick.axisStateChanges.poll()) != null)
+            {
+                Axis axis = axisStateChange.getA();
+                
+                AxisInput axisObj = joystick.axisMap.get(axis);
+                
+                axisObj._value = axisStateChange.getB();
+                if (Double.compare(axisObj.value, axisObj._value) != 0)
+                {
+                    double delta = axisObj._value - axisObj.value;
+                    axisObj.value = axisObj._value;
+                    Engine.Events.post(EventJoystickAxis.create(time, index, axis, axisObj.value, delta));
+                }
+            }
+            
+            Pair<Button, Integer> buttonStateChange;
+            while ((buttonStateChange = joystick.buttonStateChanges.poll()) != null)
+            {
+                Input buttonObj = joystick.buttonMap.get(buttonStateChange.getA());
+                
+                buttonObj._state = buttonStateChange.getB();
+            }
+            
+            for (Button button : joystick.buttonMap.keySet())
+            {
+                Input input = joystick.buttonMap.get(button);
+                
+                input.state  = input._state;
+                input._state = -1;
+                switch (input.state)
+                {
+                    case GLFW_PRESS -> {
+                        boolean inc = time - input.downTime < Input.doublePressedDelayL();
+                        
+                        input.held      = true;
+                        input.heldTime  = time + Input.holdFrequencyL();
+                        input.downTime  = time;
+                        input.downCount = inc ? input.downCount + 1 : 1;
+                        Engine.Events.post(EventJoystickButtonDown.create(time, index, button, input.downCount));
+                    }
+                    case GLFW_RELEASE -> {
+                        input.held     = false;
+                        input.heldTime = Long.MAX_VALUE;
+                        Engine.Events.post(EventJoystickButtonUp.create(time, index, button));
+                    }
+                    case GLFW_REPEAT -> Engine.Events.post(EventJoystickButtonRepeated.create(time, index, button));
+                }
+                if (input.held && time - input.heldTime >= Input.holdFrequencyL())
+                {
+                    input.heldTime += Input.holdFrequencyL();
+                    Engine.Events.post(EventJoystickButtonHeld.create(time, index, button));
+                }
+            }
+            
+            Pair<Hat, Integer> hatStateChange;
+            while ((hatStateChange = joystick.hatStateChanges.poll()) != null)
+            {
+                Hat hat = hatStateChange.getA();
+                
+                Input hatObj = joystick.hatMap.get(hat);
+                
+                hatObj._state = hatStateChange.getB();
+                if (hatObj.state != hatObj._state)
+                {
+                    hatObj.state = hatObj._state;
+                    Engine.Events.post(EventJoystickHat.create(time, index, hat, HatDirection.get(hatObj.state)));
+                }
+            }
+        }
+    }
+    
+    private static void callback(int jid, int event)
+    {
+        switch (event)
+        {
+            case GLFW_CONNECTED -> {
+                Index index = Index.get(jid);
+                Joystick.INSTANCES.put(index, new Joystick(jid));
+                Engine.Events.post(EventJoystickConnected.create(Time.getNS(), index));
+            }
+            case GLFW_DISCONNECTED -> {
+                Index index = Index.get(jid);
+                Joystick.INSTANCES.put(index, null);
+                Engine.Events.post(EventJoystickDisconnected.create(Time.getNS(), index));
+            }
+        }
+    }
+    
+    private static void axisCallback(int jid, int axis, float value)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
+        
+        joystick.axisStateChanges.offer(new Pair<>(Axis.get(axis), value));
+    }
+    
+    private static void buttonCallback(int jid, int button, int action)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
+        
+        joystick.buttonStateChanges.offer(new Pair<>(Button.get(button), action));
+    }
+    
+    private static void hatCallback(int jid, int hat, int action)
+    {
+        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
+        
+        joystick.hatStateChanges.offer(new Pair<>(Hat.get(hat), action));
+    }
+    
+    // -------------------- Instance -------------------- //
     
     final int jid;
     
@@ -174,10 +305,10 @@ public final class Joystick
     final Map<Hat, Input>      hatMap    = new EnumMap<>(Hat.class);
     
     // -------------------- Callback Objects -------------------- //
+    
     final Queue<Pair<Axis, Float>>     axisStateChanges   = new ConcurrentLinkedQueue<>();
     final Queue<Pair<Button, Integer>> buttonStateChanges = new ConcurrentLinkedQueue<>();
-    
-    final Queue<Pair<Hat, Integer>> hatStateChanges = new ConcurrentLinkedQueue<>();
+    final Queue<Pair<Hat, Integer>>    hatStateChanges    = new ConcurrentLinkedQueue<>();
     
     private Joystick(int jid)
     {
@@ -285,93 +416,6 @@ public final class Joystick
     {
         Joystick joystick = Joystick.INSTANCES.get(index);
         return joystick == null ? null : joystick.guid;
-    }
-    
-    /**
-     * This method is called by the window it is attached to. This is where
-     * events should be posted to when something has changed.
-     *
-     * @param time The system time in nanoseconds.
-     */
-    @SuppressWarnings("ConstantConditions")
-    static void processEvents(long time)
-    {
-        for (Index index : Joystick.INSTANCES.keySet())
-        {
-            Joystick joystick = Joystick.INSTANCES.get(index);
-            
-            if (joystick == null) continue;
-            
-            Pair<Axis, Float> axisStateChange;
-            while ((axisStateChange = joystick.axisStateChanges.poll()) != null)
-            {
-                Axis axis = axisStateChange.getA();
-                
-                AxisInput axisObj = joystick.axisMap.get(axis);
-                
-                axisObj._value = axisStateChange.getB();
-                if (Double.compare(axisObj.value, axisObj._value) != 0)
-                {
-                    double delta = axisObj._value - axisObj.value;
-                    axisObj.value = axisObj._value;
-                    Engine.Events.post(EventJoystickAxis.create(time, index, axis, axisObj.value, delta));
-                }
-            }
-            
-            Pair<Button, Integer> buttonStateChange;
-            while ((buttonStateChange = joystick.buttonStateChanges.poll()) != null)
-            {
-                Input buttonObj = joystick.buttonMap.get(buttonStateChange.getA());
-                
-                buttonObj._state = buttonStateChange.getB();
-            }
-            
-            for (Button button : joystick.buttonMap.keySet())
-            {
-                Input input = joystick.buttonMap.get(button);
-                
-                input.state  = input._state;
-                input._state = -1;
-                switch (input.state)
-                {
-                    case GLFW_PRESS -> {
-                        boolean inc = time - input.downTime < Input.doublePressedDelayL();
-                        
-                        input.held      = true;
-                        input.heldTime  = time + Input.holdFrequencyL();
-                        input.downTime  = time;
-                        input.downCount = inc ? input.downCount + 1 : 1;
-                        Engine.Events.post(EventJoystickButtonDown.create(time, index, button, input.downCount));
-                    }
-                    case GLFW_RELEASE -> {
-                        input.held     = false;
-                        input.heldTime = Long.MAX_VALUE;
-                        Engine.Events.post(EventJoystickButtonUp.create(time, index, button));
-                    }
-                    case GLFW_REPEAT -> Engine.Events.post(EventJoystickButtonRepeated.create(time, index, button));
-                }
-                if (input.held && time - input.heldTime >= Input.holdFrequencyL())
-                {
-                    input.heldTime += Input.holdFrequencyL();
-                    Engine.Events.post(EventJoystickButtonHeld.create(time, index, button));
-                }
-            }
-            
-            Pair<Hat, Integer> hatStateChange;
-            while ((hatStateChange = joystick.hatStateChanges.poll()) != null)
-            {
-                Hat hat = hatStateChange.getA();
-                
-                Input hatObj = joystick.hatMap.get(hat);
-                
-                hatObj._state = hatStateChange.getB();
-                if (hatObj.state != hatObj._state)
-                {
-                    hatObj.state = hatObj._state;
-                    Engine.Events.post(EventJoystickHat.create(time, index, hat, HatDirection.get(hatObj.state)));
-                }
-            }
-        }
     }
     
     /**
@@ -646,35 +690,5 @@ public final class Joystick
             for (HatDirection hat : HatDirection.values()) if ((value & hat.ref) == value) return hat;
             return HatDirection.CENTERED;
         }
-    }
-    
-    private static void callback(int jid, int event)
-    {
-        switch (event)
-        {
-            case GLFW_CONNECTED -> Joystick.INSTANCES.put(Index.get(jid), new Joystick(jid));
-            case GLFW_DISCONNECTED -> Joystick.INSTANCES.put(Index.get(jid), null);
-        }
-    }
-    
-    private static void axisCallback(int jid, int axis, float value)
-    {
-        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
-        
-        joystick.axisStateChanges.offer(new Pair<>(Axis.get(axis), value));
-    }
-    
-    private static void buttonCallback(int jid, int button, int action)
-    {
-        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
-        
-        joystick.buttonStateChanges.offer(new Pair<>(Button.get(button), action));
-    }
-    
-    private static void hatCallback(int jid, int hat, int action)
-    {
-        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
-        
-        joystick.hatStateChanges.offer(new Pair<>(Hat.get(hat), action));
     }
 }

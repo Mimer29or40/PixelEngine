@@ -1,19 +1,20 @@
 package pe.event;
 
 import pe.Keyboard;
+import pe.Window;
 
 public interface EventKeyboardKeyHeld extends EventInputDeviceInputHeld, EventKeyboardKey
 {
     final class _EventKeyboardKeyHeld extends AbstractEventKeyboardKey implements EventKeyboardKeyHeld
     {
-        private _EventKeyboardKeyHeld(long time, Keyboard.Key key)
+        private _EventKeyboardKeyHeld(long time, Window window, Keyboard.Key key)
         {
-            super(time, key);
+            super(time, window, key);
         }
     }
     
-    static EventKeyboardKeyHeld create(long time, Keyboard.Key key)
+    static EventKeyboardKeyHeld create(long time, Window window, Keyboard.Key key)
     {
-        return new _EventKeyboardKeyHeld(time, key);
+        return new _EventKeyboardKeyHeld(time, window, key);
     }
 }

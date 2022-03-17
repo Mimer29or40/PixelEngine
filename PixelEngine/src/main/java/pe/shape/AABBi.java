@@ -26,19 +26,19 @@ public class AABBi implements AABBic
     
     public AABBi(@NotNull Vector2ic pos, @NotNull Vector2ic size)
     {
-        this.pos = new Vector2i(pos);
+        this.pos  = new Vector2i(pos);
         this.size = new Vector2i(size);
     }
     
     public AABBi(@NotNull Vector2i pos, @NotNull Vector2i size)
     {
-        this.pos = pos;
+        this.pos  = pos;
         this.size = size;
     }
     
     public AABBi(@NotNull AABBic other)
     {
-        this.pos = new Vector2i(other.pos());
+        this.pos  = new Vector2i(other.pos());
         this.size = new Vector2i(other.size());
     }
     

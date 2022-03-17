@@ -2,11 +2,11 @@ package pe.event;
 
 import pe.Window;
 
-abstract class AbstractEventWindow extends AbstractEvent implements EventWindow
+abstract class AbstractEventMouse extends AbstractEventInputDevice implements EventMouse
 {
     private final Window window;
     
-    AbstractEventWindow(long time, Window window)
+    AbstractEventMouse(long time, Window window)
     {
         super(time);
         

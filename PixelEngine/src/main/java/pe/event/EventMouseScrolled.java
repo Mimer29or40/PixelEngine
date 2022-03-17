@@ -2,6 +2,7 @@ package pe.event;
 
 import org.joml.Vector2d;
 import org.joml.Vector2dc;
+import pe.Window;
 
 public interface EventMouseScrolled extends EventMouse
 {
@@ -18,13 +19,13 @@ public interface EventMouseScrolled extends EventMouse
         return scroll().y();
     }
     
-    final class _EventMouseScrolled extends AbstractEventInputDevice implements EventMouseScrolled
+    final class _EventMouseScrolled extends AbstractEventMouse implements EventMouseScrolled
     {
         private final Vector2d scroll;
         
-        private _EventMouseScrolled(long time, Vector2dc scroll)
+        private _EventMouseScrolled(long time, Window window, Vector2dc scroll)
         {
-            super(time);
+            super(time, window);
             
             this.scroll = new Vector2d(scroll);
         }
@@ -36,8 +37,8 @@ public interface EventMouseScrolled extends EventMouse
         }
     }
     
-    static EventMouseScrolled create(long time, Vector2dc scroll)
+    static EventMouseScrolled create(long time, Window window, Vector2dc scroll)
     {
-        return new _EventMouseScrolled(time, scroll);
+        return new _EventMouseScrolled(time, window, scroll);
     }
 }

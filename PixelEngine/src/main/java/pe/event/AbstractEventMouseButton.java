@@ -3,19 +3,18 @@ package pe.event;
 import org.joml.Vector2d;
 import org.joml.Vector2dc;
 import pe.Mouse;
+import pe.Window;
 
-abstract class AbstractEventMouseButton extends AbstractEventInputDevice implements EventMouseButton
+abstract class AbstractEventMouseButton extends AbstractEventMouse implements EventMouseButton
 {
     private final Mouse.Button button;
-    private final Vector2d     absPos;
     private final Vector2d     pos;
     
-    AbstractEventMouseButton(long time, Mouse.Button button, Vector2dc absPos, Vector2dc pos)
+    AbstractEventMouseButton(long time, Window window, Mouse.Button button, Vector2dc pos)
     {
-        super(time);
+        super(time, window);
         
         this.button = button;
-        this.absPos    = new Vector2d(absPos);
         this.pos    = new Vector2d(pos);
     }
     
@@ -23,12 +22,6 @@ abstract class AbstractEventMouseButton extends AbstractEventInputDevice impleme
     public Mouse.Button button()
     {
         return this.button;
-    }
-    
-    @Override
-    public Vector2dc absPos()
-    {
-        return this.absPos;
     }
     
     @Override

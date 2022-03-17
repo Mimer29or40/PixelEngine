@@ -1,17 +1,19 @@
 package pe.event;
 
+import pe.Window;
+
 public interface EventMouseEntered extends EventMouse
 {
     @EventProperty
     boolean entered();
     
-    final class _EventMouseEntered extends AbstractEventInputDevice implements EventMouseEntered
+    final class _EventMouseEntered extends AbstractEventMouse implements EventMouseEntered
     {
         private final boolean entered;
         
-        private _EventMouseEntered(long time, boolean entered)
+        private _EventMouseEntered(long time, Window window, boolean entered)
         {
-            super(time);
+            super(time, window);
             
             this.entered = entered;
         }
@@ -23,8 +25,8 @@ public interface EventMouseEntered extends EventMouse
         }
     }
     
-    static EventMouseEntered create(long time, boolean entered)
+    static EventMouseEntered create(long time, Window window, boolean entered)
     {
-        return new _EventMouseEntered(time, entered);
+        return new _EventMouseEntered(time, window, entered);
     }
 }

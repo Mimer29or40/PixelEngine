@@ -2,6 +2,7 @@ package pe.event;
 
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
+import pe.Window;
 
 public interface EventWindowFramebufferResized extends EventWindow
 {
@@ -36,9 +37,9 @@ public interface EventWindowFramebufferResized extends EventWindow
         private final Vector2i size;
         private final Vector2i rel;
         
-        private _EventWindowFramebufferResized(long time, Vector2ic size, Vector2ic rel)
+        private _EventWindowFramebufferResized(long time, Window window, Vector2ic size, Vector2ic rel)
         {
-            super(time);
+            super(time, window);
             
             this.size = new Vector2i(size);
             this.rel  = new Vector2i(rel);
@@ -57,8 +58,8 @@ public interface EventWindowFramebufferResized extends EventWindow
         }
     }
     
-    static EventWindowFramebufferResized create(long time, Vector2ic size, Vector2ic rel)
+    static EventWindowFramebufferResized create(long time, Window window, Vector2ic size, Vector2ic rel)
     {
-        return new _EventWindowFramebufferResized(time, size, rel);
+        return new _EventWindowFramebufferResized(time, window, size, rel);
     }
 }

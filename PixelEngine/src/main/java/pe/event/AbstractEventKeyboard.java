@@ -2,11 +2,11 @@ package pe.event;
 
 import pe.Window;
 
-abstract class AbstractEventWindow extends AbstractEvent implements EventWindow
+abstract class AbstractEventKeyboard extends AbstractEventInputDevice implements EventKeyboard
 {
     private final Window window;
     
-    AbstractEventWindow(long time, Window window)
+    AbstractEventKeyboard(long time, Window window)
     {
         super(time);
         

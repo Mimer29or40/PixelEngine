@@ -27,18 +27,18 @@ public class GUIDebugWindow extends GUIWindow
                 {
                     GUIPropertyInt intProp;
                     
-                    intProp    = treeBoundsRows.add(new GUIPropertyInt("X Pos", 0, 0, Window.framebufferWidth(), 10, 1));
+                    intProp    = treeBoundsRows.add(new GUIPropertyInt("X Pos", 0, 0, Window.primary().framebufferWidth(), 10, 1));
                     this.propX = intProp.value;
-                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferWidth() - this.target.size.x);
-                    intProp    = treeBoundsRows.add(new GUIPropertyInt("Y Pos", 0, 0, Window.framebufferHeight(), 10, 1));
+                    intProp.max.set(() -> this.target == null ? 0 : Window.primary().framebufferWidth() - this.target.size.x);
+                    intProp    = treeBoundsRows.add(new GUIPropertyInt("Y Pos", 0, 0, Window.primary().framebufferHeight(), 10, 1));
                     this.propY = intProp.value;
-                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferHeight() - this.target.size.y);
-                    intProp    = treeBoundsRows.add(new GUIPropertyInt("Width", 0, 0, Window.framebufferWidth(), 10, 1));
+                    intProp.max.set(() -> this.target == null ? 0 : Window.primary().framebufferHeight() - this.target.size.y);
+                    intProp    = treeBoundsRows.add(new GUIPropertyInt("Width", 0, 0, Window.primary().framebufferWidth(), 10, 1));
                     this.propW = intProp.value;
-                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferWidth() - this.target.pos.x);
-                    intProp    = treeBoundsRows.add(new GUIPropertyInt("Height", 0, 0, Window.framebufferHeight(), 10, 1));
+                    intProp.max.set(() -> this.target == null ? 0 : Window.primary().framebufferWidth() - this.target.pos.x);
+                    intProp    = treeBoundsRows.add(new GUIPropertyInt("Height", 0, 0, Window.primary().framebufferHeight(), 10, 1));
                     this.propH = intProp.value;
-                    intProp.max.set(() -> this.target == null ? 0 : Window.framebufferHeight() - this.target.pos.y);
+                    intProp.max.set(() -> this.target == null ? 0 : Window.primary().framebufferHeight() - this.target.pos.y);
                     
                     GUITree treeContentBounds = new GUITree(GUITree.Type.TAB, "Content Bounds");
                     {

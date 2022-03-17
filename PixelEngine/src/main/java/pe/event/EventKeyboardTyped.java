@@ -1,5 +1,7 @@
 package pe.event;
 
+import pe.Window;
+
 public interface EventKeyboardTyped extends EventKeyboard
 {
     @EventProperty
@@ -8,14 +10,14 @@ public interface EventKeyboardTyped extends EventKeyboard
     @EventProperty
     String typed();
     
-    final class _EventKeyboardTyped extends AbstractEventInputDevice implements EventKeyboardTyped
+    final class _EventKeyboardTyped extends AbstractEventKeyboard implements EventKeyboardTyped
     {
         private final int    codePoint;
         private final String typed;
         
-        private _EventKeyboardTyped(long time, int codePoint)
+        private _EventKeyboardTyped(long time, Window window, int codePoint)
         {
-            super(time);
+            super(time, window);
             
             this.codePoint = codePoint;
             this.typed     = Character.toString(codePoint);
@@ -34,8 +36,8 @@ public interface EventKeyboardTyped extends EventKeyboard
         }
     }
     
-    static EventKeyboardTyped create(long time, int codePoint)
+    static EventKeyboardTyped create(long time, Window window, int codePoint)
     {
-        return new _EventKeyboardTyped(time, codePoint);
+        return new _EventKeyboardTyped(time, window, codePoint);
     }
 }

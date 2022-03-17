@@ -2,6 +2,7 @@ package pe.event;
 
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
+import pe.Window;
 
 public interface EventWindowMoved extends EventWindow
 {
@@ -36,9 +37,9 @@ public interface EventWindowMoved extends EventWindow
         private final Vector2i pos;
         private final Vector2i rel;
         
-        private _EventWindowMoved(long time, Vector2ic pos, Vector2ic rel)
+        private _EventWindowMoved(long time, Window window, Vector2ic pos, Vector2ic rel)
         {
-            super(time);
+            super(time, window);
             
             this.pos = new Vector2i(pos);
             this.rel = new Vector2i(rel);
@@ -57,8 +58,8 @@ public interface EventWindowMoved extends EventWindow
         }
     }
     
-    static EventWindowMoved create(long time, Vector2ic pos, Vector2ic rel)
+    static EventWindowMoved create(long time, Window window, Vector2ic pos, Vector2ic rel)
     {
-        return new _EventWindowMoved(time, pos, rel);
+        return new _EventWindowMoved(time, window, pos, rel);
     }
 }

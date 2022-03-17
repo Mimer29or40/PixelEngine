@@ -1,7 +1,5 @@
 package pe;
 
-import pe.color.Color;
-import pe.render.GLState;
 import rutils.Logger;
 
 import java.util.logging.Level;

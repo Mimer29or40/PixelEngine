@@ -2,8 +2,6 @@ package pe.gui;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector2d;
-import org.joml.Vector2dc;
 import org.joml.Vector2i;
 import org.lwjgl.nuklear.NkContext;
 import org.lwjgl.nuklear.NkRect;

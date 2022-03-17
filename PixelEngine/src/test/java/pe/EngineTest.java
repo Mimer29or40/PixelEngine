@@ -1,7 +1,6 @@
 package pe;
 
 import pe.color.Color;
-import pe.render.*;
 import rutils.Logger;
 
 import java.util.logging.Level;
@@ -42,7 +41,7 @@ public class EngineTest extends Engine
             .draw();
         
         if (Keyboard.down(Keyboard.Key.R)) Mouse.pos(10, 10);
-        if (Keyboard.down(Keyboard.Key.A)) Mouse.absPos(10, 10);
+        if (Keyboard.down(Keyboard.Key.A)) Mouse.pos(10, 10);
     }
     
     @Override

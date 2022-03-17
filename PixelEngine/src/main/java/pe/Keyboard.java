@@ -1,5 +1,6 @@
 package pe;
 
+import org.jetbrains.annotations.NotNull;
 import pe.event.*;
 import rutils.Logger;
 import rutils.group.Pair;
@@ -19,49 +20,16 @@ public final class Keyboard
     
     // -------------------- Static Objects -------------------- //
     
-    static final Map<Key, Input> keyMap = new EnumMap<>(Key.class);
-    
-    // -------------------- Callback Objects -------------------- //
-    
-    static final Queue<Integer> _charChanges = new ConcurrentLinkedQueue<>();
-    
-    static final Queue<Pair<Key, Integer>> _keyStateChanges = new ConcurrentLinkedQueue<>();
-    
     static void setup()
     {
         Keyboard.LOGGER.fine("Setup");
         
-        for (Key key : Key.values()) Keyboard.keyMap.put(key, new Input());
-        
-        glfwSetKeyCallback(Window.handle, Keyboard::keyCallback);
-        glfwSetCharCallback(Window.handle, Keyboard::charCallback);
+        for (Key key : Key.values()) Keyboard.keyState.put(key, new Input());
     }
     
-    private Keyboard() {}
-    
-    /**
-     * Sets the sticky keys flag. If sticky key are enabled, a keyboard key
-     * press will ensure that {@link EventKeyboardKeyUp} is posted with a
-     * {@link EventKeyboardKeyDown} even if the key had been released before
-     * the call. This is useful when you are only interested in whether keys
-     * have been pressed but not when or in which order.
-     *
-     * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
-     */
-    public static void sticky(boolean sticky)
+    static void destroy()
     {
-        Keyboard.LOGGER.finest("Setting Sticky Flag:", sticky);
-        
-        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_STICKY_KEYS, sticky ? GLFW_TRUE : GLFW_FALSE));
-    }
-    
-    /**
-     * @return Retrieves the sticky keys flag.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public static boolean sticky()
-    {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_STICKY_KEYS) == GLFW_TRUE);
+        Keyboard.LOGGER.fine("Destroy");
     }
     
     /**
@@ -73,23 +41,26 @@ public final class Keyboard
     @SuppressWarnings("ConstantConditions")
     static void processEvents(long time)
     {
+        Keyboard.charBuffer.setLength(0);
+        
         Integer codePoint;
-        while ((codePoint = Keyboard._charChanges.poll()) != null)
+        while ((codePoint = Keyboard.charChanges.poll()) != null)
         {
-            Engine.Events.post(EventKeyboardTyped.create(time, codePoint));
+            Keyboard.charBuffer.appendCodePoint(codePoint);
+            Engine.Events.post(EventKeyboardTyped.create(time, Keyboard.window, codePoint));
         }
         
         Pair<Key, Integer> keyStateChange;
-        while ((keyStateChange = Keyboard._keyStateChanges.poll()) != null)
+        while ((keyStateChange = Keyboard.keyStateChanges.poll()) != null)
         {
-            Input keyObj = Keyboard.keyMap.get(keyStateChange.getA());
+            Input keyObj = Keyboard.keyState.get(keyStateChange.getA());
             
             keyObj._state = keyStateChange.getB();
         }
         
-        for (Key key : Keyboard.keyMap.keySet())
+        for (Key key : Keyboard.keyState.keySet())
         {
-            Input input = Keyboard.keyMap.get(key);
+            Input input = Keyboard.keyState.get(key);
             
             input.state  = input._state;
             input._state = -1;
@@ -97,46 +68,203 @@ public final class Keyboard
             {
                 case GLFW_PRESS -> {
                     boolean inc = time - input.downTime < Input.doublePressedDelayL();
-    
-                    input.held     = true;
-                    input.heldTime = time + Input.holdFrequencyL();
-                    input.downTime = time;
+                    
+                    input.held      = true;
+                    input.heldTime  = time + Input.holdFrequencyL();
+                    input.downTime  = time;
                     input.downCount = inc ? input.downCount + 1 : 1;
-                    Engine.Events.post(EventKeyboardKeyDown.create(time, key, input.downCount));
+                    Engine.Events.post(EventKeyboardKeyDown.create(time, Keyboard.window, key, input.downCount));
                 }
                 case GLFW_RELEASE -> {
                     input.held     = false;
                     input.heldTime = Long.MAX_VALUE;
-                    Engine.Events.post(EventKeyboardKeyUp.create(time, key));
+                    Engine.Events.post(EventKeyboardKeyUp.create(time, Keyboard.window, key));
                 }
-                case GLFW_REPEAT -> Engine.Events.post(EventKeyboardKeyRepeated.create(time, key));
+                case GLFW_REPEAT -> Engine.Events.post(EventKeyboardKeyRepeated.create(time, Keyboard.window, key));
             }
             if (input.held && time - input.heldTime >= Input.holdFrequencyL())
             {
                 input.heldTime += Input.holdFrequencyL();
-                Engine.Events.post(EventKeyboardKeyHeld.create(time, key));
+                Engine.Events.post(EventKeyboardKeyHeld.create(time, Keyboard.window, key));
             }
         }
     }
     
+    // -------------------- Instance -------------------- //
+    
+    static Window window;
+    
+    static final StringBuffer   charBuffer  = new StringBuffer();
+    static final Queue<Integer> charChanges = new ConcurrentLinkedQueue<>();
+    
+    static final Map<Key, Input>           keyState        = new EnumMap<>(Key.class);
+    static final Queue<Pair<Key, Integer>> keyStateChanges = new ConcurrentLinkedQueue<>();
+    
+    private Keyboard() {}
+    
+    // -------------------- Properties -------------------- //
+    
+    /**
+     * Sets the sticky keys flag in the specified window. If sticky key are
+     * enabled, a keyboard key press will ensure that {@link EventKeyboardKeyUp}
+     * is posted with a {@link EventKeyboardKeyDown} even if the key had been
+     * released before the call. This is useful when you are only interested in
+     * whether keys have been pressed but not when or in which order.
+     *
+     * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
+     */
+    public static void sticky(@NotNull Window window, boolean sticky)
+    {
+        Keyboard.LOGGER.finest("Setting Sticky Flag for %s: %s", window, sticky);
+        
+        Delegator.runTask(() -> glfwSetInputMode(window.handle, GLFW_STICKY_KEYS, sticky ? GLFW_TRUE : GLFW_FALSE));
+    }
+    
+    /**
+     * Sets the sticky keys flag in the main window. If sticky key are enabled,
+     * a keyboard key press will ensure that {@link EventKeyboardKeyUp} is
+     * posted with a {@link EventKeyboardKeyDown} even if the key had been
+     * released before the call. This is useful when you are only interested in
+     * whether keys have been pressed but not when or in which order.
+     *
+     * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
+     */
+    public static void sticky(boolean sticky)
+    {
+        sticky(Window.primary, sticky);
+    }
+    
+    /**
+     * @return Retrieves the sticky keys flag.
+     */
+    @SuppressWarnings("ConstantConditions")
+    public static boolean sticky(@NotNull Window window)
+    {
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_STICKY_KEYS) == GLFW_TRUE);
+    }
+    
+    /**
+     * @return Retrieves the sticky keys flag.
+     */
+    public static boolean sticky()
+    {
+        return sticky(Window.primary);
+    }
+    
+    // -------------------- State Properties -------------------- //
+    
+    /**
+     * @return The string of chars that were typed in the specified window.
+     */
+    @NotNull
+    public static String charsTypes(@NotNull Window window)
+    {
+        return Keyboard.window == window ? Keyboard.charBuffer.toString() : "";
+    }
+    
+    /**
+     * @return The string of chars that were typed in the main window.
+     */
+    @NotNull
+    public static String charsTypes()
+    {
+        return charsTypes(Window.primary);
+    }
+    
+    /**
+     * @return If the provided key is in the down state in the provided window.
+     */
+    public static boolean down(@NotNull Window window, Key key)
+    {
+        return Keyboard.window == window && Keyboard.keyState.get(key).state == GLFW_PRESS;
+    }
+    
+    /**
+     * @return If the provided key is in the down state in the main window.
+     */
     public static boolean down(Key key)
     {
-        return Keyboard.keyMap.get(key).state == GLFW_PRESS;
+        return down(Window.primary, key);
     }
     
+    /**
+     * @return If the provided key is in the down state in any window.
+     */
+    public static boolean downAny(Key key)
+    {
+        return down(Keyboard.window, key);
+    }
+    
+    /**
+     * @return If the provided key is in the up state in the provided window.
+     */
+    public static boolean up(@NotNull Window window, Key key)
+    {
+        return Keyboard.window == window && Keyboard.keyState.get(key).state == GLFW_RELEASE;
+    }
+    
+    /**
+     * @return If the provided key is in the up state in the main window.
+     */
     public static boolean up(Key key)
     {
-        return Keyboard.keyMap.get(key).state == GLFW_RELEASE;
+        return up(Window.primary, key);
     }
     
+    /**
+     * @return If the provided key is in the up state in any window.
+     */
+    public static boolean upAny(Key key)
+    {
+        return up(Keyboard.window, key);
+    }
+    
+    /**
+     * @return If the provided key is in the repeat state in the provided window.
+     */
+    public static boolean repeat(@NotNull Window window, Key key)
+    {
+        return Keyboard.window == window && Keyboard.keyState.get(key).state == GLFW_REPEAT;
+    }
+    
+    /**
+     * @return If the provided key is in the repeat state in the main window.
+     */
     public static boolean repeat(Key key)
     {
-        return Keyboard.keyMap.get(key).state == GLFW_REPEAT;
+        return repeat(Window.primary, key);
     }
     
+    /**
+     * @return If the provided key is in the repeat state in any window.
+     */
+    public static boolean repeatAny(Key key)
+    {
+        return repeat(Keyboard.window, key);
+    }
+    
+    /**
+     * @return If the provided key is in the held state in the provided window.
+     */
+    public static boolean held(@NotNull Window window, Key key)
+    {
+        return Keyboard.window == window && Keyboard.keyState.get(key).held;
+    }
+    
+    /**
+     * @return If the provided key is in the held state in the main window.
+     */
     public static boolean held(Key key)
     {
-        return Keyboard.keyMap.get(key).held;
+        return held(Window.primary, key);
+    }
+    
+    /**
+     * @return If the provided key is in the held state in any window.
+     */
+    public static boolean heldAny(Key key)
+    {
+        return held(Keyboard.window, key);
     }
     
     public enum Key
@@ -318,17 +446,5 @@ public final class Keyboard
                 Key.NAME_MAP.put(key.name(), key);
             }
         }
-    }
-    
-    private static void keyCallback(long handle, int key, int scancode, int action, int mods)
-    {
-        Keyboard._keyStateChanges.offer(new Pair<>(Keyboard.Key.get(key, scancode), action));
-        
-        Modifier.activeMods = mods;
-    }
-    
-    private static void charCallback(long handle, int codePoint)
-    {
-        Keyboard._charChanges.offer(codePoint);
     }
 }

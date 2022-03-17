@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.system.APIUtil;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Colorc;
 import pe.draw.*;
@@ -37,8 +38,6 @@ public abstract class Engine
     static final Vector2i screenSize = new Vector2i();
     static final Vector2i pixelSize  = new Vector2i();
     
-    static boolean windowEnabled = false;
-    
     static boolean wireframe = false;
     
     static int vertices = 0;
@@ -53,13 +52,6 @@ public abstract class Engine
         private static void processEvents()
         {
             Events.events.clear();
-            
-            long time = Time.getNS();
-            
-            Mouse.processEvents(time);
-            Keyboard.processEvents(time);
-            Joystick.processEvents(time);
-            Window.processEvents(time);
         }
         
         public static void post(Event event)
@@ -91,7 +83,38 @@ public abstract class Engine
         }
     }
     
-    protected static class Extensions // TODO
+    private static final class IO
+    {
+        private static void setup()
+        {
+            Monitor.setup();
+            Window.setup();
+            Mouse.setup();
+            Keyboard.setup();
+            Joystick.setup();
+        }
+        
+        private static void processEvents()
+        {
+            long time = Time.getNS();
+            
+            Mouse.processEvents(time);
+            Keyboard.processEvents(time);
+            Joystick.processEvents(time);
+            Window.processEvents(time);
+        }
+        
+        private static void destroy()
+        {
+            Joystick.destroy();
+            Keyboard.destroy();
+            Mouse.destroy();
+            Window.destroy();
+            Monitor.destroy();
+        }
+    }
+    
+    static final class Extensions // TODO
     {
         private static final Logger LOGGER = new Logger();
         
@@ -351,8 +374,8 @@ public abstract class Engine
         {
             double aspect = (double) (Engine.screenSize.x * Engine.pixelSize.x) / (double) (Engine.screenSize.y * Engine.pixelSize.y);
             
-            int frameWidth  = Window.framebufferWidth();
-            int frameHeight = Window.framebufferHeight();
+            int frameWidth  = Window.primary.framebufferWidth();
+            int frameHeight = Window.primary.framebufferHeight();
             
             Viewport.size.set(frameWidth, (int) (frameWidth / aspect));
             if (Viewport.size.y > frameHeight) Viewport.size.set((int) (frameHeight * aspect), frameHeight);
@@ -508,7 +531,7 @@ public abstract class Engine
             
             Extensions.postSetup();
             
-            if (Engine.windowEnabled)
+            if (Window.primary != null)
             {
                 Window.unmakeCurrent();
                 
@@ -530,6 +553,7 @@ public abstract class Engine
                                 Extensions.preEvents();
                                 
                                 Events.processEvents();
+                                IO.processEvents();
                                 
                                 Extensions.postEvents();
                                 
@@ -579,7 +603,7 @@ public abstract class Engine
                                 NuklearGUI.draw();
                                 ImGUI.draw();
                                 
-                                Window.swap();
+                                Window.primary.swap();
                                 
                                 // TODO Profiler End Frame
                                 
@@ -620,7 +644,7 @@ public abstract class Engine
                             // TODO
                             // if (Time.shouldUpdate())
                             // {
-                            //     Window.title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
+                            //     Window.primary.title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
                             //
                             //     // Debug.update();
                             // }
@@ -644,9 +668,7 @@ public abstract class Engine
                         
                         GLState.destroy();
                         
-                        Window.unmakeCurrent();
-                        
-                        Window.destroy();
+                        IO.destroy();
                         
                         Engine.running = false;
                         
@@ -701,6 +723,18 @@ public abstract class Engine
         if (Engine.pixelSize.x <= 0 || Engine.pixelSize.y <= 0) throw new IllegalArgumentException("Pixel dimension must be > 0");
         Engine.LOGGER.fine("Pixel Size:", Engine.pixelSize);
         
+        try (MemoryStack stack = MemoryStack.stackPush())
+        {
+            IntBuffer major = stack.mallocInt(1);
+            IntBuffer minor = stack.mallocInt(1);
+            IntBuffer rev   = stack.mallocInt(1);
+            
+            glfwGetVersion(major, minor, rev);
+            
+            Engine.LOGGER.fine("GLFW Initialization %s.%s.%s", major.get(), minor.get(), rev.get());
+            Engine.LOGGER.finer("RWJGLUtil Compiled to '%s'", glfwGetVersionString());
+        }
+        
         Engine.LOGGER.finer("GLFW Setup");
         if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
         
@@ -715,14 +749,7 @@ public abstract class Engine
             Engine.LOGGER.severe(message.toString());
         });
         
-        Window.setup();
-        Modifier.setup();
-        Mouse.setup();
-        Keyboard.setup();
-        Joystick.setup();
-        
-        Window.makeCurrent();
-        Window.title("Engine - " + Engine.instance.name);
+        IO.setup();
         
         GLState.setup();
         
@@ -731,8 +758,6 @@ public abstract class Engine
         Debug.setup();
         NuklearGUI.setup();
         ImGUI.setup();
-        
-        Engine.windowEnabled = true;
     }
     
     protected static void size(int screenW, int screenH)
@@ -796,7 +821,7 @@ public abstract class Engine
     // ----- Instance -----
     // --------------------
     
-    private final String name;
+    final String name;
     
     public Engine()
     {

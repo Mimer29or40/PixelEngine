@@ -549,7 +549,7 @@ public final class Debug
             if (Debug.currentMenu < 0)
             {
                 String text = "No Menus";
-                int    x    = (Window.framebufferWidth() - Debug.textWidth(text)) / 2;
+                int    x    = (Window.primary.framebufferWidth() - Debug.textWidth(text)) / 2;
                 drawTextWithBackground(x, 0, text, Color.WHITE, null);
             }
             else
@@ -566,7 +566,7 @@ public final class Debug
                 int currWidth = Debug.textWidth(menu.name) + 2;
                 int prevWidth = Debug.textWidth(prev.name) + 2;
                 
-                int currPos = (Window.framebufferWidth() - currWidth) / 2;
+                int currPos = (Window.primary.framebufferWidth() - currWidth) / 2;
                 int prevPos = currPos - spacing - prevWidth;
                 int nextPos = currPos + currWidth + spacing;
                 
@@ -577,15 +577,15 @@ public final class Debug
         }
         if (Debug.notification != null && Time.getNS() - Debug.notificationTime < Debug.notificationDur)
         {
-            int x = (Window.framebufferWidth() - textWidth(Debug.notification)) >> 1;
-            int y = (Window.framebufferHeight() - textHeight(Debug.notification)) >> 1;
+            int x = (Window.primary.framebufferWidth() - textWidth(Debug.notification)) >> 1;
+            int y = (Window.primary.framebufferHeight() - textHeight(Debug.notification)) >> 1;
             
             drawTextWithBackground(x, y, Debug.notification, Color.WHITE, null);
         }
         if (!Debug.renderables.isEmpty())
         {
-            int fbWidth  = Window.framebufferWidth();
-            int fbHeight = Window.framebufferHeight();
+            int fbWidth  = Window.primary.framebufferWidth();
+            int fbHeight = Window.primary.framebufferHeight();
             
             GLState.viewport(0, 0, fbWidth, fbHeight);
             
@@ -836,8 +836,8 @@ public final class Debug
         
         protected void draw()
         {
-            this.width  = Window.framebufferWidth();
-            this.height = Window.framebufferHeight() - Debug.headerSize;
+            this.width  = Window.primary().framebufferWidth();
+            this.height = Window.primary().framebufferHeight() - Debug.headerSize;
             drawImpl();
         }
         

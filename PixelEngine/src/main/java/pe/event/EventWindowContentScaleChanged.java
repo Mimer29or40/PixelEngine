@@ -2,6 +2,7 @@ package pe.event;
 
 import org.joml.Vector2d;
 import org.joml.Vector2dc;
+import pe.Window;
 
 public interface EventWindowContentScaleChanged extends EventWindow
 {
@@ -36,9 +37,9 @@ public interface EventWindowContentScaleChanged extends EventWindow
         private final Vector2d scale;
         private final Vector2d rel;
         
-        private _EventWindowContentScaleChanged(long time, Vector2d scale, Vector2d rel)
+        private _EventWindowContentScaleChanged(long time, Window window, Vector2d scale, Vector2d rel)
         {
-            super(time);
+            super(time, window);
             
             this.scale = new Vector2d(scale);
             this.rel   = new Vector2d(rel);
@@ -57,8 +58,8 @@ public interface EventWindowContentScaleChanged extends EventWindow
         }
     }
     
-    static EventWindowContentScaleChanged create(long time, Vector2d scale, Vector2d rel)
+    static EventWindowContentScaleChanged create(long time, Window window, Vector2d scale, Vector2d rel)
     {
-        return new _EventWindowContentScaleChanged(time, scale, rel);
+        return new _EventWindowContentScaleChanged(time, window, scale, rel);
     }
 }

@@ -1,5 +1,7 @@
 package pe.event;
 
+import pe.Window;
+
 public interface EventWindowVsyncChanged extends EventWindow
 {
     @EventProperty
@@ -9,9 +11,9 @@ public interface EventWindowVsyncChanged extends EventWindow
     {
         private final boolean vsync;
         
-        private _EventWindowVsyncChanged(long time, boolean vsync)
+        private _EventWindowVsyncChanged(long time, Window window, boolean vsync)
         {
-            super(time);
+            super(time, window);
             
             this.vsync = vsync;
         }
@@ -23,8 +25,8 @@ public interface EventWindowVsyncChanged extends EventWindow
         }
     }
     
-    static EventWindowVsyncChanged create(long time, boolean maximized)
+    static EventWindowVsyncChanged create(long time, Window window, boolean vsync)
     {
-        return new _EventWindowVsyncChanged(time, maximized);
+        return new _EventWindowVsyncChanged(time, window, vsync);
     }
 }

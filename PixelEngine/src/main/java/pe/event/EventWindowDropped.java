@@ -1,5 +1,7 @@
 package pe.event;
 
+import pe.Window;
+
 import java.nio.file.Path;
 
 public interface EventWindowDropped extends EventWindow
@@ -11,9 +13,9 @@ public interface EventWindowDropped extends EventWindow
     {
         private final Path[] paths;
         
-        private _EventWindowDropped(long time, Path[] paths)
+        private _EventWindowDropped(long time, Window window, Path[] paths)
         {
-            super(time);
+            super(time, window);
             
             this.paths = paths;
         }
@@ -25,8 +27,8 @@ public interface EventWindowDropped extends EventWindow
         }
     }
     
-    static EventWindowDropped create(long time, Path[] paths)
+    static EventWindowDropped create(long time, Window window, Path[] paths)
     {
-        return new _EventWindowDropped(time, paths);
+        return new _EventWindowDropped(time, window, paths);
     }
 }

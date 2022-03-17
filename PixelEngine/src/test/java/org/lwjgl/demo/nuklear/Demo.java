@@ -55,7 +55,7 @@ class Demo
                     nk_label(ctx, String.format("Mouse Pos: [%.3f, %.3f]", Mouse.x(), Mouse.y()), NK_TEXT_LEFT);
         
                     nk_layout_row_dynamic(ctx, 0, 1);
-                    nk_label(ctx, String.format("Mouse Abs Pos: [%.3f, %.3f]", Mouse.absX(), Mouse.absY()), NK_TEXT_LEFT);
+                    nk_label(ctx, String.format("Mouse Abs Pos: [%.3f, %.3f]", Mouse.x(), Mouse.y()), NK_TEXT_LEFT);
         
                     nk_layout_row_static(ctx, 0, 80, 1);
                     if (nk_button_label(ctx, "button")) System.out.println("button pressed");
