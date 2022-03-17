@@ -7,10 +7,19 @@ import java.util.logging.Level;
 
 public class EngineTest extends Engine
 {
+    Window window;
+    
     @Override
     protected void setup()
     {
         size(100, 100, 4, 4);
+    
+        Window.Builder builder = new Window.Builder();
+    
+        builder.name("Test");
+        builder.size(200, 200);
+        
+        this.window = builder.build();
     }
     
     @Override

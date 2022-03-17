@@ -61,6 +61,8 @@ public class OverlayGUITest extends Engine
     @Override
     protected void draw(double elapsedTime)
     {
+        Layer layer = Layer.primary();
+    
         var list = List.of(
                 new Pair<>(Keyboard.Key.Q, WindowFlag.BORDER),
                 new Pair<>(Keyboard.Key.W, WindowFlag.MOVABLE),
@@ -102,25 +104,25 @@ public class OverlayGUITest extends Engine
         
         double time = Time.get() * 0.5;
         
-        double sizeX = screenWidth() * 0.33;
-        double sizeY = screenHeight() * 0.33;
+        double sizeX = layer.width() * 0.33;
+        double sizeY = layer.height() * 0.33;
         
         double angle, cos, sin;
         
         angle = time;
         cos   = sizeX * Math.cos(angle);
         sin   = sizeY * Math.sin(angle);
-        p0.set(screenSize()).mul(0.5).add(cos, sin);
+        p0.set(layer.size()).mul(0.5).add(cos, sin);
         
         angle = time + Math.PI_3;
         cos   = sizeX * Math.cos(angle);
         sin   = sizeY * Math.sin(angle);
-        p1.set(screenSize()).mul(0.5).sub(cos, sin);
+        p1.set(layer.size()).mul(0.5).sub(cos, sin);
         
         angle = time - Math.PI_3;
         cos   = sizeX * Math.cos(angle);
         sin   = sizeY * Math.sin(angle);
-        p2.set(screenSize()).mul(0.5).sub(cos, sin);
+        p2.set(layer.size()).mul(0.5).sub(cos, sin);
         
         Draw.line2D().point0(p0).point1(p1).thickness(1.0).color(Color.WHITE).draw();
         Draw.line2D().point0(p0).point1(p2).thickness(1.0).color(Color.WHITE).draw();

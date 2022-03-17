@@ -69,76 +69,78 @@ public class Draw2DTest extends Engine
         
         // Time.frameRate(60);
         
+        Layer layer = Layer.primary();
+        
         draggablePoint = new Vector2d[16];
         for (int i = 0, n = draggablePoint.length; i < n; i++)
         {
             double angle = (double) i / (n - 1) * Math.PI2;
             
-            double cos = Math.cos(angle) * screenWidth() * 0.25;
-            double sin = Math.sin(angle) * screenHeight() * 0.25;
+            double cos = Math.cos(angle) * layer.width() * 0.25;
+            double sin = Math.sin(angle) * layer.height() * 0.25;
             
-            draggablePoint[i] = new Vector2d(cos + screenWidth() * 0.5, sin + screenHeight() * 0.5);
+            draggablePoint[i] = new Vector2d(cos + layer.width() * 0.5, sin + layer.height() * 0.5);
         }
         
         draggableLine = new Vector2d[] {
-                new Vector2d(screenWidth() * 0.5, screenHeight() * 0.5),
+                new Vector2d(layer.width() * 0.5, layer.height() * 0.5),
                 new Vector2d(10, 10),
-                new Vector2d(10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, 10),
+                new Vector2d(10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, 10),
                 };
         
         draggableLines = new Vector2d[] {
-                new Vector2d(10, screenHeight() * 0.5),
-                new Vector2d(screenWidth() * 0.5 - 10, 10),
-                new Vector2d(screenWidth() * 0.5 + 10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
+                new Vector2d(10, layer.height() * 0.5),
+                new Vector2d(layer.width() * 0.5 - 10, 10),
+                new Vector2d(layer.width() * 0.5 + 10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
                 };
         
         draggableBezier = new Vector2d[] {
-                new Vector2d(10, screenHeight() * 0.5),
-                new Vector2d(screenWidth() * 0.5 - 10, 10),
-                new Vector2d(screenWidth() * 0.5 + 10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
+                new Vector2d(10, layer.height() * 0.5),
+                new Vector2d(layer.width() * 0.5 - 10, 10),
+                new Vector2d(layer.width() * 0.5 + 10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
                 };
         
         draggableTriangle = new Vector2d[] {
-                new Vector2d(10, screenHeight() * 0.5),
-                new Vector2d(screenWidth() * 0.5 - 10, 10),
-                new Vector2d(screenWidth() * 0.5 + 10, screenHeight() - 10),
+                new Vector2d(10, layer.height() * 0.5),
+                new Vector2d(layer.width() * 0.5 - 10, 10),
+                new Vector2d(layer.width() * 0.5 + 10, layer.height() - 10),
                 };
         
         draggableQuad = new Vector2d[] {
                 new Vector2d(10, 10),
-                new Vector2d(10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, 10),
+                new Vector2d(10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, 10),
                 };
         
         draggableRect = new Vector2d[] {
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
-                new Vector2d(screenWidth() * 0.5, screenHeight() * 0.5),
-                new Vector2d(screenWidth() - 10, screenHeight() * 0.5),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(layer.width() * 0.5, layer.height() * 0.5),
+                new Vector2d(layer.width() - 10, layer.height() * 0.5),
                 };
         
         draggableEllipse = new Vector2d[] {
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
-                new Vector2d(screenWidth() * 0.5, screenHeight() * 0.5),
-                new Vector2d(screenWidth() - 10, screenHeight() * 0.5),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(layer.width() * 0.5, layer.height() * 0.5),
+                new Vector2d(layer.width() - 10, layer.height() * 0.5),
                 };
         
         draggableRing = new Vector2d[] {
-                new Vector2d(screenWidth() * 0.5 + 10, screenHeight() * 0.5 + 10),
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
-                new Vector2d(screenWidth() * 0.5, screenHeight() * 0.5),
-                new Vector2d(screenWidth() - 10, screenHeight() * 0.5),
+                new Vector2d(layer.width() * 0.5 + 10, layer.height() * 0.5 + 10),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(layer.width() * 0.5, layer.height() * 0.5),
+                new Vector2d(layer.width() - 10, layer.height() * 0.5),
                 };
         
         draggableTexture = new Vector2d[] {
                 new Vector2d(10, 10),
-                new Vector2d(10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, screenHeight() - 10),
-                new Vector2d(screenWidth() - 10, 10),
+                new Vector2d(10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(layer.width() - 10, 10),
                 };
         
         Image image = Image.genColorGradient(30, 30, Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE);
@@ -284,6 +286,8 @@ public class Draw2DTest extends Engine
     {
         handleInput();
         
+        Layer layer = Layer.primary();
+        
         Draw.clearBackground(Color.BLACK);
         
         double thickness = Math.map(Math.max(hValue, 1), 0, 100, 0, 10);
@@ -328,8 +332,8 @@ public class Draw2DTest extends Engine
                         // y = x < 0.5 ? 4 * x * x * x : 1 - 4 * (1 - x) * (1 - x) * (1 - x);
                         y = 8 * (x) * (x - 0.5) * (x - 1) + 0.5;
                         
-                        points[(i << 1)]     = x * screenWidth();
-                        points[(i << 1) + 1] = y * screenHeight();
+                        points[(i << 1)]     = x * layer.width();
+                        points[(i << 1) + 1] = y * layer.height();
                     }
                     
                     Draw.lines2D().points(points).thickness(thickness).color0(Color.CYAN).color1(Color.MAGENTA).draw();
@@ -425,8 +429,8 @@ public class Draw2DTest extends Engine
                 }
             }
             case F7 -> {
-                double cx = screenWidth() * 0.5;
-                double cy = screenHeight() * 0.5;
+                double cx = layer.width() * 0.5;
+                double cy = layer.height() * 0.5;
                 
                 double width  = draggableRect[0].x - cx;
                 double height = draggableRect[0].y - cy;
@@ -459,8 +463,8 @@ public class Draw2DTest extends Engine
                 }
             }
             case F8 -> {
-                double cx = screenWidth() * 0.5;
-                double cy = screenHeight() * 0.5;
+                double cx = layer.width() * 0.5;
+                double cy = layer.height() * 0.5;
                 
                 double rx = draggableEllipse[0].x - cx;
                 double ry = draggableEllipse[0].y - cy;
@@ -510,8 +514,8 @@ public class Draw2DTest extends Engine
                 }
             }
             case F9 -> {
-                double cx = screenWidth() * 0.5;
-                double cy = screenHeight() * 0.5;
+                double cx = layer.width() * 0.5;
+                double cy = layer.height() * 0.5;
                 
                 double rxi = draggableRing[0].x - cx;
                 double ryi = draggableRing[0].y - cy;
@@ -571,8 +575,8 @@ public class Draw2DTest extends Engine
                 {
                     double rotation = Math.toRadians(hValue);
                     
-                    double cx = screenWidth() >> 1;
-                    double cy = screenHeight() >> 1;
+                    double cx = layer.width() >> 1;
+                    double cy = layer.height() >> 1;
                     
                     double mul = Math.map(vValue, 0, 1000, 0, 10);
                     

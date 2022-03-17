@@ -79,7 +79,7 @@ public class Window
                                                .mapToLong(w -> w.handle)
                                                .toArray();
         
-        Window.windows.values().forEach(w -> w.processWindowEvents(time));
+        Window.windows.values().forEach(w -> w.processEvents(time));
         
         for (long handle : handlesToRemove)
         {
@@ -295,7 +295,7 @@ public class Window
     
     private Window(final @NotNull Builder builder)
     {
-        boolean visible = builder.visible;
+        Boolean visible = builder.visible;
         if (builder.position != null) builder.visible(false);
         builder.applyHints();
         
@@ -316,7 +316,7 @@ public class Window
         
         this.open = true;
         
-        this.refreshRate = builder.refreshRate != null ? builder.refreshRate : DONT_CARE;
+        this.refreshRate = builder.refreshRate;
         
         this.vsync        = builder.vsync;
         this.vsyncChanges = this.vsync;
@@ -345,7 +345,7 @@ public class Window
                 this.pos.set(builder.position);
                 this.posChanges.set(this.pos);
                 glfwSetWindowPos(this.handle, this.pos.x(), this.pos.y());
-                if (visible) glfwShowWindow(this.handle);
+                if (visible != null && visible) glfwShowWindow(this.handle);
             }
             else
             {
@@ -386,7 +386,7 @@ public class Window
         glfwMakeContextCurrent(this.handle);
         this.capabilities = org.lwjgl.opengl.GL.createCapabilities();
         
-        Modifier.lockKeyMods(this, builder.lockKeyMods != null ? builder.lockKeyMods : false);
+        Modifier.lockKeyMods(this, builder.lockKeyMods);
         
         glfwSetWindowCloseCallback(this.handle, Window::windowCloseCallback);
         glfwSetWindowFocusCallback(this.handle, Window::windowFocusCallback);
@@ -969,7 +969,7 @@ public class Window
      * flag to disable this behavior.
      * <p>
      * Also by default, windowed mode windows are focused when shown with
-     * {@link #show}. Set the {@link Builder#focusOnShow(Boolean)} window hint
+     * {@link #show}. Set the {@link Builder#focusOnShow(boolean)} window hint
      * to disable this behavior.
      * <p>
      * <b>Do not use this function</b> to steal focus from other applications
@@ -1552,7 +1552,7 @@ public class Window
     
     // -------------------- State Updating -------------------- //
     
-    void processWindowEvents(long time)
+    void processEvents(long time)
     {
         boolean updateMonitor = false;
         
@@ -1677,8 +1677,8 @@ public class Window
         
         private Vector2ic position = null;
         private Vector2ic size     = new Vector2i(800, 600);
-        private Vector2ic minSize  = new Vector2i(DONT_CARE);
-        private Vector2ic maxSize  = new Vector2i(DONT_CARE);
+        private Vector2ic minSize  = new Vector2i(GLFW_DONT_CARE);
+        private Vector2ic maxSize  = new Vector2i(GLFW_DONT_CARE);
         
         private boolean windowed = true;
         private boolean vsync    = false;
@@ -1695,6 +1695,7 @@ public class Window
         private Boolean centerCursor           = null;
         private Boolean transparentFramebuffer = null;
         private Boolean focusOnShow            = null;
+        private Boolean mousePassthrough       = null;
         private Boolean scaleToMonitor         = null;
         
         private Integer redBits        = null;
@@ -1709,11 +1710,10 @@ public class Window
         private Integer accumAlphaBits = null;
         private Integer auxBuffers     = null;
         private Boolean stereo         = null;
+        private Integer refreshRate    = null;
         private Integer samples        = null;
         private Boolean srgbCapable    = null;
         private Boolean doublebuffer   = null;
-        
-        private Integer refreshRate = null;
         
         private ClientAPI       clientApi       = null;
         private CreationAPI     creationApi     = null;
@@ -1725,6 +1725,8 @@ public class Window
         private Robustness      robustness      = null;
         private ReleaseBehavior releaseBehavior = null;
         private Boolean         noError         = null;
+        
+        private Boolean win32KeyboardMenu = null;
         
         private Boolean cocoaRetinaFramebuffer = null;
         private String  cocoaFrameName         = null;
@@ -2114,6 +2116,23 @@ public class Window
         public Builder focusOnShow(Boolean focusOnShow)
         {
             this.focusOnShow = focusOnShow;
+            return this;
+        }
+        
+        /**
+         * Specifies whether the window is transparent to mouse input, letting
+         * any mouse events pass through to whatever window is behind it. This
+         * is only supported for undecorated windows. Decorated windows with
+         * this enabled will behave differently between platforms. Possible
+         * values are {@code true}, {@code false} and {@code null} for system
+         * default.
+         *
+         * @param mousePassthrough if the window is transparent to mouse input. One of:<br>{@code true}, {@code false}, {@code null}
+         * @return This instance for call chaining.
+         */
+        public Builder mousePassthrough(boolean mousePassthrough)
+        {
+            this.mousePassthrough = mousePassthrough;
             return this;
         }
         
@@ -2621,8 +2640,23 @@ public class Window
         }
         
         /**
+         * Specifies whether to allow access to the window menu via the
+         * {@code Alt+Space} and {@code Alt-and-then-Space} keyboard shortcuts.
+         * This is ignored on other platforms. Possible values are {@code true},
+         * {@code false}, and {@code null} fpr system default.
+         *
+         * @param win32KeyboardMenu if to use full resolution framebuffers on Retina displays. One of:<br>{@code true}, {@code false}, {@code null}
+         * @return This instance for call chaining.
+         */
+        public Builder win32KeyboardMenu(Boolean win32KeyboardMenu)
+        {
+            this.win32KeyboardMenu = win32KeyboardMenu;
+            return this;
+        }
+        
+        /**
          * Specifies whether to use full resolution framebuffers on Retina
-         * displays. Possible values are {@code true}, {@code false} and
+         * displays. Possible values are {@code true}, {@code false} or
          * {@code null} for system default.
          *
          * @param cocoaRetinaFramebuffer if to use full resolution framebuffers on Retina displays. One of:<br>{@code true}, {@code false}, {@code null}
@@ -2706,78 +2740,92 @@ public class Window
         {
             glfwDefaultWindowHints();
             
-            applyBoolean(GLFW_RESIZABLE, this.resizable);
-            applyBoolean(GLFW_VISIBLE, this.visible);
-            applyBoolean(GLFW_DECORATED, this.decorated);
-            applyBoolean(GLFW_FOCUSED, this.focused);
-            applyBoolean(GLFW_AUTO_ICONIFY, this.autoIconify);
-            applyBoolean(GLFW_FLOATING, this.floating);
-            applyBoolean(GLFW_MAXIMIZED, this.maximized);
-            applyBoolean(GLFW_CENTER_CURSOR, this.centerCursor);
-            applyBoolean(GLFW_TRANSPARENT_FRAMEBUFFER, this.transparentFramebuffer);
-            applyBoolean(GLFW_FOCUS_ON_SHOW, this.focusOnShow);
-            applyBoolean(GLFW_SCALE_TO_MONITOR, this.scaleToMonitor);
+            this.resizable              = applyBoolean(GLFW_RESIZABLE, this.resizable, true);
+            this.visible                = applyBoolean(GLFW_VISIBLE, this.visible, true);
+            this.decorated              = applyBoolean(GLFW_DECORATED, this.decorated, true);
+            this.focused                = applyBoolean(GLFW_FOCUSED, this.focused, true);
+            this.autoIconify            = applyBoolean(GLFW_AUTO_ICONIFY, this.autoIconify, true);
+            this.floating               = applyBoolean(GLFW_FLOATING, this.floating, false);
+            this.maximized              = applyBoolean(GLFW_MAXIMIZED, this.maximized, false);
+            this.centerCursor           = applyBoolean(GLFW_CENTER_CURSOR, this.centerCursor, true);
+            this.transparentFramebuffer = applyBoolean(GLFW_TRANSPARENT_FRAMEBUFFER, this.transparentFramebuffer, false);
+            this.focusOnShow            = applyBoolean(GLFW_FOCUS_ON_SHOW, this.focusOnShow, true);
+            this.mousePassthrough       = applyBoolean(GLFW_MOUSE_PASSTHROUGH, this.mousePassthrough, false);
+            this.scaleToMonitor         = applyBoolean(GLFW_SCALE_TO_MONITOR, this.scaleToMonitor, false);
             
-            applyInteger(GLFW_RED_BITS, this.redBits, true);
-            applyInteger(GLFW_GREEN_BITS, this.greenBits, true);
-            applyInteger(GLFW_BLUE_BITS, this.blueBits, true);
-            applyInteger(GLFW_ALPHA_BITS, this.alphaBits, true);
-            applyInteger(GLFW_DEPTH_BITS, this.depthBits, true);
-            applyInteger(GLFW_STENCIL_BITS, this.stencilBits, true);
-            applyInteger(GLFW_ACCUM_RED_BITS, this.accumRedBits, true);
-            applyInteger(GLFW_ACCUM_GREEN_BITS, this.accumGreenBits, true);
-            applyInteger(GLFW_ACCUM_BLUE_BITS, this.accumBlueBits, true);
-            applyInteger(GLFW_ACCUM_ALPHA_BITS, this.accumAlphaBits, true);
-            applyInteger(GLFW_AUX_BUFFERS, this.auxBuffers, true);
-            applyInteger(GLFW_SAMPLES, this.samples, true);
-            applyBoolean(GLFW_STEREO, this.stereo);
-            applyBoolean(GLFW_SRGB_CAPABLE, this.srgbCapable);
-            applyBoolean(GLFW_DOUBLEBUFFER, this.doublebuffer);
+            this.redBits        = applyInteger(GLFW_RED_BITS, this.redBits, GLFW_DONT_CARE);
+            this.greenBits      = applyInteger(GLFW_GREEN_BITS, this.greenBits, GLFW_DONT_CARE);
+            this.blueBits       = applyInteger(GLFW_BLUE_BITS, this.blueBits, GLFW_DONT_CARE);
+            this.alphaBits      = applyInteger(GLFW_ALPHA_BITS, this.alphaBits, GLFW_DONT_CARE);
+            this.depthBits      = applyInteger(GLFW_DEPTH_BITS, this.depthBits, GLFW_DONT_CARE);
+            this.stencilBits    = applyInteger(GLFW_STENCIL_BITS, this.stencilBits, GLFW_DONT_CARE);
+            this.accumRedBits   = applyInteger(GLFW_ACCUM_RED_BITS, this.accumRedBits, GLFW_DONT_CARE);
+            this.accumGreenBits = applyInteger(GLFW_ACCUM_GREEN_BITS, this.accumGreenBits, GLFW_DONT_CARE);
+            this.accumBlueBits  = applyInteger(GLFW_ACCUM_BLUE_BITS, this.accumBlueBits, GLFW_DONT_CARE);
+            this.accumAlphaBits = applyInteger(GLFW_ACCUM_ALPHA_BITS, this.accumAlphaBits, GLFW_DONT_CARE);
+            this.auxBuffers     = applyInteger(GLFW_AUX_BUFFERS, this.auxBuffers, GLFW_DONT_CARE);
+            this.samples        = applyInteger(GLFW_SAMPLES, this.samples, GLFW_DONT_CARE);
+            this.refreshRate    = applyInteger(GLFW_REFRESH_RATE, this.refreshRate, GLFW_DONT_CARE);
+            this.stereo         = applyBoolean(GLFW_STEREO, this.stereo, false);
+            this.srgbCapable    = applyBoolean(GLFW_SRGB_CAPABLE, this.srgbCapable, false);
+            this.doublebuffer   = applyBoolean(GLFW_DOUBLEBUFFER, this.doublebuffer, true);
             
-            applyInteger(GLFW_REFRESH_RATE, this.refreshRate, true);
+            this.clientApi       = applyRef(GLFW_CLIENT_API, this.clientApi, ClientAPI.OPENGL);
+            this.creationApi     = applyRef(GLFW_CONTEXT_CREATION_API, this.creationApi, CreationAPI.NATIVE);
+            this.versionMajor    = applyInteger(GLFW_CONTEXT_VERSION_MAJOR, this.versionMajor, 1);
+            this.versionMinor    = applyInteger(GLFW_CONTEXT_VERSION_MINOR, this.versionMinor, 0);
+            this.forwardCompat   = applyBoolean(GLFW_OPENGL_FORWARD_COMPAT, this.forwardCompat, false);
+            this.debugContext    = applyBoolean(GLFW_OPENGL_DEBUG_CONTEXT, this.debugContext, false);
+            this.profile         = applyRef(GLFW_OPENGL_PROFILE, this.profile, OpenGLProfile.ANY);
+            this.robustness      = applyRef(GLFW_CONTEXT_ROBUSTNESS, this.robustness, Robustness.NONE);
+            this.releaseBehavior = applyRef(GLFW_CONTEXT_RELEASE_BEHAVIOR, this.releaseBehavior, ReleaseBehavior.ANY);
+            this.noError         = applyBoolean(GLFW_CONTEXT_NO_ERROR, this.noError, false);
             
-            if (this.clientApi != null) glfwWindowHint(GLFW_CLIENT_API, this.clientApi.ref);
-            if (this.creationApi != null) glfwWindowHint(GLFW_CONTEXT_CREATION_API, this.creationApi.ref);
-            applyInteger(GLFW_CONTEXT_VERSION_MAJOR, this.versionMajor, false);
-            applyInteger(GLFW_CONTEXT_VERSION_MINOR, this.versionMinor, false);
-            applyBoolean(GLFW_OPENGL_FORWARD_COMPAT, this.forwardCompat);
-            applyBoolean(GLFW_OPENGL_DEBUG_CONTEXT, this.debugContext);
-            if (this.profile != null) glfwWindowHint(GLFW_OPENGL_PROFILE, this.profile.ref);
-            if (this.robustness != null) glfwWindowHint(GLFW_CONTEXT_ROBUSTNESS, this.robustness.ref);
-            if (this.releaseBehavior != null) glfwWindowHint(GLFW_CONTEXT_RELEASE_BEHAVIOR, this.releaseBehavior.ref);
-            applyBoolean(GLFW_CONTEXT_NO_ERROR, this.noError);
+            this.win32KeyboardMenu = applyBoolean(GLFW_WIN32_KEYBOARD_MENU, this.win32KeyboardMenu, false);
             
-            applyBoolean(GLFW_COCOA_RETINA_FRAMEBUFFER, this.cocoaRetinaFramebuffer);
-            applyBoolean(GLFW_COCOA_GRAPHICS_SWITCHING, this.cocoaGraphicsSwitching);
-            
+            this.cocoaRetinaFramebuffer = applyBoolean(GLFW_COCOA_RETINA_FRAMEBUFFER, this.cocoaRetinaFramebuffer, true);
+            this.cocoaGraphicsSwitching = applyBoolean(GLFW_COCOA_GRAPHICS_SWITCHING, this.cocoaGraphicsSwitching, true);
             applyString(GLFW_COCOA_FRAME_NAME, this.cocoaFrameName);
+            
             applyString(GLFW_X11_CLASS_NAME, this.x11ClassName);
             applyString(GLFW_X11_INSTANCE_NAME, this.x11InstanceName);
+            
+            if (this.lockKeyMods == null) this.lockKeyMods = false;
         }
         
-        private void applyInteger(int glfw, Integer value, boolean dontCare)
+        private int applyInteger(int glfw, Integer value, int defaultValue)
         {
-            if (value == null) return;
-            
-            glfwWindowHint(glfw, value >= 0 ? value : dontCare ? GLFW_DONT_CARE : 0);
+            if (value == null) return defaultValue;
+            glfwWindowHint(glfw, value);
+            return value;
         }
         
-        private void applyBoolean(int glfw, Boolean value)
+        private boolean applyBoolean(int glfw, Boolean value, boolean defaultValue)
         {
-            if (value == null) return;
-            
+            if (value == null) return defaultValue;
             glfwWindowHint(glfw, value ? GLFW_TRUE : GLFW_FALSE);
+            return value;
+        }
+        
+        private <T extends Ref> T applyRef(int glfw, T value, T defaultValue)
+        {
+            if (value == null) return defaultValue;
+            glfwWindowHint(glfw, value.ref());
+            return value;
         }
         
         private void applyString(int glfw, String value)
         {
-            if (value == null) return;
-            
-            glfwWindowHintString(glfw, value);
+            if (value != null) glfwWindowHintString(glfw, value);
         }
     }
     
-    public enum ClientAPI
+    private interface Ref
+    {
+        int ref();
+    }
+    
+    public enum ClientAPI implements Ref
     {
         NONE(GLFW_NO_API),
         OPENGL(GLFW_OPENGL_API),
@@ -2787,9 +2835,15 @@ public class Window
         private final int ref;
         
         ClientAPI(int ref) {this.ref = ref;}
+        
+        @Override
+        public int ref()
+        {
+            return this.ref;
+        }
     }
     
-    public enum CreationAPI
+    public enum CreationAPI implements Ref
     {
         NATIVE(GLFW_NATIVE_CONTEXT_API),
         EGL(GLFW_EGL_CONTEXT_API),
@@ -2799,9 +2853,15 @@ public class Window
         private final int ref;
         
         CreationAPI(int ref) {this.ref = ref;}
+        
+        @Override
+        public int ref()
+        {
+            return this.ref;
+        }
     }
     
-    public enum OpenGLProfile
+    public enum OpenGLProfile implements Ref
     {
         ANY(GLFW_OPENGL_ANY_PROFILE),
         CORE(GLFW_OPENGL_CORE_PROFILE),
@@ -2811,9 +2871,15 @@ public class Window
         private final int ref;
         
         OpenGLProfile(int ref) {this.ref = ref;}
+        
+        @Override
+        public int ref()
+        {
+            return this.ref;
+        }
     }
     
-    public enum Robustness
+    public enum Robustness implements Ref
     {
         NONE(GLFW_NO_ROBUSTNESS),
         NO_RESET(GLFW_NO_RESET_NOTIFICATION),
@@ -2823,9 +2889,15 @@ public class Window
         private final int ref;
         
         Robustness(int ref) {this.ref = ref;}
+        
+        @Override
+        public int ref()
+        {
+            return this.ref;
+        }
     }
     
-    public enum ReleaseBehavior
+    public enum ReleaseBehavior implements Ref
     {
         ANY(GLFW_ANY_RELEASE_BEHAVIOR),
         FLUSH(GLFW_RELEASE_BEHAVIOR_FLUSH),
@@ -2835,5 +2907,11 @@ public class Window
         private final int ref;
         
         ReleaseBehavior(int ref) {this.ref = ref;}
+        
+        @Override
+        public int ref()
+        {
+            return this.ref;
+        }
     }
 }
