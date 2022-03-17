@@ -31,8 +31,8 @@ public abstract class Engine
     private static final Logger LOGGER = new Logger();
     
     static Engine  instance;
-    static boolean running;
-    static Random  random;
+    static boolean mainThreadRunning, renderThreadRunning;
+    static Random random;
     
     static boolean wireframe = false;
     
@@ -431,9 +431,10 @@ public abstract class Engine
         {
             if (Engine.instance != null) throw new IllegalStateException("Cannot call 'start' more that once.");
             
-            Engine.instance = instance;
-            Engine.running  = true;
-            Engine.random   = new Random();
+            Engine.instance            = instance;
+            Engine.mainThreadRunning   = true;
+            Engine.renderThreadRunning = true;
+            Engine.random              = new Random();
             
             Time.setup();
             // Delegator.setup(); // TODO
@@ -456,7 +457,7 @@ public abstract class Engine
                     {
                         Extensions.renderSetup();
                         
-                        while (Engine.running)
+                        while (Engine.renderThreadRunning)
                         {
                             if (Time.startFrame())
                             {
@@ -581,13 +582,13 @@ public abstract class Engine
                         
                         IO.destroy();
                         
-                        Engine.running = false;
+                        Engine.mainThreadRunning = false;
                         
                         latch.countDown();
                     }
                 }, "render").start();
                 
-                while (Engine.running)
+                while (Engine.mainThreadRunning)
                 {
                     glfwPollEvents();
                     
@@ -622,7 +623,7 @@ public abstract class Engine
     
     public static void stop()
     {
-        Engine.running = false;
+        Engine.renderThreadRunning = false;
     }
     
     protected static void size(int width, int height, double pixelWidth, double pixelHeight)

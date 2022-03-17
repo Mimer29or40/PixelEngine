@@ -67,8 +67,7 @@ public class Window
         Window.LOGGER.fine("Destroy");
         
         Window.makeCurrent(null);
-        
-        Window.windows.values().forEach(Window::releaseCallbacks);
+        for (Window window : Window.windows.values()) window.releaseCallbacks();
     }
     
     static void events(long time)
