@@ -52,8 +52,8 @@ public class EngineTest extends Engine
     
     public static void main(String[] args)
     {
-        Logger.setLevel(Level.FINEST);
-        // Logger.setLevel(Level.FINE);
+        // Logger.setLevel(Level.FINEST);
+        Logger.setLevel(Level.FINE);
         Logger.addLogFile("out/console.log");
         start(new EngineTest());
     }

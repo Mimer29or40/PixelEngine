@@ -23,7 +23,7 @@ import java.util.*;
 
 import static org.lwjgl.glfw.GLFW.*;
 
-public class Monitor
+public final class Monitor
 {
     private static final Logger LOGGER = new Logger();
     

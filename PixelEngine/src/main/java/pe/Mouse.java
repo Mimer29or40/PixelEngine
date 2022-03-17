@@ -45,7 +45,7 @@ public final class Mouse
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    static void processEvents(long time)
+    static void events(long time)
     {
         boolean entered = false;
         if (Mouse.entered != Mouse.enteredChanges)

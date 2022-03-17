@@ -3,21 +3,20 @@ package pe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
-import org.joml.Vector2i;
-import org.joml.Vector2ic;
 import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Colorc;
 import pe.draw.*;
 import pe.event.Event;
-import pe.render.*;
+import pe.render.GLBatch;
+import pe.render.GLFramebuffer;
+import pe.render.GLProgram;
+import pe.render.GLState;
 import pe.util.Random;
 import rutils.Logger;
-import rutils.Math;
 import rutils.group.Pair;
 
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
@@ -35,9 +34,6 @@ public abstract class Engine
     static boolean running;
     static Random  random;
     
-    static final Vector2i screenSize = new Vector2i();
-    static final Vector2i pixelSize  = new Vector2i();
-    
     static boolean wireframe = false;
     
     static int vertices = 0;
@@ -49,7 +45,7 @@ public abstract class Engine
         
         private static final Set<Event> events = new HashSet<>();
         
-        private static void processEvents()
+        private static void events()
         {
             Events.events.clear();
         }
@@ -85,27 +81,65 @@ public abstract class Engine
     
     private static final class IO
     {
-        private static void setup()
+        private static void setup(int width, int height, double pixelWidth, double pixelHeight)
         {
+            try (MemoryStack stack = MemoryStack.stackPush())
+            {
+                IntBuffer major = stack.mallocInt(1);
+                IntBuffer minor = stack.mallocInt(1);
+                IntBuffer rev   = stack.mallocInt(1);
+                
+                glfwGetVersion(major, minor, rev);
+                
+                Engine.LOGGER.fine("GLFW Initialization %s.%s.%s", major.get(), minor.get(), rev.get());
+                Engine.LOGGER.finer("RWJGLUtil Compiled to '%s'", glfwGetVersionString());
+            }
+            
+            Engine.LOGGER.finer("GLFW Setup");
+            if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
+            
+            final Map<Integer, String> errorCodes = APIUtil.apiClassTokens((field, value) -> 0x10000 < value && value < 0x20000, null, org.lwjgl.glfw.GLFW.class);
+            glfwSetErrorCallback((error, description) -> {
+                StringBuilder message = new StringBuilder();
+                message.append("[LWJGL] ").append(errorCodes.get(error)).append(" error\n");
+                message.append("\tDescription : ").append(MemoryUtil.memUTF8(description)).append('\n');
+                message.append("\tStacktrace  :\n");
+                StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+                for (int i = 4; i < stack.length; i++) message.append("\t\t").append(stack[i].toString()).append('\n');
+                Engine.LOGGER.severe(message.toString());
+            });
+            
             Monitor.setup();
-            Window.setup();
+            Window.setup(width, height, pixelWidth, pixelHeight);
             Mouse.setup();
             Keyboard.setup();
             Joystick.setup();
+            
+            GLState.setup();
+            
+            Layer.setup(width, height);
+    
+            GLState.defaultState();
         }
         
-        private static void processEvents()
+        private static void events()
         {
             long time = Time.getNS();
             
-            Mouse.processEvents(time);
-            Keyboard.processEvents(time);
-            Joystick.processEvents(time);
-            Window.processEvents(time);
+            Mouse.events(time);
+            Keyboard.events(time);
+            Joystick.events(time);
+            Window.events(time);
+            
+            Layer.processEvents();
         }
         
         private static void destroy()
         {
+            Layer.destroy();
+            
+            GLState.destroy();
+            
             Joystick.destroy();
             Keyboard.destroy();
             Mouse.destroy();
@@ -278,126 +312,6 @@ public abstract class Engine
         }
     }
     
-    public static final class Viewport
-    {
-        private static GLProgram     program;
-        private static GLVertexArray vertexArray;
-        private static GLFramebuffer framebuffer;
-        
-        private static final Vector2i pos  = new Vector2i();
-        private static final Vector2i size = new Vector2i();
-        
-        private static void setup()
-        {
-            String vert = """
-                          #version 330
-                          layout(location = 0) in vec2 POSITION;
-                          layout(location = 1) in vec2 TEXCOORD;
-                          out vec2 texCoord;
-                          void main(void)
-                          {
-                              texCoord = TEXCOORD;
-                              gl_Position = vec4(POSITION, 0.0, 1.0);
-                          }
-                          """;
-            String frag = """
-                          #version 330
-                          uniform sampler2D tex;
-                          in vec2 texCoord;
-                          out vec4 FragColor;
-                          void main(void)
-                          {
-                              FragColor = texture(tex, texCoord);
-                          }
-                          """;
-            Viewport.program = GLProgram.loadFromCode(vert, null, frag);
-            
-            FloatBuffer vertices = MemoryUtil.memCallocFloat(16).put(new float[] {
-                    -1.0F, +1.0F, 0.0F, 1.0F,
-                    -1.0F, -1.0F, 0.0F, 0.0F,
-                    +1.0F, -1.0F, 1.0F, 0.0F,
-                    +1.0F, +1.0F, 1.0F, 1.0F,
-                    });
-            IntBuffer indices = MemoryUtil.memCallocInt(6).put(new int[] {
-                    0, 1, 2, 0, 2, 3
-            });
-            Viewport.vertexArray = GLVertexArray.builder()
-                                                .buffer(vertices.clear(), Usage.STATIC_DRAW,
-                                                        new GLAttribute(GLType.FLOAT, 2, false),
-                                                        new GLAttribute(GLType.FLOAT, 2, false))
-                                                .indexBuffer(indices.clear(), Usage.STATIC_DRAW)
-                                                .build();
-            MemoryUtil.memFree(vertices);
-            MemoryUtil.memFree(indices);
-            
-            Viewport.framebuffer = GLFramebuffer.load(Engine.screenSize.x, Engine.screenSize.y);
-        }
-        
-        private static void destroy()
-        {
-            Viewport.program.delete();
-            Viewport.vertexArray.delete();
-            Viewport.framebuffer.delete();
-        }
-        
-        public static @NotNull Vector2ic pos()
-        {
-            return Viewport.pos;
-        }
-        
-        public static int x()
-        {
-            return Viewport.pos.x;
-        }
-        
-        public static int y()
-        {
-            return Viewport.pos.y;
-        }
-        
-        public static @NotNull Vector2ic size()
-        {
-            return Viewport.size;
-        }
-        
-        public static int width()
-        {
-            return Viewport.size.x;
-        }
-        
-        public static int height()
-        {
-            return Viewport.size.y;
-        }
-        
-        private static void draw()
-        {
-            double aspect = (double) (Engine.screenSize.x * Engine.pixelSize.x) / (double) (Engine.screenSize.y * Engine.pixelSize.y);
-            
-            int frameWidth  = Window.primary.framebufferWidth();
-            int frameHeight = Window.primary.framebufferHeight();
-            
-            Viewport.size.set(frameWidth, (int) (frameWidth / aspect));
-            if (Viewport.size.y > frameHeight) Viewport.size.set((int) (frameHeight * aspect), frameHeight);
-            Viewport.pos.set((frameWidth - Viewport.size.x) >> 1, (frameHeight - Viewport.size.y) >> 1);
-            
-            Engine.pixelSize.x = Math.max(Viewport.size.x / Engine.screenSize.x, 1);
-            Engine.pixelSize.y = Math.max(Viewport.size.y / Engine.screenSize.y, 1);
-            
-            GLFramebuffer.bind(null);
-            GLProgram.bind(Viewport.program);
-            
-            GLState.defaultState();
-            GLState.viewport(Viewport.pos.x, Viewport.pos.y, Viewport.size.x, Viewport.size.y);
-            GLState.depthMode(DepthMode.NONE);
-            
-            GLState.clearScreenBuffers(ScreenBuffer.COLOR);
-            
-            GLTexture.bind(Viewport.framebuffer.color());
-            Viewport.vertexArray.drawElements(DrawMode.TRIANGLES, 6);
-        }
-    }
-    
     public static final class Draw
     {
         private static final DrawPoint2D         DRAW_POINT_2D          = new DrawPoint2D();
@@ -552,8 +466,8 @@ public abstract class Engine
                                 
                                 Extensions.preEvents();
                                 
-                                Events.processEvents();
-                                IO.processEvents();
+                                Events.events();
+                                IO.events();
                                 
                                 Extensions.postEvents();
                                 
@@ -564,7 +478,7 @@ public abstract class Engine
                                 
                                 if (!Time.paused)
                                 {
-                                    GLFramebuffer.bind(Viewport.framebuffer);
+                                    GLFramebuffer.bind(Layer.primary.framebuffer);
                                     GLProgram.bind(null);
                                     
                                     GLState.defaultState();
@@ -597,7 +511,7 @@ public abstract class Engine
                                     Engine.draws    = stats.draws();
                                 }
                                 
-                                Viewport.draw();
+                                Layer.draw();
                                 // GUI.draw();
                                 // Debug.draw();
                                 // NuklearGUI.draw();
@@ -660,13 +574,10 @@ public abstract class Engine
                     {
                         Extensions.renderDestroy();
                         
-                        Viewport.destroy();
                         // GUI.destroy();
                         // Debug.destroy();
                         // NuklearGUI.destroy();
                         // ImGUI.destroy();
-                        
-                        GLState.destroy();
                         
                         IO.destroy();
                         
@@ -702,6 +613,7 @@ public abstract class Engine
             
             Extensions.postDestroy();
             
+            org.lwjgl.opengl.GL.destroy();
             glfwTerminate();
         }
         
@@ -713,109 +625,24 @@ public abstract class Engine
         Engine.running = false;
     }
     
-    protected static void size(int screenW, int screenH, int pixelW, int pixelH)
+    protected static void size(int width, int height, double pixelWidth, double pixelHeight)
     {
-        Engine.screenSize.set(screenW, screenH);
-        if (Engine.screenSize.x <= 0 || Engine.screenSize.y <= 0) throw new IllegalArgumentException("Screen dimension must be > 0");
-        Engine.LOGGER.fine("Screen Size:", Engine.screenSize);
+        IO.setup(width, height, pixelWidth, pixelHeight);
         
-        Engine.pixelSize.set(pixelW, pixelH);
-        if (Engine.pixelSize.x <= 0 || Engine.pixelSize.y <= 0) throw new IllegalArgumentException("Pixel dimension must be > 0");
-        Engine.LOGGER.fine("Pixel Size:", Engine.pixelSize);
-        
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            IntBuffer major = stack.mallocInt(1);
-            IntBuffer minor = stack.mallocInt(1);
-            IntBuffer rev   = stack.mallocInt(1);
-            
-            glfwGetVersion(major, minor, rev);
-            
-            Engine.LOGGER.fine("GLFW Initialization %s.%s.%s", major.get(), minor.get(), rev.get());
-            Engine.LOGGER.finer("RWJGLUtil Compiled to '%s'", glfwGetVersionString());
-        }
-        
-        Engine.LOGGER.finer("GLFW Setup");
-        if (!glfwInit()) throw new IllegalStateException("Unable to initialize GLFW");
-        
-        final Map<Integer, String> errorCodes = APIUtil.apiClassTokens((field, value) -> 0x10000 < value && value < 0x20000, null, org.lwjgl.glfw.GLFW.class);
-        glfwSetErrorCallback((error, description) -> {
-            StringBuilder message = new StringBuilder();
-            message.append("[LWJGL] ").append(errorCodes.get(error)).append(" error\n");
-            message.append("\tDescription : ").append(MemoryUtil.memUTF8(description)).append('\n');
-            message.append("\tStacktrace  :\n");
-            StackTraceElement[] stack = Thread.currentThread().getStackTrace();
-            for (int i = 4; i < stack.length; i++) message.append("\t\t").append(stack[i].toString()).append('\n');
-            Engine.LOGGER.severe(message.toString());
-        });
-        
-        IO.setup();
-        
-        GLState.setup();
-        
-        Viewport.setup();
         // GUI.setup();
         Debug.setup();
         NuklearGUI.setup();
         ImGUI.setup();
     }
     
-    protected static void size(int screenW, int screenH)
+    protected static void size(int width, int height)
     {
-        size(screenW, screenH, 4, 4);
+        size(width, height, 4, 4);
     }
     
     // -----------------------
     // -- Engine Properties --
     // -----------------------
-    
-    /**
-     * @return The read-only screen size vector in screen pixels. This will be the values passed in to the {@link #size} function.
-     */
-    public static @NotNull Vector2ic screenSize()
-    {
-        return Engine.screenSize;
-    }
-    
-    /**
-     * @return The screen width in screen pixels. This will be the value passed in to the {@link #size} function.
-     */
-    public static int screenWidth()
-    {
-        return Engine.screenSize.x;
-    }
-    
-    /**
-     * @return The screen height in screen pixels. This will be the value passed in to the {@link #size} function.
-     */
-    public static int screenHeight()
-    {
-        return Engine.screenSize.y;
-    }
-    
-    /**
-     * @return The read-only pixel size vector in actual pixels. This will be the values passed in to the {@link #size} function.
-     */
-    public static @NotNull Vector2ic pixelSize()
-    {
-        return Engine.pixelSize;
-    }
-    
-    /**
-     * @return The pixel width in actual pixels. This will be the value passed in to the {@link #size} function.
-     */
-    public static int pixelWidth()
-    {
-        return Engine.pixelSize.x;
-    }
-    
-    /**
-     * @return The pixel height in actual pixels. This will be the value passed in to the {@link #size} function.
-     */
-    public static int pixelHeight()
-    {
-        return Engine.pixelSize.y;
-    }
     
     // --------------------
     // ----- Instance -----

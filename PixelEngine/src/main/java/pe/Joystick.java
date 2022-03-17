@@ -144,7 +144,7 @@ public final class Joystick
     
     // -------------------- Static Objects -------------------- //
     
-    private static final Map<Index, Joystick> INSTANCES = new EnumMap<>(Index.class);
+    static final Map<Index, Joystick> joysticks = new EnumMap<>(Index.class);
     
     static void setup()
     {
@@ -155,7 +155,7 @@ public final class Joystick
         for (Index idx : Index.values())
         {
             int jid = idx.index;
-            Joystick.INSTANCES.put(idx, glfwJoystickPresent(jid) ? new Joystick(jid) : null);
+            Joystick.joysticks.put(idx, glfwJoystickPresent(jid) ? new Joystick(jid) : null);
         }
         
         setupCallbackEmulation();
@@ -173,11 +173,11 @@ public final class Joystick
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    static void processEvents(long time)
+    static void events(long time)
     {
-        for (Index index : Joystick.INSTANCES.keySet())
+        for (Index index : Joystick.joysticks.keySet())
         {
-            Joystick joystick = Joystick.INSTANCES.get(index);
+            Joystick joystick = Joystick.joysticks.get(index);
             
             if (joystick == null) continue;
             
@@ -258,13 +258,13 @@ public final class Joystick
         switch (event)
         {
             case GLFW_CONNECTED -> {
-                Index index = Index.get(jid);
-                Joystick.INSTANCES.put(index, new Joystick(jid));
+                Index index = Index.valueOf(jid);
+                Joystick.joysticks.put(index, new Joystick(jid));
                 Engine.Events.post(EventJoystickConnected.create(Time.getNS(), index));
             }
             case GLFW_DISCONNECTED -> {
-                Index index = Index.get(jid);
-                Joystick.INSTANCES.put(index, null);
+                Index index = Index.valueOf(jid);
+                Joystick.joysticks.put(index, null);
                 Engine.Events.post(EventJoystickDisconnected.create(Time.getNS(), index));
             }
         }
@@ -272,21 +272,21 @@ public final class Joystick
     
     private static void axisCallback(int jid, int axis, float value)
     {
-        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
+        Joystick joystick = Joystick.joysticks.get(Index.valueOf(jid));
         
         joystick.axisStateChanges.offer(new Pair<>(Axis.get(axis), value));
     }
     
     private static void buttonCallback(int jid, int button, int action)
     {
-        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
+        Joystick joystick = Joystick.joysticks.get(Index.valueOf(jid));
         
         joystick.buttonStateChanges.offer(new Pair<>(Button.get(button), action));
     }
     
     private static void hatCallback(int jid, int hat, int action)
     {
-        Joystick joystick = Joystick.INSTANCES.get(Index.get(jid));
+        Joystick joystick = Joystick.joysticks.get(Index.valueOf(jid));
         
         joystick.hatStateChanges.offer(new Pair<>(Hat.get(hat), action));
     }
@@ -364,7 +364,7 @@ public final class Joystick
      */
     public static boolean isPresent(Index index)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick != null;
     }
     
@@ -376,7 +376,7 @@ public final class Joystick
      */
     public static boolean isGamepad(Index index)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick != null && joystick.gamepad;
     }
     
@@ -389,7 +389,7 @@ public final class Joystick
     @Nullable
     public static String name(Index index)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick == null ? null : joystick.name;
     }
     
@@ -414,7 +414,7 @@ public final class Joystick
     @Nullable
     public static String guid(Index index)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick == null ? null : joystick.guid;
     }
     
@@ -432,31 +432,31 @@ public final class Joystick
      */
     public static double axis(Index index, Axis axis)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick == null ? 0.0 : joystick.axisMap.get(axis).value;
     }
     
     public static boolean down(Index index, Button button)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick != null && joystick.buttonMap.get(button).state == GLFW_PRESS;
     }
     
     public static boolean up(Index index, Button button)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick != null && joystick.buttonMap.get(button).state == GLFW_RELEASE;
     }
     
     public static boolean repeat(Index index, Button button)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick != null && joystick.buttonMap.get(button).state == GLFW_REPEAT;
     }
     
     public static boolean held(Index index, Button button)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick != null && joystick.buttonMap.get(button).held;
     }
     
@@ -473,7 +473,7 @@ public final class Joystick
      */
     public static HatDirection hat(Index index, Hat hat)
     {
-        Joystick joystick = Joystick.INSTANCES.get(index);
+        Joystick joystick = Joystick.joysticks.get(index);
         return joystick == null ? HatDirection.CENTERED : HatDirection.get(joystick.hatMap.get(hat).state);
     }
     
@@ -516,16 +516,16 @@ public final class Joystick
             this.index = index;
         }
         
-        public static Index get(int value)
+        public static Index valueOf(int value)
         {
             return Index.LOOKUP.getOrDefault(value, Index.ONE);
         }
         
         static
         {
-            for (Index axis : values())
+            for (Index index : values())
             {
-                Index.LOOKUP.put(axis.index, axis);
+                Index.LOOKUP.put(index.index, index);
             }
         }
     }

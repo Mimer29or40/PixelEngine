@@ -39,7 +39,7 @@ public final class Keyboard
      * @param time The system time in nanoseconds.
      */
     @SuppressWarnings("ConstantConditions")
-    static void processEvents(long time)
+    static void events(long time)
     {
         Keyboard.charBuffer.setLength(0);
         

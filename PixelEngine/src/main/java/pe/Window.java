@@ -35,35 +35,26 @@ public class Window
     static final Map<Long, Window> windows = new LinkedHashMap<>();
     static       Window            primary = null;
     
-    static void setup()
+    static void setup(int width, int height, double pixelWidth, double pixelHeight)
     {
         Window.LOGGER.fine("Setup");
         
         Builder builder = new Builder();
         
-        int width  = Engine.screenSize.x * Engine.pixelSize.x;
-        int height = Engine.screenSize.y * Engine.pixelSize.y;
-        
         builder.name("main");
-        // builder.monitor();
-        // builder.position();
-        builder.size(width, height);
-        builder.minSize(Engine.screenSize);
-        // builder.maxSize();
-        // builder.windowed();
+        builder.size((int) (width * pixelWidth), (int) (height * pixelHeight));
+        builder.minSize(width, height);
         builder.vsync(false);
         builder.title("Engine - " + Engine.instance.name);
         builder.resizable(true);
         builder.visible(true);
         builder.decorated(true);
         builder.focused(true);
-        // builder.autoIconify();
         builder.floating(false);
         builder.maximized(false);
         builder.centerCursor(false);
         builder.transparentFramebuffer(false);
         builder.focusOnShow(false);
-        // builder.scaleToMonitor();
         
         Window.primary = builder.build();
         Window.makeCurrent();
@@ -76,11 +67,9 @@ public class Window
         Window.unmakeCurrent();
         
         Window.windows.values().forEach(Window::releaseCallbacks);
-        
-        org.lwjgl.opengl.GL.destroy();
     }
     
-    static void processEvents(long time)
+    static void events(long time)
     {
         long[] handlesToRemove = Window.windows.values()
                                                .stream()
@@ -252,7 +241,6 @@ public class Window
     final Vector2i maxSize;
     
     final AABBi bounds;
-    final AABBi viewport;
     
     final Matrix4d viewMatrix;
     
@@ -293,8 +281,6 @@ public class Window
     private final Vector2d deltaD              = new Vector2d();
     private final Vector2d windowToScreen      = new Vector2d();
     private final Vector2d screenToWindow      = new Vector2d();
-    private final Vector2d windowToViewport    = new Vector2d();
-    private final Vector2d viewportToWindow    = new Vector2d();
     private final Vector2d windowToFramebuffer = new Vector2d();
     private final Vector2d framebufferToWindow = new Vector2d();
     
@@ -382,8 +368,7 @@ public class Window
         
         glfwSetWindowSizeLimits(this.handle, this.minSize.x, this.minSize.y, this.maxSize.x, this.maxSize.y);
         
-        this.bounds   = new AABBi(this.pos, this.size);
-        this.viewport = new AABBi(0, 0, this.fbSize.x, this.fbSize.y);
+        this.bounds = new AABBi(this.pos, this.size);
         
         this.viewMatrix = new Matrix4d().setOrtho(0, this.fbSize.x, this.fbSize.y, 0, -1F, 1F);
         
@@ -833,14 +818,6 @@ public class Window
     public AABBic bounds()
     {
         return this.bounds;
-    }
-    
-    /**
-     * @return The axis-aligned bounding box of the viewport.
-     */
-    public AABBi viewport()
-    {
-        return this.viewport;
     }
     
     /**
@@ -1422,134 +1399,6 @@ public class Window
     public Vector2dc screenToWindow(@NotNull Vector2dc pos)
     {
         return screenToWindow(pos.x(), pos.y(), this.screenToWindow);
-    }
-    
-    /**
-     * Converts a point relative to the window origin to a point relative to
-     * the viewport origin.
-     *
-     * @param x   The x coordinate of the window point
-     * @param y   The y coordinate of the window point
-     * @param out The vector to store the results
-     * @return The results stored in {@code out}.
-     */
-    @NotNull
-    public Vector2dc windowToViewport(double x, double y, @NotNull Vector2d out)
-    {
-        out.x = x - this.viewport.x();
-        out.y = y + this.viewport.height() - this.viewport.y();
-        return out;
-    }
-    
-    /**
-     * Converts a point relative to the window origin to a point relative to
-     * the viewport origin.
-     *
-     * @param pos The window point
-     * @param out The vector to store the results
-     * @return The results stored in {@code out}.
-     */
-    @NotNull
-    public Vector2dc windowToViewport(@NotNull Vector2dc pos, @NotNull Vector2d out)
-    {
-        return windowToViewport(pos.x(), pos.y(), out);
-    }
-    
-    /**
-     * Converts a point relative to the window origin to a point relative to
-     * the viewport origin.
-     * <p>
-     * <b>Note:</b> The results are only valid until the next time this is
-     * called.
-     *
-     * @param x The x coordinate of the window point
-     * @param y The y coordinate of the window point
-     * @return The results.
-     */
-    @NotNull
-    public Vector2dc windowToViewport(double x, double y)
-    {
-        return windowToViewport(x, y, this.windowToViewport);
-    }
-    
-    /**
-     * Converts a point relative to the window origin to a point relative to
-     * the viewport origin.
-     * <p>
-     * <b>Note:</b> The results are only valid until the next time this is
-     * called.
-     *
-     * @param pos The window point
-     * @return The results.
-     */
-    @NotNull
-    public Vector2dc windowToViewport(@NotNull Vector2dc pos)
-    {
-        return windowToViewport(pos.x(), pos.y(), this.windowToViewport);
-    }
-    
-    /**
-     * Converts a point relative to the viewport origin to a point relative to
-     * the window origin.
-     *
-     * @param x   The x coordinate of the viewport point
-     * @param y   The y coordinate of the viewport point
-     * @param out The vector to store the results
-     * @return The results stored in {@code out}.
-     */
-    @NotNull
-    public Vector2dc viewportToWindow(double x, double y, @NotNull Vector2d out)
-    {
-        out.x = x + this.viewport.x();
-        out.y = y - this.viewport.height() + this.viewport.y();
-        return out;
-    }
-    
-    /**
-     * Converts a point relative to the viewport origin to a point relative to
-     * the window origin.
-     *
-     * @param pos The viewport point
-     * @param out The vector to store the results
-     * @return The results stored in {@code out}.
-     */
-    @NotNull
-    public Vector2dc viewportToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
-    {
-        return viewportToWindow(pos.x(), pos.y(), out);
-    }
-    
-    /**
-     * Converts a point relative to the viewport origin to a point relative to
-     * the window origin.
-     * <p>
-     * <b>Note:</b> The results are only valid until the next time this is
-     * called.
-     *
-     * @param x The x coordinate of the viewport point
-     * @param y The y coordinate of the viewport point
-     * @return The results
-     */
-    @NotNull
-    public Vector2dc viewportToWindow(double x, double y)
-    {
-        return viewportToWindow(x, y, this.viewportToWindow);
-    }
-    
-    /**
-     * Converts a point relative to the viewport origin to a point relative to
-     * the window origin.
-     * <p>
-     * <b>Note:</b> The results are only valid until the next time this is
-     * called.
-     *
-     * @param pos The viewport point
-     * @return The results
-     */
-    @NotNull
-    public Vector2dc viewportToWindow(@NotNull Vector2dc pos)
-    {
-        return viewportToWindow(pos.x(), pos.y(), this.viewportToWindow);
     }
     
     /**

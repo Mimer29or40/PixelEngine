@@ -72,6 +72,14 @@ public class GLFramebuffer
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, this.id);
         
         this.color        = Texture.load(width, height, ColorFormat.RGBA);
+        // TODO - GL_COLOR_ATTACHMENT0
+        // TODO - GL_COLOR_ATTACHMENT1
+        // TODO - GL_COLOR_ATTACHMENT2
+        // TODO - GL_COLOR_ATTACHMENT3
+        // TODO - GL_COLOR_ATTACHMENT4
+        // TODO - GL_COLOR_ATTACHMENT5
+        // TODO - GL_COLOR_ATTACHMENT6
+        // TODO - GL_COLOR_ATTACHMENT7
         this.depthStencil = TextureDepthStencil.load(width, height);
         
         GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL33.GL_TEXTURE_2D, this.color.id(), 0);

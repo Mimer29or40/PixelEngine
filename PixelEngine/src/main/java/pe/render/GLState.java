@@ -3,7 +3,7 @@ package pe.render;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
-import pe.Engine;
+import pe.Layer;
 import pe.color.BlendMode;
 import rutils.Logger;
 
@@ -80,8 +80,6 @@ public class GLState
         GLBatch.setup();
         GLBatch.bind(null);
         
-        defaultState();
-        
         // TODO - Setup Uniform Buffer for default things
         // TODO - Setup Default Uniform values
     }
@@ -131,9 +129,9 @@ public class GLState
         cullFace(CullFace.DEFAULT);
         winding(Winding.DEFAULT);
         
-        int r = Engine.screenWidth() >> 1;
+        int r = Layer.primary().width() >> 1;
         int l = -r;
-        int b = Engine.screenHeight() >> 1;
+        int b = Layer.primary().height() >> 1;
         int t = -b;
         
         GLBatch.get().matrixMode(MatrixMode.PROJECTION);
