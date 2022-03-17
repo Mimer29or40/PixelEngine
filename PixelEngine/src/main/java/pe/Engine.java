@@ -558,9 +558,9 @@ public abstract class Engine
                                 Extensions.postEvents();
                                 
                                 // GUI.handleEvents();
-                                Debug.handleEvents();
-                                NuklearGUI.handleEvents();
-                                ImGUI.handleEvents();
+                                // Debug.handleEvents();
+                                // NuklearGUI.handleEvents();
+                                // ImGUI.handleEvents();
                                 
                                 if (!Time.paused)
                                 {
@@ -600,8 +600,8 @@ public abstract class Engine
                                 Viewport.draw();
                                 // GUI.draw();
                                 // Debug.draw();
-                                NuklearGUI.draw();
-                                ImGUI.draw();
+                                // NuklearGUI.draw();
+                                // ImGUI.draw();
                                 
                                 Window.primary.swap();
                                 
@@ -662,9 +662,9 @@ public abstract class Engine
                         
                         Viewport.destroy();
                         // GUI.destroy();
-                        Debug.destroy();
-                        NuklearGUI.destroy();
-                        ImGUI.destroy();
+                        // Debug.destroy();
+                        // NuklearGUI.destroy();
+                        // ImGUI.destroy();
                         
                         GLState.destroy();
                         

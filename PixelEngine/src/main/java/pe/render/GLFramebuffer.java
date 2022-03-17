@@ -156,6 +156,6 @@ public class GLFramebuffer
         
         this.id = 0;
         
-        GLFramebuffer.LOGGER.info("Unloaded", this);
+        GLFramebuffer.LOGGER.fine("Unloaded", this);
     }
 }

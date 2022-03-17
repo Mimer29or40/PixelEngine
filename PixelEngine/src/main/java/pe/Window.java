@@ -44,8 +44,26 @@ public class Window
         int width  = Engine.screenSize.x * Engine.pixelSize.x;
         int height = Engine.screenSize.y * Engine.pixelSize.y;
         
+        builder.name("main");
+        // builder.monitor();
+        // builder.position();
         builder.size(width, height);
+        builder.minSize(Engine.screenSize);
+        // builder.maxSize();
+        // builder.windowed();
+        builder.vsync(false);
         builder.title("Engine - " + Engine.instance.name);
+        builder.resizable(true);
+        builder.visible(true);
+        builder.decorated(true);
+        builder.focused(true);
+        // builder.autoIconify();
+        builder.floating(false);
+        builder.maximized(false);
+        builder.centerCursor(false);
+        builder.transparentFramebuffer(false);
+        builder.focusOnShow(false);
+        // builder.scaleToMonitor();
         
         Window.primary = builder.build();
         Window.makeCurrent();
@@ -82,7 +100,7 @@ public class Window
     
     static void makeCurrent()
     {
-        Window.LOGGER.finest("Making Main Window's Context Current");
+        Window.LOGGER.finer("Making Main Window's Context Current");
         
         glfwMakeContextCurrent(Window.primary.handle);
         org.lwjgl.opengl.GL.createCapabilities();
@@ -90,7 +108,7 @@ public class Window
     
     static void unmakeCurrent()
     {
-        Window.LOGGER.finest("Unmaking Main Window's Context Current");
+        Window.LOGGER.finer("Unmaking Main Window's Context Current");
         
         org.lwjgl.opengl.GL.setCapabilities(null);
         glfwMakeContextCurrent(MemoryUtil.NULL);
@@ -282,7 +300,8 @@ public class Window
     
     private Window(final @NotNull Builder builder)
     {
-        if (builder.size != null) builder.visible(false);
+        boolean visible = builder.visible;
+        if (builder.position != null) builder.visible(false);
         builder.applyHints();
         
         this.monitor = builder.monitor != null ? builder.monitor : Monitor.primary();
@@ -325,12 +344,12 @@ public class Window
             
             this.pos        = new Vector2i();
             this.posChanges = new Vector2i();
-            if (builder.pos != null)
+            if (builder.position != null)
             {
-                this.pos.set(builder.pos);
+                this.pos.set(builder.position);
                 this.posChanges.set(this.pos);
                 glfwSetWindowPos(this.handle, this.pos.x(), this.pos.y());
-                if (builder.visible) glfwShowWindow(this.handle);
+                if (visible) glfwShowWindow(this.handle);
             }
             else
             {
@@ -1793,10 +1812,10 @@ public class Window
         
         private Monitor monitor = null;
         
-        private Vector2ic pos     = null;
-        private Vector2ic size    = new Vector2i(800, 600);
-        private Vector2ic minSize = new Vector2i(DONT_CARE);
-        private Vector2ic maxSize = new Vector2i(DONT_CARE);
+        private Vector2ic position = null;
+        private Vector2ic size     = new Vector2i(800, 600);
+        private Vector2ic minSize  = new Vector2i(DONT_CARE);
+        private Vector2ic maxSize  = new Vector2i(DONT_CARE);
         
         private boolean windowed = true;
         private boolean vsync    = false;
@@ -1896,7 +1915,7 @@ public class Window
          */
         public Builder position(Vector2ic pos)
         {
-            this.pos = pos;
+            this.position = pos;
             return this;
         }
         
@@ -1910,7 +1929,7 @@ public class Window
          */
         public Builder position(int x, int y)
         {
-            this.pos = new Vector2i(x, y);
+            this.position = new Vector2i(x, y);
             return this;
         }
         
