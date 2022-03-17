@@ -195,10 +195,41 @@ public final class Layer
     @NotNull
     public static Layer create(@NotNull Index index, int width, int height)
     {
-        if (Layer.layers.containsKey(index)) throw new IllegalArgumentException(String.format("Layer at %s already exists", index));
+        if (Layer.layers.get(index) != null) throw new IllegalArgumentException(String.format("Layer at %s already exists", index));
         Layer layer = new Layer(width, height);
         Layer.layers.put(index, layer);
         return layer;
+    }
+    
+    @NotNull
+    public static Layer create(@NotNull Index index, @NotNull Vector2ic size)
+    {
+        return create(index, size.x(), size.y());
+    }
+    
+    @NotNull
+    public static Layer create(int width, int height)
+    {
+        Index index = null;
+        for (Index idx : Layer.layers.keySet())
+        {
+            Layer layer = Layer.layers.get(idx);
+            if (layer == null)
+            {
+                index = idx;
+                break;
+            }
+        }
+        if (index == null) throw new IllegalArgumentException("No available Layers remain.");
+        Layer layer = new Layer(width, height);
+        Layer.layers.put(index, layer);
+        return layer;
+    }
+    
+    @NotNull
+    public static Layer create(@NotNull Vector2ic size)
+    {
+        return create(size.x(), size.y());
     }
     
     // -------------------- Instance -------------------- //

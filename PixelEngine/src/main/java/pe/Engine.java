@@ -118,7 +118,7 @@ public abstract class Engine
             GLState.setup();
             
             Layer.setup(width, height);
-    
+            
             GLState.defaultState();
         }
         

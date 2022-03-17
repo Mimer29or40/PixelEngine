@@ -71,7 +71,7 @@ public class GLFramebuffer
         
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, this.id);
         
-        this.color        = Texture.load(width, height, ColorFormat.RGBA);
+        this.color = Texture.load(width, height, ColorFormat.RGBA);
         // TODO - GL_COLOR_ATTACHMENT0
         // TODO - GL_COLOR_ATTACHMENT1
         // TODO - GL_COLOR_ATTACHMENT2
