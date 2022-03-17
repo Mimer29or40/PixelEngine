@@ -91,6 +91,7 @@ public class NuklearGUI
                       """;
         NuklearGUI.program = GLProgram.loadFromCode(vert, null, frag);
         
+        GLProgram.bind(NuklearGUI.program);
         GLProgram.Uniform.int1("tex", 0);
         
         int vertexSize  = Float.BYTES * 2 + Float.BYTES * 2 + Byte.BYTES * 4;

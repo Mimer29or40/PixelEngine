@@ -6,6 +6,7 @@ import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
@@ -34,6 +35,7 @@ public class Window
     
     static final Map<Long, Window> windows = new LinkedHashMap<>();
     static       Window            primary = null;
+    static       Window            current = null;
     
     static void setup(int width, int height, double pixelWidth, double pixelHeight)
     {
@@ -57,14 +59,14 @@ public class Window
         builder.focusOnShow(false);
         
         Window.primary = builder.build();
-        Window.makeCurrent();
+        Window.makeCurrent(Window.primary);
     }
     
     static void destroy()
     {
         Window.LOGGER.fine("Destroy");
         
-        Window.unmakeCurrent();
+        Window.makeCurrent(null);
         
         Window.windows.values().forEach(Window::releaseCallbacks);
     }
@@ -87,20 +89,25 @@ public class Window
         }
     }
     
-    static void makeCurrent()
+    public static void makeCurrent(@Nullable Window window)
     {
-        Window.LOGGER.finer("Making Main Window's Context Current");
-        
-        glfwMakeContextCurrent(Window.primary.handle);
-        org.lwjgl.opengl.GL.createCapabilities();
-    }
-    
-    static void unmakeCurrent()
-    {
-        Window.LOGGER.finer("Unmaking Main Window's Context Current");
-        
-        org.lwjgl.opengl.GL.setCapabilities(null);
-        glfwMakeContextCurrent(MemoryUtil.NULL);
+        if (Window.current != window)
+        {
+            Window.current = window;
+            if (window != null)
+            {
+                Window.LOGGER.finer("Binding Context for", window);
+                
+                org.lwjgl.opengl.GL.setCapabilities(window.capabilities);
+                glfwMakeContextCurrent(window.handle);
+            }
+            else
+            {
+                Window.LOGGER.finer("Unbinding Context");
+                
+                glfwMakeContextCurrent(MemoryUtil.NULL);
+            }
+        }
     }
     
     @UnmodifiableView
@@ -244,6 +251,8 @@ public class Window
     
     final Matrix4d viewMatrix;
     
+    final GLCapabilities capabilities;
+    
     // -------------------- State Objects -------------------- //
     
     boolean vsync;
@@ -302,7 +311,8 @@ public class Window
         glfwMakeContextCurrent(MemoryUtil.NULL);
         this.handle = glfwCreateWindow(builder.size.x(), builder.size.y(), title, monitor, window);
         if (this.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the window");
-        glfwMakeContextCurrent(window);
+        
+        Window.LOGGER.fine("Created", this);
         
         this.open = true;
         
@@ -371,6 +381,10 @@ public class Window
         this.bounds = new AABBi(this.pos, this.size);
         
         this.viewMatrix = new Matrix4d().setOrtho(0, this.fbSize.x, this.fbSize.y, 0, -1F, 1F);
+        
+        Window.current = this;
+        glfwMakeContextCurrent(this.handle);
+        this.capabilities = org.lwjgl.opengl.GL.createCapabilities();
         
         Modifier.lockKeyMods(this, builder.lockKeyMods != null ? builder.lockKeyMods : false);
         

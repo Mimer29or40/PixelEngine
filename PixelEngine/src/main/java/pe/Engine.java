@@ -131,7 +131,7 @@ public abstract class Engine
             Joystick.events(time);
             Window.events(time);
             
-            Layer.processEvents();
+            Layer.events();
         }
         
         private static void destroy()
@@ -447,15 +447,13 @@ public abstract class Engine
             
             if (Window.primary != null)
             {
-                Window.unmakeCurrent();
+                Window.makeCurrent(null);
                 
                 final CountDownLatch latch = new CountDownLatch(1);
                 
                 new Thread(() -> {
                     try
                     {
-                        Window.makeCurrent();
-                        
                         Extensions.renderSetup();
                         
                         while (Engine.running)
@@ -478,6 +476,8 @@ public abstract class Engine
                                 
                                 if (!Time.paused)
                                 {
+                                    Window.makeCurrent(Window.primary);
+                                    
                                     GLFramebuffer.bind(Layer.primary.framebuffer);
                                     GLProgram.bind(null);
                                     
@@ -630,9 +630,9 @@ public abstract class Engine
         IO.setup(width, height, pixelWidth, pixelHeight);
         
         // GUI.setup();
-        Debug.setup();
-        NuklearGUI.setup();
-        ImGUI.setup();
+        // Debug.setup();
+        // NuklearGUI.setup();
+        // ImGUI.setup();
     }
     
     protected static void size(int width, int height)

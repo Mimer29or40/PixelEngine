@@ -129,7 +129,7 @@ public final class Layer
         Layer.layers.clear();
     }
     
-    static void processEvents()
+    static void events()
     {
         int fbWidth  = Window.primary.framebufferWidth();
         int fbHeight = Window.primary.framebufferHeight();
@@ -155,6 +155,8 @@ public final class Layer
     
     static void draw()
     {
+        Window.makeCurrent(Window.primary);
+        
         GLFramebuffer.bind(null);
         GLProgram.bind(Layer.program);
         
