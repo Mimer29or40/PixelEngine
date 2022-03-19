@@ -450,6 +450,10 @@ public class Window
     private static final Vector2d screenToWindow      = new Vector2d();
     private static final Vector2d windowToFramebuffer = new Vector2d();
     private static final Vector2d framebufferToWindow = new Vector2d();
+    private static final Vector2d windowToLayer       = new Vector2d();
+    private static final Vector2d layerToWindow       = new Vector2d();
+    private static final Vector2d framebufferToLayer  = new Vector2d();
+    private static final Vector2d layerToFramebuffer  = new Vector2d();
     
     // -------------------- Instance -------------------- //
     
@@ -1596,6 +1600,350 @@ public class Window
         return framebufferToWindow(pos.x(), pos.y(), Window.framebufferToWindow);
     }
     
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the window point
+     * @param y     The y coordinate of the window point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToLayer(@NotNull Layer.Index index, double x, double y, @NotNull Vector2d out)
+    {
+        Layer layer = Layer.get(index);
+        if (layer == null)
+        {
+            Window.LOGGER.warning(index, "does not exist");
+            return out.set(x, y);
+        }
+        out.x = (x - layer.bounds().x()) * (double) Window.width() / (double) layer.bounds().width();
+        out.y = (y - layer.bounds().y()) * (double) Window.height() / (double) layer.bounds().height();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the window point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToLayer(@NotNull Layer.Index index, @NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return windowToLayer(index, pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the window point
+     * @param y     The y coordinate of the window point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc windowToLayer(@NotNull Layer.Index index, double x, double y)
+    {
+        return windowToLayer(index, x, y, Window.windowToLayer);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the window point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc windowToLayer(@NotNull Layer.Index index, @NotNull Vector2dc pos)
+    {
+        return windowToLayer(index, pos.x(), pos.y(), Window.windowToLayer);
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the window.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the layer point
+     * @param y     The y coordinate of the layer point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc layerToWindow(@NotNull Layer.Index index, double x, double y, @NotNull Vector2d out)
+    {
+        Layer layer = Layer.get(index);
+        if (layer == null)
+        {
+            Window.LOGGER.warning(index, "does not exist");
+            return out.set(x, y);
+        }
+        out.x = (x * (double) layer.bounds().width() / (double) Window.width()) + layer.bounds().x();
+        out.y = (y * (double) layer.bounds().height() / (double) Window.height()) + layer.bounds().y();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the window.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the layer point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc layerToWindow(@NotNull Layer.Index index, @NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return layerToWindow(index, pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the window.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the layer point
+     * @param y     The y coordinate of the layer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc layerToWindow(@NotNull Layer.Index index, double x, double y)
+    {
+        return layerToWindow(index, x, y, Window.layerToWindow);
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the window.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the layer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc layerToWindow(@NotNull Layer.Index index, @NotNull Vector2dc pos)
+    {
+        return layerToWindow(index, pos.x(), pos.y(), Window.layerToWindow);
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative
+     * to the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the framebuffer point
+     * @param y     The y coordinate of the framebuffer point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc framebufferToLayer(@NotNull Layer.Index index, double x, double y, @NotNull Vector2d out)
+    {
+        Layer layer = Layer.get(index);
+        if (layer == null)
+        {
+            Window.LOGGER.warning(index, "does not exist");
+            return out.set(x, y);
+        }
+        out.x = (x - layer.bounds().x()) * (double) Window.framebufferWidth() / (double) layer.bounds().width();
+        out.y = (y - layer.bounds().y()) * (double) Window.framebufferHeight() / (double) layer.bounds().height();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative
+     * to the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the framebuffer point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc framebufferToLayer(@NotNull Layer.Index index, @NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return framebufferToLayer(index, pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative
+     * to the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the framebuffer point
+     * @param y     The y coordinate of the framebuffer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc framebufferToLayer(@NotNull Layer.Index index, double x, double y)
+    {
+        return framebufferToLayer(index, x, y, Window.framebufferToLayer);
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative
+     * to the indicated layer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the framebuffer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc framebufferToLayer(@NotNull Layer.Index index, @NotNull Vector2dc pos)
+    {
+        return framebufferToLayer(index, pos.x(), pos.y(), Window.framebufferToLayer);
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the framebuffer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the layer point
+     * @param y     The y coordinate of the layer point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc layerToFramebuffer(@NotNull Layer.Index index, double x, double y, @NotNull Vector2d out)
+    {
+        Layer layer = Layer.get(index);
+        if (layer == null)
+        {
+            Window.LOGGER.warning(index, "does not exist");
+            return out.set(x, y);
+        }
+        out.x = (x - layer.bounds().x()) * (double) Window.width() / (double) layer.bounds().width();
+        out.y = (y - layer.bounds().y()) * (double) Window.height() / (double) layer.bounds().height();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the framebuffer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the layer point
+     * @param out   The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc layerToFramebuffer(@NotNull Layer.Index index, @NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return layerToFramebuffer(index, pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the framebuffer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param x     The x coordinate of the layer point
+     * @param y     The y coordinate of the layer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc layerToFramebuffer(@NotNull Layer.Index index, double x, double y)
+    {
+        return layerToFramebuffer(index, x, y, Window.layerToFramebuffer);
+    }
+    
+    /**
+     * Converts a point relative to the indicated layer origin to a point
+     * relative to the framebuffer.
+     * <p>
+     * If the layer does not exist, then a warning is generated and no
+     * transformation is performed.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param index The layer index.
+     * @param pos   The coordinate of the layer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc layerToFramebuffer(@NotNull Layer.Index index, @NotNull Vector2dc pos)
+    {
+        return layerToFramebuffer(index, pos.x(), pos.y(), Window.layerToFramebuffer);
+    }
+    
     // -------------------- Updating -------------------- //
     
     public static void swap()
@@ -1614,8 +1962,8 @@ public class Window
         
         private Vector2ic position = null;
         private Vector2ic size     = new Vector2i(800, 600);
-        private Vector2ic minSize  = new Vector2i(GLFW_DONT_CARE);
-        private Vector2ic maxSize  = new Vector2i(GLFW_DONT_CARE);
+        private Vector2ic minSize  = new Vector2i(DONT_CARE);
+        private Vector2ic maxSize  = new Vector2i(DONT_CARE);
         
         private boolean windowed = true;
         private boolean vsync    = false;
@@ -2690,19 +3038,19 @@ public class Window
             this.mousePassthrough       = applyBoolean(GLFW_MOUSE_PASSTHROUGH, this.mousePassthrough, false);
             this.scaleToMonitor         = applyBoolean(GLFW_SCALE_TO_MONITOR, this.scaleToMonitor, false);
             
-            this.redBits        = applyInteger(GLFW_RED_BITS, this.redBits, GLFW_DONT_CARE);
-            this.greenBits      = applyInteger(GLFW_GREEN_BITS, this.greenBits, GLFW_DONT_CARE);
-            this.blueBits       = applyInteger(GLFW_BLUE_BITS, this.blueBits, GLFW_DONT_CARE);
-            this.alphaBits      = applyInteger(GLFW_ALPHA_BITS, this.alphaBits, GLFW_DONT_CARE);
-            this.depthBits      = applyInteger(GLFW_DEPTH_BITS, this.depthBits, GLFW_DONT_CARE);
-            this.stencilBits    = applyInteger(GLFW_STENCIL_BITS, this.stencilBits, GLFW_DONT_CARE);
-            this.accumRedBits   = applyInteger(GLFW_ACCUM_RED_BITS, this.accumRedBits, GLFW_DONT_CARE);
-            this.accumGreenBits = applyInteger(GLFW_ACCUM_GREEN_BITS, this.accumGreenBits, GLFW_DONT_CARE);
-            this.accumBlueBits  = applyInteger(GLFW_ACCUM_BLUE_BITS, this.accumBlueBits, GLFW_DONT_CARE);
-            this.accumAlphaBits = applyInteger(GLFW_ACCUM_ALPHA_BITS, this.accumAlphaBits, GLFW_DONT_CARE);
-            this.auxBuffers     = applyInteger(GLFW_AUX_BUFFERS, this.auxBuffers, GLFW_DONT_CARE);
-            this.samples        = applyInteger(GLFW_SAMPLES, this.samples, GLFW_DONT_CARE);
-            this.refreshRate    = applyInteger(GLFW_REFRESH_RATE, this.refreshRate, GLFW_DONT_CARE);
+            this.redBits        = applyInteger(GLFW_RED_BITS, this.redBits, DONT_CARE);
+            this.greenBits      = applyInteger(GLFW_GREEN_BITS, this.greenBits, DONT_CARE);
+            this.blueBits       = applyInteger(GLFW_BLUE_BITS, this.blueBits, DONT_CARE);
+            this.alphaBits      = applyInteger(GLFW_ALPHA_BITS, this.alphaBits, DONT_CARE);
+            this.depthBits      = applyInteger(GLFW_DEPTH_BITS, this.depthBits, DONT_CARE);
+            this.stencilBits    = applyInteger(GLFW_STENCIL_BITS, this.stencilBits, DONT_CARE);
+            this.accumRedBits   = applyInteger(GLFW_ACCUM_RED_BITS, this.accumRedBits, DONT_CARE);
+            this.accumGreenBits = applyInteger(GLFW_ACCUM_GREEN_BITS, this.accumGreenBits, DONT_CARE);
+            this.accumBlueBits  = applyInteger(GLFW_ACCUM_BLUE_BITS, this.accumBlueBits, DONT_CARE);
+            this.accumAlphaBits = applyInteger(GLFW_ACCUM_ALPHA_BITS, this.accumAlphaBits, DONT_CARE);
+            this.auxBuffers     = applyInteger(GLFW_AUX_BUFFERS, this.auxBuffers, DONT_CARE);
+            this.samples        = applyInteger(GLFW_SAMPLES, this.samples, DONT_CARE);
+            this.refreshRate    = applyInteger(GLFW_REFRESH_RATE, this.refreshRate, DONT_CARE);
             this.stereo         = applyBoolean(GLFW_STEREO, this.stereo, false);
             this.srgbCapable    = applyBoolean(GLFW_SRGB_CAPABLE, this.srgbCapable, false);
             this.doublebuffer   = applyBoolean(GLFW_DOUBLEBUFFER, this.doublebuffer, true);

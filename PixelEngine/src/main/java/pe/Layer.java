@@ -8,6 +8,8 @@ import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.system.MemoryStack;
 import pe.render.*;
+import pe.shape.AABBi;
+import pe.shape.AABBic;
 import rutils.Logger;
 import rutils.Math;
 
@@ -138,18 +140,16 @@ public final class Layer
         {
             if (layer == null) continue;
             
+            AABBi bounds = layer.bounds;
+            
             double aspect = layer.aspectRatio();
             
-            double width  = fbWidth;
-            double height = (int) (fbWidth / aspect);
-            if (height > fbHeight)
-            {
-                width  = (int) (fbHeight * aspect);
-                height = fbHeight;
-            }
+            bounds.size.set(fbWidth, (int) (fbWidth / aspect));
+            if (bounds.height() > fbHeight) bounds.size.set((int) (fbHeight * aspect), fbHeight);
+            bounds.pos.set((fbWidth - bounds.width()) >> 1, (fbHeight - bounds.height()) >> 1);
             
-            layer.pixelSize.x = Math.max(width / (double) layer.width(), 1.0);
-            layer.pixelSize.y = Math.max(height / (double) layer.height(), 1.0);
+            layer.pixelSize.x = Math.max(bounds.width() / (double) layer.width(), 1.0);
+            layer.pixelSize.y = Math.max(bounds.height() / (double) layer.height(), 1.0);
         }
     }
     
@@ -234,15 +234,17 @@ public final class Layer
     
     // -------------------- Instance -------------------- //
     
-    final Vector2i size      = new Vector2i();
-    final Vector2d pixelSize = new Vector2d();
+    final Vector2i size;
+    final AABBi    bounds;
+    final Vector2d pixelSize;
     
     final GLFramebuffer framebuffer;
     
     private Layer(int width, int height)
     {
-        this.size.set(width, height);
-        this.pixelSize.set(1.0);
+        this.size      = new Vector2i(width, height);
+        this.bounds    = new AABBi();
+        this.pixelSize = new Vector2d(1.0);
         
         this.framebuffer = GLFramebuffer.load(width, height);
     }
@@ -261,6 +263,12 @@ public final class Layer
     public int height()
     {
         return this.size.y;
+    }
+    
+    @NotNull
+    public AABBic bounds()
+    {
+        return this.bounds;
     }
     
     @NotNull
