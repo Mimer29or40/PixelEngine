@@ -155,13 +155,11 @@ public final class Layer
     
     static void draw()
     {
-        Window.makeCurrent(Window.primary);
-        
         GLFramebuffer.bind(null);
         GLProgram.bind(Layer.program);
         
-        int fbWidth  = Window.primary.framebufferWidth();
-        int fbHeight = Window.primary.framebufferHeight();
+        int fbWidth  = Window.framebufferWidth();
+        int fbHeight = Window.framebufferHeight();
         
         GLProgram.Uniform.vec2("framebuffer", fbWidth, fbHeight);
         

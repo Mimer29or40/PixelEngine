@@ -531,24 +531,6 @@ public final class Monitor
         Engine.Delegator.waitRunTask(() -> glfwSetGamma(this.handle, gamma));
     }
     
-    public int windowOverlap(@NotNull Window window)
-    {
-        VideoMode current = videoMode();
-        
-        int mx = x();
-        int my = y();
-        int mw = current.width;
-        int mh = current.height;
-        
-        int wx = window.x();
-        int wy = window.y();
-        int ww = window.width();
-        int wh = window.height();
-        
-        return Math.max(0, Math.min(wx + ww, mx + mw) - Math.max(wx, mx)) *
-               Math.max(0, Math.min(wy + wh, my + mh) - Math.max(wy, my));
-    }
-    
     public static final class VideoMode
     {
         private static final HashMap<Integer, VideoMode> CACHE = new HashMap<>();

@@ -113,42 +113,20 @@ public final class Keyboard
      *
      * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
      */
-    public static void sticky(@NotNull Window window, boolean sticky)
-    {
-        Keyboard.LOGGER.finest("Setting Sticky Flag for %s: %s", window, sticky);
-        
-        Delegator.runTask(() -> glfwSetInputMode(window.handle, GLFW_STICKY_KEYS, sticky ? GLFW_TRUE : GLFW_FALSE));
-    }
-    
-    /**
-     * Sets the sticky keys flag in the main window. If sticky key are enabled,
-     * a keyboard key press will ensure that {@link EventKeyboardKeyUp} is
-     * posted with a {@link EventKeyboardKeyDown} even if the key had been
-     * released before the call. This is useful when you are only interested in
-     * whether keys have been pressed but not when or in which order.
-     *
-     * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
-     */
     public static void sticky(boolean sticky)
     {
-        sticky(Window.primary, sticky);
+        Keyboard.LOGGER.finest("Setting Sticky Flag for %s: %s", Window.primary, sticky);
+        
+        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_STICKY_KEYS, sticky ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves the sticky keys flag.
      */
     @SuppressWarnings("ConstantConditions")
-    public static boolean sticky(@NotNull Window window)
-    {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_STICKY_KEYS) == GLFW_TRUE);
-    }
-    
-    /**
-     * @return Retrieves the sticky keys flag.
-     */
     public static boolean sticky()
     {
-        return sticky(Window.primary);
+        return Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_STICKY_KEYS) == GLFW_TRUE);
     }
     
     // -------------------- State Properties -------------------- //
@@ -157,114 +135,41 @@ public final class Keyboard
      * @return The string of chars that were typed in the specified window.
      */
     @NotNull
-    public static String charsTypes(@NotNull Window window)
-    {
-        return Keyboard.window == window ? Keyboard.charBuffer.toString() : "";
-    }
-    
-    /**
-     * @return The string of chars that were typed in the main window.
-     */
-    @NotNull
     public static String charsTypes()
     {
-        return charsTypes(Window.primary);
+        return Keyboard.charBuffer.toString();
     }
     
     /**
      * @return If the provided key is in the down state in the provided window.
      */
-    public static boolean down(@NotNull Window window, Key key)
+    public static boolean down(@NotNull Key key)
     {
-        return Keyboard.window == window && Keyboard.keyState.get(key).state == GLFW_PRESS;
-    }
-    
-    /**
-     * @return If the provided key is in the down state in the main window.
-     */
-    public static boolean down(Key key)
-    {
-        return down(Window.primary, key);
-    }
-    
-    /**
-     * @return If the provided key is in the down state in any window.
-     */
-    public static boolean downAny(Key key)
-    {
-        return down(Keyboard.window, key);
+        return Keyboard.keyState.get(key).state == GLFW_PRESS;
     }
     
     /**
      * @return If the provided key is in the up state in the provided window.
      */
-    public static boolean up(@NotNull Window window, Key key)
+    public static boolean up(@NotNull Key key)
     {
-        return Keyboard.window == window && Keyboard.keyState.get(key).state == GLFW_RELEASE;
-    }
-    
-    /**
-     * @return If the provided key is in the up state in the main window.
-     */
-    public static boolean up(Key key)
-    {
-        return up(Window.primary, key);
-    }
-    
-    /**
-     * @return If the provided key is in the up state in any window.
-     */
-    public static boolean upAny(Key key)
-    {
-        return up(Keyboard.window, key);
+        return Keyboard.keyState.get(key).state == GLFW_RELEASE;
     }
     
     /**
      * @return If the provided key is in the repeat state in the provided window.
      */
-    public static boolean repeat(@NotNull Window window, Key key)
+    public static boolean repeat(@NotNull Key key)
     {
-        return Keyboard.window == window && Keyboard.keyState.get(key).state == GLFW_REPEAT;
-    }
-    
-    /**
-     * @return If the provided key is in the repeat state in the main window.
-     */
-    public static boolean repeat(Key key)
-    {
-        return repeat(Window.primary, key);
-    }
-    
-    /**
-     * @return If the provided key is in the repeat state in any window.
-     */
-    public static boolean repeatAny(Key key)
-    {
-        return repeat(Keyboard.window, key);
+        return Keyboard.keyState.get(key).state == GLFW_REPEAT;
     }
     
     /**
      * @return If the provided key is in the held state in the provided window.
      */
-    public static boolean held(@NotNull Window window, Key key)
+    public static boolean held(@NotNull Key key)
     {
-        return Keyboard.window == window && Keyboard.keyState.get(key).held;
-    }
-    
-    /**
-     * @return If the provided key is in the held state in the main window.
-     */
-    public static boolean held(Key key)
-    {
-        return held(Window.primary, key);
-    }
-    
-    /**
-     * @return If the provided key is in the held state in any window.
-     */
-    public static boolean heldAny(Key key)
-    {
-        return held(Keyboard.window, key);
+        return Keyboard.keyState.get(key).held;
     }
     
     public enum Key

@@ -449,8 +449,8 @@ public final class GUI
         
         // GLBatch batch = GLBatch.get();
         
-        float fb_scale_x = (float) Window.primary().framebufferWidth() / (float) Window.primary().width();
-        float fb_scale_y = (float) Window.primary().framebufferHeight() / (float) Window.primary().height();
+        float fb_scale_x = (float) Window.framebufferWidth() / (float) Window.width();
+        float fb_scale_y = (float) Window.framebufferHeight() / (float) Window.height();
         
         // iterate over and execute each draw command
         long offset = MemoryUtil.NULL;
@@ -504,7 +504,7 @@ public final class GUI
             glBindTexture(GL_TEXTURE_2D, cmd.texture().id());
             glScissor(
                     (int) (cmd.clip_rect().x() * fb_scale_x),
-                    (int) ((Window.primary().height() - (int) (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
+                    (int) ((Window.height() - (int) (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
                     (int) (cmd.clip_rect().w() * fb_scale_x),
                     (int) (cmd.clip_rect().h() * fb_scale_y)
                      );

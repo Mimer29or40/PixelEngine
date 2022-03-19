@@ -156,95 +156,54 @@ public final class Mouse
      * @return Retrieves if the mouse is visible and behaving normally in the specified window.
      */
     @SuppressWarnings("ConstantConditions")
-    public static boolean isShown(@NotNull Window window)
-    {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_CURSOR) == GLFW_CURSOR_NORMAL);
-    }
-    
-    /**
-     * @return Retrieves if the mouse is visible and behaving normally in the main window.
-     */
     public static boolean isShown()
     {
-        return isShown(Window.primary);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_NORMAL);
     }
     
     /**
      * Makes the cursor visible and behaving normally in the specified window.
      */
-    public static void show(@NotNull Window window)
-    {
-        Mouse.LOGGER.finest("Showing in", window);
-        
-        Engine.Delegator.runTask(() -> {
-            if (Mouse.window == window && glfwGetInputMode(window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
-            {
-                Mouse.pos.set(Mouse.posChanges.set(window.bounds().size()).mul(0.5));
-            }
-            glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-        });
-    }
-    
-    /**
-     * Makes the cursor visible and behaving normally in the main window.
-     */
     public static void show()
     {
-        show(Window.primary);
+        Mouse.LOGGER.finest("Showing in", Window.primary);
+        
+        Engine.Delegator.runTask(() -> {
+            if (glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+            {
+                Mouse.pos.set(Mouse.posChanges.set(Window.bounds().size()).mul(0.5));
+            }
+            glfwSetInputMode(Window.handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        });
     }
     
     /**
      * @return Retrieves if the mouse is hidden in the specified window.
      */
     @SuppressWarnings("ConstantConditions")
-    public static boolean isHidden(@NotNull Window window)
-    {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN);
-    }
-    
-    /**
-     * @return Retrieves if the mouse is hidden in the main window.
-     */
     public static boolean isHidden()
     {
-        return isHidden(Window.primary);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN);
     }
     
     /**
      * Makes the cursor invisible when it is over the content area of the
      * specified window but does not restrict the cursor from leaving.
      */
-    public static void hide(@NotNull Window window)
-    {
-        Mouse.LOGGER.finest("Hiding in", window);
-        
-        Engine.Delegator.runTask(() -> glfwSetInputMode(window.handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN));
-    }
-    
-    /**
-     * Makes the cursor invisible when it is over the content area of the main
-     * window but does not restrict the cursor from leaving.
-     */
     public static void hide()
     {
-        hide(Window.primary);
+        Mouse.LOGGER.finest("Hiding in", Window.primary);
+        
+        Engine.Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_CURSOR, GLFW_CURSOR_HIDDEN));
     }
     
     /**
      * @return Retrieves if the mouse is captured in the specified window.
      */
     @SuppressWarnings("ConstantConditions")
-    public static boolean isCaptured(@NotNull Window window)
-    {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED);
-    }
-    
-    /**
-     * @return Retrieves if the mouse is captured in the main window.
-     */
     public static boolean isCaptured()
     {
-        return isCaptured(Window.primary);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_CURSOR) == GLFW_CURSOR_DISABLED);
     }
     
     /**
@@ -252,33 +211,22 @@ public final class Mouse
      * and unlimited cursor movement. This is useful for implementing for
      * example 3D camera controls.
      */
-    public static void capture(@NotNull Window window)
-    {
-        Mouse.LOGGER.finest("Capturing in", window);
-        
-        Engine.Delegator.runTask(() -> {
-            Mouse.window = window;
-            Mouse.pos.set(Mouse.posChanges.set(Mouse.window.bounds().size()).mul(0.5));
-            glfwSetCursorPos(Mouse.window.handle, Mouse.posChanges.x, Mouse.posChanges.y);
-            glfwSetInputMode(Mouse.window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        });
-    }
-    
-    /**
-     * Hides and grabs the cursor in the main window, providing virtual and
-     * unlimited cursor movement. This is useful for implementing for example
-     * 3D camera controls.
-     */
     public static void capture()
     {
-        capture(Window.primary);
+        Mouse.LOGGER.finest("Capturing in", Window.primary);
+        
+        Engine.Delegator.runTask(() -> {
+            Mouse.pos.set(Mouse.posChanges.set(Window.bounds().size()).mul(0.5));
+            glfwSetCursorPos(Window.handle, Mouse.posChanges.x, Mouse.posChanges.y);
+            glfwSetInputMode(Window.handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        });
     }
     
     /**
      * @return Retrieves the raw mouse motion flag for the specified window.
      */
     @SuppressWarnings("ConstantConditions")
-    public static boolean isRawInput(@NotNull Window window)
+    public static boolean isRawInput()
     {
         return Engine.Delegator.waitReturnTask(() -> {
             if (!glfwRawMouseMotionSupported())
@@ -286,16 +234,8 @@ public final class Mouse
                 Mouse.LOGGER.warning("Raw Mouse Motion is not support on", Platform.get());
                 return false;
             }
-            return glfwGetInputMode(window.handle, GLFW_RAW_MOUSE_MOTION) == GLFW_TRUE;
+            return glfwGetInputMode(Window.handle, GLFW_RAW_MOUSE_MOTION) == GLFW_TRUE;
         });
-    }
-    
-    /**
-     * @return Retrieves the raw mouse motion flag for the main window.
-     */
-    public static boolean isRawInput()
-    {
-        return isRawInput(Window.primary);
     }
     
     /**
@@ -306,9 +246,9 @@ public final class Mouse
      *
      * @param rawInput {@code true} to enable raw mouse motion mode, otherwise {@code false}.
      */
-    public static void rawInput(@NotNull Window window, boolean rawInput)
+    public static void rawInput(boolean rawInput)
     {
-        Mouse.LOGGER.finest("Setting Raw Input Flag for %s: %s", window, rawInput);
+        Mouse.LOGGER.finest("Setting Raw Input Flag for %s: %s", Window.primary, rawInput);
         
         Engine.Delegator.runTask(() -> {
             if (!glfwRawMouseMotionSupported())
@@ -316,38 +256,17 @@ public final class Mouse
                 Mouse.LOGGER.warning("Raw Mouse Motion is not support on", Platform.get());
                 return;
             }
-            glfwSetInputMode(window.handle, GLFW_RAW_MOUSE_MOTION, rawInput ? GLFW_TRUE : GLFW_FALSE);
+            glfwSetInputMode(Window.handle, GLFW_RAW_MOUSE_MOTION, rawInput ? GLFW_TRUE : GLFW_FALSE);
         });
-    }
-    
-    /**
-     * Sets the raw mouse motion flag for the main window. Set {@code true} to
-     * enable raw (unscaled and un-accelerated) mouse motion when the cursor is
-     * disabled, or {@code false} to disable it. If raw motion is not
-     * supported, attempting to set Mouse will log a warning.
-     *
-     * @param rawInput {@code true} to enable raw mouse motion mode, otherwise {@code false}.
-     */
-    public static void rawInput(boolean rawInput)
-    {
-        rawInput(Window.primary, rawInput);
     }
     
     /**
      * @return Retrieves the sticky mouse buttons flag for the specified window.
      */
     @SuppressWarnings("ConstantConditions")
-    public static boolean isSticky(@NotNull Window window)
-    {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_STICKY_MOUSE_BUTTONS) == GLFW_TRUE);
-    }
-    
-    /**
-     * @return Retrieves the sticky mouse buttons flag for the main window.
-     */
     public static boolean isSticky()
     {
-        return isSticky(Window.primary);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetInputMode(Window.handle, GLFW_STICKY_MOUSE_BUTTONS) == GLFW_TRUE);
     }
     
     /**
@@ -360,73 +279,26 @@ public final class Mouse
      *
      * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
      */
-    public static void sticky(@NotNull Window window, boolean sticky)
+    public static void sticky(boolean sticky)
     {
         Mouse.LOGGER.finest("Setting Sticky Flag for %s: %s", window, sticky);
         
-        Engine.Delegator.runTask(() -> {
-            Mouse.window = window;
-            glfwSetInputMode(Mouse.window.handle, GLFW_STICKY_MOUSE_BUTTONS, sticky ? GLFW_TRUE : GLFW_FALSE);
-        });
-    }
-    
-    /**
-     * Sets the sticky mouse buttons flag for the main window. If sticky mouse
-     * buttons are enabled, a mouse button press will ensure that a
-     * {@link EventMouseButtonUp} is posted with a {@link EventMouseButtonDown}
-     * even if the mouse button had been released before the call. This is
-     * useful when you are only interested in whether mouse buttons have been
-     * pressed but not when or in which order.
-     *
-     * @param sticky {@code true} to enable sticky mode, otherwise {@code false}.
-     */
-    public static void sticky(boolean sticky)
-    {
-        sticky(Window.primary, sticky);
+        Engine.Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_STICKY_MOUSE_BUTTONS, sticky ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return The current shape of the mouse or {@code null} if set to the default arrow cursor for the specified window.
      */
     @Nullable
-    public static Shape shape(@NotNull Window window)
-    {
-        return Mouse.shapes.getOrDefault(window.handle, null);
-    }
-    
-    /**
-     * @return The current shape of the mouse or {@code null} if set to the default arrow cursor for the main window.
-     */
-    @Nullable
     public static Shape shape()
     {
-        return shape(Window.primary);
+        return Mouse.shapes.getOrDefault(Window.handle, null);
     }
     
     /**
      * Sets the cursor image to be used when the cursor is over the content
      * area of the window. The set cursor will only be visible when the cursor
-     * mode of the window {@link #isShown(Window)}.
-     * <p>
-     * On some platforms, the set cursor may not be visible unless the
-     * window also has input focus.
-     *
-     * @param shape the cursor to set, or {@code null} to switch back to the default arrow cursor
-     */
-    public static void shape(@NotNull Window window, @Nullable Shape shape)
-    {
-        Mouse.LOGGER.finest("Setting Shape for %s: %s", window, shape);
-        
-        Engine.Delegator.waitRunTask(() -> {
-            Mouse.shapes.put(window.handle, shape);
-            glfwSetCursor(window.handle, shape != null ? shape.handle : NULL);
-        });
-    }
-    
-    /**
-     * Sets the cursor image to be used when the cursor is over the content
-     * area of the window. The set cursor will only be visible when the cursor
-     * mode of the window {@link #isShown(Window)}.
+     * mode of the window {@link #isShown()}.
      * <p>
      * On some platforms, the set cursor may not be visible unless the
      * window also has input focus.
@@ -435,7 +307,12 @@ public final class Mouse
      */
     public static void shape(@Nullable Shape shape)
     {
-        shape(Window.primary, shape);
+        Mouse.LOGGER.finest("Setting Shape for %s: %s", Window.primary, shape);
+        
+        Engine.Delegator.waitRunTask(() -> {
+            Mouse.shapes.put(Window.handle, shape);
+            glfwSetCursor(Window.handle, shape != null ? shape.handle : NULL);
+        });
     }
     
     // -------------------- State Properties -------------------- //
@@ -443,25 +320,9 @@ public final class Mouse
     /**
      * @return If the mouse is in the window specified.
      */
-    public static boolean entered(@NotNull Window window)
-    {
-        return Mouse.window == window && Mouse.entered;
-    }
-    
-    /**
-     * @return If the mouse is in the main window.
-     */
     public static boolean entered()
     {
-        return entered(Window.primary);
-    }
-    
-    /**
-     * @return If the mouse is in any window.
-     */
-    public static boolean enteredAny()
-    {
-        return entered(Mouse.window);
+        return Mouse.entered;
     }
     
     /**
@@ -479,65 +340,31 @@ public final class Mouse
      * @param x The x position of the cursor
      * @param y The y position of the cursor
      */
-    public static void pos(@NotNull Window window, double x, double y)
-    {
-        Mouse.LOGGER.finest("Setting Position in %s: (%s, %s)", window, x, y);
-        
-        Engine.Delegator.waitRunTask(() -> {
-            Mouse.window = window;
-            glfwSetCursorPos(window.handle, x, y);
-        });
-    }
-    
-    /**
-     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the specified window.
-     *
-     * @param pos The position of the cursor
-     */
-    public static void pos(@NotNull Window window, @NotNull Vector2ic pos)
-    {
-        pos(window, pos.x(), pos.y());
-    }
-    
-    /**
-     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the specified window.
-     *
-     * @param pos The position of the cursor
-     */
-    public static void pos(@NotNull Window window, @NotNull Vector2dc pos)
-    {
-        pos(window, pos.x(), pos.y());
-    }
-    
-    /**
-     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the current window.
-     *
-     * @param x The x position of the cursor
-     * @param y The y position of the cursor
-     */
     public static void pos(double x, double y)
     {
-        pos(Mouse.window, x, y);
+        Mouse.LOGGER.finest("Setting Position in %s: (%s, %s)", Window.primary, x, y);
+        
+        Engine.Delegator.waitRunTask(() -> glfwSetCursorPos(Window.handle, x, y));
     }
     
     /**
-     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the current window.
+     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the specified window.
      *
      * @param pos The position of the cursor
      */
     public static void pos(@NotNull Vector2ic pos)
     {
-        pos(Mouse.window, pos.x(), pos.y());
+        pos(pos.x(), pos.y());
     }
     
     /**
-     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the current window.
+     * Sets the cursor position, in viewport coordinates, relative to the upper-left corner of the content area in the specified window.
      *
      * @param pos The position of the cursor
      */
     public static void pos(@NotNull Vector2dc pos)
     {
-        pos(Mouse.window, pos.x(), pos.y());
+        pos(pos.x(), pos.y());
     }
     
     /**
@@ -609,97 +436,33 @@ public final class Mouse
     /**
      * @return If the provided button is in the down state in the provided window.
      */
-    public static boolean down(@NotNull Window window, @NotNull Button button)
-    {
-        return Mouse.window == window && Mouse.buttonState.get(button).state == GLFW_PRESS;
-    }
-    
-    /**
-     * @return If the provided button is in the down state in the main window.
-     */
     public static boolean down(@NotNull Button button)
     {
-        return down(Window.primary, button);
-    }
-    
-    /**
-     * @return If the provided button is in the down state.
-     */
-    public static boolean downAny(@NotNull Button button)
-    {
-        return down(Mouse.window, button);
+        return Mouse.buttonState.get(button).state == GLFW_PRESS;
     }
     
     /**
      * @return If the provided button is in the up state in the provided window.
      */
-    public static boolean up(@NotNull Window window, @NotNull Button button)
-    {
-        return Mouse.window == window && Mouse.buttonState.get(button).state == GLFW_RELEASE;
-    }
-    
-    /**
-     * @return If the provided button is in the up state in the main window.
-     */
     public static boolean up(@NotNull Button button)
     {
-        return up(Window.primary, button);
-    }
-    
-    /**
-     * @return If the provided button is in the up state.
-     */
-    public static boolean upAny(@NotNull Button button)
-    {
-        return up(Mouse.window, button);
+        return Mouse.buttonState.get(button).state == GLFW_RELEASE;
     }
     
     /**
      * @return If the provided button is in the repeat state in the provided window.
      */
-    public static boolean repeat(@NotNull Window window, @NotNull Button button)
-    {
-        return Mouse.window == window && Mouse.buttonState.get(button).state == GLFW_REPEAT;
-    }
-    
-    /**
-     * @return If the provided button is in the repeat state in the main window.
-     */
     public static boolean repeat(@NotNull Button button)
     {
-        return repeat(Window.primary, button);
-    }
-    
-    /**
-     * @return If the provided button is in the repeat state.
-     */
-    public static boolean repeatAny(@NotNull Button button)
-    {
-        return repeat(Mouse.window, button);
+        return Mouse.buttonState.get(button).state == GLFW_REPEAT;
     }
     
     /**
      * @return If the provided button is in the held state in the provided window.
      */
-    public static boolean held(@NotNull Window window, @NotNull Button button)
-    {
-        return Mouse.window == window && Mouse.buttonState.get(button).held;
-    }
-    
-    /**
-     * @return If the provided button is in the held state in the main window.
-     */
     public static boolean held(@NotNull Button button)
     {
-        return held(Window.primary, button);
-    }
-    
-    /**
-     * @return If the provided button is in the held state.
-     */
-    public static boolean heldAny(@NotNull Button button)
-    {
-        return held(Mouse.window, button);
+        return Mouse.buttonState.get(button).held;
     }
     
     // -------------------- State Updating -------------------- //

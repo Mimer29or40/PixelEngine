@@ -455,6 +455,8 @@ public abstract class Engine
                 new Thread(() -> {
                     try
                     {
+                        Window.makeCurrent();
+                        
                         Extensions.renderSetup();
                         
                         while (Engine.renderThreadRunning)
@@ -477,14 +479,12 @@ public abstract class Engine
                                 
                                 if (!Time.paused)
                                 {
-                                    Window.makeCurrent(Window.primary);
-                                    
                                     GLFramebuffer.bind(Layer.primary.framebuffer);
                                     GLProgram.bind(null);
                                     
                                     GLState.defaultState();
                                     GLState.wireframe(Engine.wireframe);
-    
+                                    
                                     GLBatch.bind(null);
                                     GLBatch defaultBatch = GLBatch.get();
                                     defaultBatch.start();

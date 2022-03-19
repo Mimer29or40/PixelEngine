@@ -26,15 +26,6 @@ public enum Modifier
     }
     
     /**
-     * @return Retrieves the lock mods flag for the specified window.
-     */
-    @SuppressWarnings("ConstantConditions")
-    public static boolean lockKeyMods(@NotNull Window window)
-    {
-        return Delegator.waitReturnTask(() -> glfwGetInputMode(window.handle, GLFW_LOCK_KEY_MODS) == GLFW_TRUE);
-    }
-    
-    /**
      * Sets the lock mods flag. Set {@code true} to enable lock key modifier
      * bits, or {@code false} to disable them. If enabled, callbacks that
      * receive modifier bits will also have the {@link Modifier#CAPS_LOCK}
@@ -43,11 +34,11 @@ public enum Modifier
      *
      * @param lockMods {@code true} to enable lockKeyMods mode, otherwise {@code false}.
      */
-    public static void lockKeyMods(@NotNull Window window, boolean lockMods)
+    public static void lockKeyMods(boolean lockMods)
     {
-        Modifier.LOGGER.finest("Setting Lock Mods State for %s: %s", window, lockMods);
+        Modifier.LOGGER.finest("Setting Lock Mods State for %s: %s", Window.primary, lockMods);
         
-        Delegator.runTask(() -> glfwSetInputMode(window.handle, GLFW_LOCK_KEY_MODS, lockMods ? GLFW_TRUE : GLFW_FALSE));
+        Delegator.runTask(() -> glfwSetInputMode(Window.handle, GLFW_LOCK_KEY_MODS, lockMods ? GLFW_TRUE : GLFW_FALSE));
     }
     
     private final int value;

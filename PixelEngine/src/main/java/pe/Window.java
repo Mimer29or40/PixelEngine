@@ -2,11 +2,9 @@ package pe;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.UnmodifiableView;
 import org.joml.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFWImage;
-import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
@@ -17,12 +15,13 @@ import pe.texture.Image;
 import rutils.Logger;
 import rutils.group.Pair;
 
+import java.lang.Math;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
@@ -33,10 +32,7 @@ public class Window
     
     public static final int DONT_CARE = GLFW_DONT_CARE;
     
-    static final Map<Long, Window> windows = new LinkedHashMap<>();
-    static       Window            primary = null;
-    
-    static final Map<Long, GLCapabilities> contexts = new LinkedHashMap<>();
+    static Window primary = null;
     
     static void setup(int width, int height, double pixelWidth, double pixelHeight)
     {
@@ -51,297 +47,44 @@ public class Window
         builder.title("Engine - " + Engine.instance.name);
         builder.resizable(true);
         builder.visible(true);
-        builder.decorated(true);
-        builder.focused(true);
-        builder.floating(false);
-        builder.maximized(false);
-        builder.centerCursor(false);
-        builder.transparentFramebuffer(false);
-        builder.focusOnShow(false);
         
-        Window.primary = builder.build();
-        Window.makeCurrent(Window.primary);
-    }
-    
-    static void destroy()
-    {
-        Window.LOGGER.fine("Destroy");
+        builder.contextVersionMajor(3);
+        builder.contextVersionMinor(3);
         
-        unbindContext();
-        for (Window window : Window.windows.values()) window.releaseCallbacks();
-        
-        Window.windows.clear();
-        Window.primary = null;
-    }
-    
-    static void events(long time)
-    {
-        List<Long> handlesToRemove = new ArrayList<>();
-        for (Window window : Window.windows.values())
-        {
-            window.processEvents(time);
-            
-            if (!window.isOpen()) handlesToRemove.add(window.handle);
-        }
-        
-        long primaryHandle = Window.primary.handle;
-        
-        for (long handle : handlesToRemove)
-        {
-            if (handle == primaryHandle)
-            {
-                Engine.stop();
-            }
-            else
-            {
-                Window removed = Window.windows.remove(handle);
-                removed.releaseCallbacks();
-            }
-        }
-    }
-    
-    public static void makeCurrent(@Nullable Window window)
-    {
-        if (window == null) window = Window.primary;
-        
-        if (glfwGetCurrentContext() == window.handle) return;
-        
-        long thread = Thread.currentThread().getId();
-        
-        Window.LOGGER.fine("Binding Context(%s) in Thread=%s", window.handle, thread);
-        
-        glfwMakeContextCurrent(window.handle);
-        
-        Window.contexts.computeIfAbsent(thread, t -> org.lwjgl.opengl.GL.createCapabilities());
-    }
-    
-    static void unbindContext()
-    {
-        long thread = Thread.currentThread().getId();
-        
-        Window.LOGGER.fine("Unbinding Context in Thread=%s", thread);
-        
-        org.lwjgl.opengl.GL.setCapabilities(null);
-        Window.contexts.remove(thread);
-        glfwMakeContextCurrent(MemoryUtil.NULL);
-    }
-    
-    @UnmodifiableView
-    @NotNull
-    public static Collection<@NotNull Window> get()
-    {
-        return Collections.unmodifiableCollection(Window.windows.values());
-    }
-    
-    @NotNull
-    public static Window get(int index)
-    {
-        if (index < 0) throw new RuntimeException("Window Index cannot be < 0");
-        for (Window window : Window.windows.values()) if (index-- <= 0) return window;
-        return Window.primary;
-    }
-    
-    @NotNull
-    public static Window primary()
-    {
-        return Window.primary;
-    }
-    
-    private static void windowFocusCallback(long handle, boolean focused)
-    {
-        Window window = Window.windows.get(handle);
-        window.focusedChanges = focused;
-    }
-    
-    private static void windowIconifyCallback(long handle, boolean iconified)
-    {
-        Window window = Window.windows.get(handle);
-        window.iconifiedChanges = iconified;
-    }
-    
-    private static void windowMaximizeCallback(long handle, boolean maximized)
-    {
-        Window window = Window.windows.get(handle);
-        window.maximizedChanges = maximized;
-    }
-    
-    private static void windowCloseCallback(long handle)
-    {
-        Window window = Window.windows.get(handle);
-        window.shouldClose = true;
-    }
-    
-    private static void windowRefreshCallback(long handle)
-    {
-        Window window = Window.windows.get(handle);
-        window.shouldRefresh = true;
-    }
-    
-    private static void windowPosCallback(long handle, int x, int y)
-    {
-        Window window = Window.windows.get(handle);
-        window.posChanges.set(x, y);
-    }
-    
-    private static void windowSizeCallback(long handle, int width, int height)
-    {
-        Window window = Window.windows.get(handle);
-        window.sizeChanges.set(width, height);
-    }
-    
-    private static void windowContentScaleCallback(long handle, float xScale, float yScale)
-    {
-        Window window = Window.windows.get(handle);
-        window.scaleChanges.set(xScale, yScale);
-    }
-    
-    private static void windowFramebufferSizeCallback(long handle, int width, int height)
-    {
-        Window window = Window.windows.get(handle);
-        window.fbSizeChanges.set(width, height);
-    }
-    
-    private static void windowDropCallback(long handle, int count, long names)
-    {
-        Window window = Window.windows.get(handle);
-        window.dropped = new String[count];
-        PointerBuffer charPointers = MemoryUtil.memPointerBuffer(names, count);
-        for (int i = 0; i < count; i++) window.dropped[i] = MemoryUtil.memUTF8(charPointers.get(i));
-    }
-    
-    private static void mouseEnteredCallback(long handle, boolean entered)
-    {
-        Mouse.window         = Window.windows.get(handle);
-        Mouse.enteredChanges = entered;
-    }
-    
-    private static void mousePosCallback(long handle, double x, double y)
-    {
-        Mouse.window = Window.windows.get(handle);
-        Mouse.posChanges.set(x, y);
-    }
-    
-    private static void mouseScrollCallback(long handle, double dx, double dy)
-    {
-        Mouse.window = Window.windows.get(handle);
-        Mouse.scrollChanges.add(dx, dy);
-    }
-    
-    private static void mouseButtonCallback(long handle, int button, int action, int mods)
-    {
-        Mouse.window = Window.windows.get(handle);
-        Mouse.buttonStateChanges.offer(new Pair<>(Mouse.Button.valueOf(button), action));
-        Modifier.activeMods = mods;
-    }
-    
-    private static void keyboardCharCallback(long handle, int codePoint)
-    {
-        Keyboard.window = Window.windows.get(handle);
-        Keyboard.charChanges.offer(codePoint);
-    }
-    
-    private static void keyboardKeyCallback(long handle, int key, int scancode, int action, int mods)
-    {
-        Keyboard.window = Window.windows.get(handle);
-        Keyboard.keyStateChanges.offer(new Pair<>(Keyboard.Key.get(key, scancode), action));
-        Modifier.activeMods = mods;
-    }
-    
-    // -------------------- Instance -------------------- //
-    
-    final String name;
-    final long   handle;
-    
-    Monitor monitor;
-    
-    boolean windowed;
-    
-    boolean open;
-    
-    int refreshRate;
-    
-    final Vector2i minSize;
-    final Vector2i maxSize;
-    
-    final AABBi bounds;
-    
-    final Matrix4d viewMatrix;
-    
-    // -------------------- State Objects -------------------- //
-    
-    boolean vsync;
-    boolean vsyncChanges;
-    
-    boolean focused;
-    boolean focusedChanges;
-    
-    boolean iconified;
-    boolean iconifiedChanges;
-    
-    boolean maximized;
-    boolean maximizedChanges;
-    
-    final Vector2i pos;
-    final Vector2i posChanges;
-    
-    final Vector2i size;
-    final Vector2i sizeChanges;
-    
-    final Vector2d scale;
-    final Vector2d scaleChanges;
-    
-    final Vector2i fbSize;
-    final Vector2i fbSizeChanges;
-    
-    boolean shouldClose;
-    boolean shouldRefresh;
-    
-    String[] dropped;
-    
-    // -------------------- Utility Objects -------------------- //
-    
-    private final Vector2i deltaI              = new Vector2i();
-    private final Vector2d deltaD              = new Vector2d();
-    private final Vector2d windowToScreen      = new Vector2d();
-    private final Vector2d screenToWindow      = new Vector2d();
-    private final Vector2d windowToFramebuffer = new Vector2d();
-    private final Vector2d framebufferToWindow = new Vector2d();
-    
-    private Window(final @NotNull Builder builder)
-    {
         Boolean visible = builder.visible;
         if (builder.position != null) builder.visible(false);
         builder.applyHints();
         
-        this.monitor = builder.monitor != null ? builder.monitor : Monitor.primary();
+        Window.monitor = builder.monitor != null ? builder.monitor : Monitor.primary();
         
-        this.windowed = builder.windowed;
+        Window.windowed = builder.windowed;
         
-        this.name = builder.name;
-        String title   = builder.title != null ? builder.title : this.name != null ? this.name : "Window";
-        long   monitor = this.windowed ? MemoryUtil.NULL : this.monitor.handle;
-        long   window  = Window.primary != null ? Window.primary.handle : MemoryUtil.NULL;
+        Window.name = builder.name;
+        String title   = builder.title != null ? builder.title : Window.name != null ? Window.name : "Window";
+        long   monitor = Window.windowed ? MemoryUtil.NULL : Window.monitor.handle;
+        long   window  = MemoryUtil.NULL;
+        // long   window  = Window.primary != null ? Window.primary.handle : MemoryUtil.NULL;
         
-        this.handle = glfwCreateWindow(builder.size.x(), builder.size.y(), title, monitor, window);
-        if (this.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the window");
+        Window.handle = glfwCreateWindow(builder.size.x(), builder.size.y(), title, monitor, window);
+        if (Window.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the window");
         
-        Window.LOGGER.fine("Created", this);
+        Window.LOGGER.fine("Created Window");
         
-        this.open = true;
+        Window.open = true;
         
-        this.refreshRate = builder.refreshRate;
+        Window.refreshRate = builder.refreshRate;
         
-        this.vsync        = builder.vsync;
-        this.vsyncChanges = this.vsync;
+        Window.vsync        = builder.vsync;
+        Window.vsyncChanges = Window.vsync;
         
-        this.focused        = glfwGetWindowAttrib(this.handle, GLFW_FOCUSED) == GLFW_TRUE;
-        this.focusedChanges = this.focused;
+        Window.focused        = glfwGetWindowAttrib(Window.handle, GLFW_FOCUSED) == GLFW_TRUE;
+        Window.focusedChanges = Window.focused;
         
-        this.iconified        = glfwGetWindowAttrib(this.handle, GLFW_ICONIFIED) == GLFW_TRUE;
-        this.iconifiedChanges = this.iconified;
+        Window.iconified        = glfwGetWindowAttrib(Window.handle, GLFW_ICONIFIED) == GLFW_TRUE;
+        Window.iconifiedChanges = Window.iconified;
         
-        this.maximized        = glfwGetWindowAttrib(this.handle, GLFW_MAXIMIZED) == GLFW_TRUE;
-        this.maximizedChanges = this.maximized;
+        Window.maximized        = glfwGetWindowAttrib(Window.handle, GLFW_MAXIMIZED) == GLFW_TRUE;
+        Window.maximizedChanges = Window.maximized;
         
         try (MemoryStack stack = MemoryStack.stackPush())
         {
@@ -351,93 +94,377 @@ public class Window
             FloatBuffer xf = stack.mallocFloat(1);
             FloatBuffer yf = stack.mallocFloat(1);
             
-            this.pos        = new Vector2i();
-            this.posChanges = new Vector2i();
             if (builder.position != null)
             {
-                this.pos.set(builder.position);
-                this.posChanges.set(this.pos);
-                glfwSetWindowPos(this.handle, this.pos.x(), this.pos.y());
-                if (visible != null && visible) glfwShowWindow(this.handle);
+                Window.pos.set(builder.position);
+                Window.posChanges.set(Window.pos);
+                glfwSetWindowPos(Window.handle, Window.pos.x(), Window.pos.y());
+                if (visible != null && visible) glfwShowWindow(Window.handle);
             }
             else
             {
-                glfwGetWindowPos(this.handle, x, y);
-                this.pos.set(x.get(0), y.get(0));
-                this.posChanges.set(this.pos);
+                glfwGetWindowPos(Window.handle, x, y);
+                Window.pos.set(x.get(0), y.get(0));
+                Window.posChanges.set(Window.pos);
             }
             
-            glfwGetWindowSize(this.handle, x, y);
-            this.size        = new Vector2i(x.get(0), y.get(0));
-            this.sizeChanges = new Vector2i(this.size);
+            glfwGetWindowSize(Window.handle, x, y);
+            Window.size.set(x.get(0), y.get(0));
+            Window.sizeChanges.set(Window.size);
             
-            glfwGetWindowContentScale(this.handle, xf, yf);
-            this.scale        = new Vector2d(xf.get(0), yf.get(0));
-            this.scaleChanges = new Vector2d(this.scale);
+            glfwGetWindowContentScale(Window.handle, xf, yf);
+            Window.scale.set(xf.get(0), yf.get(0));
+            Window.scaleChanges.set(Window.scale);
             
-            glfwGetFramebufferSize(this.handle, x, y);
-            this.fbSize        = new Vector2i(x.get(0), y.get(0));
-            this.fbSizeChanges = new Vector2i(this.fbSize);
+            glfwGetFramebufferSize(Window.handle, x, y);
+            Window.fbSize.set(x.get(0), y.get(0));
+            Window.fbSizeChanges.set(Window.fbSize);
         }
         
-        this.shouldClose = false;
+        Window.shouldClose = false;
         
-        this.shouldRefresh = true;
+        Window.shouldRefresh = true;
         
-        this.dropped = null;
+        Window.dropped = null;
         
-        this.minSize = new Vector2i(builder.minSize);
-        this.maxSize = new Vector2i(builder.maxSize);
+        Window.minSize.set(builder.minSize);
+        Window.maxSize.set(builder.maxSize);
         
-        glfwSetWindowSizeLimits(this.handle, this.minSize.x, this.minSize.y, this.maxSize.x, this.maxSize.y);
+        glfwSetWindowSizeLimits(Window.handle, Window.minSize.x, Window.minSize.y, Window.maxSize.x, Window.maxSize.y);
         
-        this.bounds = new AABBi(this.pos, this.size);
+        Window.bounds.set(Window.pos, Window.size);
         
-        this.viewMatrix = new Matrix4d().setOrtho(0, this.fbSize.x, this.fbSize.y, 0, -1F, 1F);
+        Window.viewMatrix.setOrtho(0, Window.fbSize.x, Window.fbSize.y, 0, -1F, 1F);
         
-        Modifier.lockKeyMods(this, builder.lockKeyMods);
+        Modifier.lockKeyMods(builder.lockKeyMods);
         
-        glfwSetWindowCloseCallback(this.handle, Window::windowCloseCallback);
-        glfwSetWindowFocusCallback(this.handle, Window::windowFocusCallback);
-        glfwSetWindowIconifyCallback(this.handle, Window::windowIconifyCallback);
-        glfwSetWindowMaximizeCallback(this.handle, Window::windowMaximizeCallback);
-        glfwSetWindowPosCallback(this.handle, Window::windowPosCallback);
-        glfwSetWindowSizeCallback(this.handle, Window::windowSizeCallback);
-        glfwSetWindowContentScaleCallback(this.handle, Window::windowContentScaleCallback);
-        glfwSetFramebufferSizeCallback(this.handle, Window::windowFramebufferSizeCallback);
-        glfwSetWindowRefreshCallback(this.handle, Window::windowRefreshCallback);
-        glfwSetDropCallback(this.handle, Window::windowDropCallback);
+        glfwSetWindowCloseCallback(Window.handle, Window::windowCloseCallback);
+        glfwSetWindowFocusCallback(Window.handle, Window::windowFocusCallback);
+        glfwSetWindowIconifyCallback(Window.handle, Window::windowIconifyCallback);
+        glfwSetWindowMaximizeCallback(Window.handle, Window::windowMaximizeCallback);
+        glfwSetWindowPosCallback(Window.handle, Window::windowPosCallback);
+        glfwSetWindowSizeCallback(Window.handle, Window::windowSizeCallback);
+        glfwSetWindowContentScaleCallback(Window.handle, Window::windowContentScaleCallback);
+        glfwSetFramebufferSizeCallback(Window.handle, Window::windowFramebufferSizeCallback);
+        glfwSetWindowRefreshCallback(Window.handle, Window::windowRefreshCallback);
+        glfwSetDropCallback(Window.handle, Window::windowDropCallback);
         
-        glfwSetCursorEnterCallback(this.handle, Window::mouseEnteredCallback);
-        glfwSetCursorPosCallback(this.handle, Window::mousePosCallback);
-        glfwSetScrollCallback(this.handle, Window::mouseScrollCallback);
-        glfwSetMouseButtonCallback(this.handle, Window::mouseButtonCallback);
+        glfwSetCursorEnterCallback(Window.handle, Window::mouseEnteredCallback);
+        glfwSetCursorPosCallback(Window.handle, Window::mousePosCallback);
+        glfwSetScrollCallback(Window.handle, Window::mouseScrollCallback);
+        glfwSetMouseButtonCallback(Window.handle, Window::mouseButtonCallback);
         
-        glfwSetCharCallback(this.handle, Window::keyboardCharCallback);
-        glfwSetKeyCallback(this.handle, Window::keyboardKeyCallback);
+        glfwSetCharCallback(Window.handle, Window::keyboardCharCallback);
+        glfwSetKeyCallback(Window.handle, Window::keyboardKeyCallback);
         
-        Window.windows.put(this.handle, this);
+        Window.makeCurrent();
+        
+        Window.primary = new Window();
     }
+    
+    static void destroy()
+    {
+        Window.LOGGER.fine("Destroy");
+        
+        unbindContext();
+        
+        Engine.Delegator.waitRunTask(() -> {
+            glfwFreeCallbacks(Window.handle);
+            glfwDestroyWindow(Window.handle);
+        });
+        
+        Window.primary = null;
+    }
+    
+    static void events(long time)
+    {
+        boolean updateMonitor = false;
+        
+        if (Window.vsync != Window.vsyncChanges)
+        {
+            Window.vsync = Window.vsyncChanges;
+            glfwSwapInterval(Window.vsync ? 1 : 0);
+            Engine.Events.post(EventWindowVsyncChanged.create(time, Window.primary, Window.vsync));
+        }
+        
+        if (Window.focused != Window.focusedChanges)
+        {
+            Window.focused = Window.focusedChanges;
+            Engine.Events.post(EventWindowFocused.create(time, Window.primary, Window.focused));
+        }
+        
+        if (Window.iconified != Window.iconifiedChanges)
+        {
+            Window.iconified = Window.iconifiedChanges;
+            Engine.Events.post(EventWindowIconified.create(time, Window.primary, Window.iconified));
+        }
+        
+        if (Window.maximized != Window.maximizedChanges)
+        {
+            Window.maximized = Window.maximizedChanges;
+            Engine.Events.post(EventWindowMaximized.create(time, Window.primary, Window.maximized));
+        }
+        
+        if (Window.pos.x != Window.posChanges.x || Window.pos.y != Window.posChanges.y)
+        {
+            Window.posChanges.sub(Window.pos, Window.deltaI);
+            Window.pos.set(Window.posChanges);
+            Engine.Events.post(EventWindowMoved.create(time, Window.primary, Window.pos, Window.deltaI));
+            
+            updateMonitor = true;
+        }
+        
+        if (Window.size.x != Window.sizeChanges.x || Window.size.y != Window.sizeChanges.y)
+        {
+            Window.sizeChanges.sub(Window.size, Window.deltaI);
+            Window.size.set(Window.sizeChanges);
+            Engine.Events.post(EventWindowResized.create(time, Window.primary, Window.size, Window.deltaI));
+            
+            updateMonitor = true;
+        }
+        
+        if (Double.compare(Window.scale.x, Window.scaleChanges.x) != 0 || Double.compare(Window.scale.y, Window.scaleChanges.y) != 0)
+        {
+            Window.scaleChanges.sub(Window.scale, Window.deltaD);
+            Window.scale.set(Window.scaleChanges);
+            Engine.Events.post(EventWindowContentScaleChanged.create(time, Window.primary, Window.scale, Window.deltaD));
+        }
+        
+        if (Window.fbSize.x != Window.fbSizeChanges.x || Window.fbSize.y != Window.fbSizeChanges.y)
+        {
+            Window.fbSizeChanges.sub(Window.fbSize, Window.deltaI);
+            Window.fbSize.set(Window.fbSizeChanges);
+            Engine.Events.post(EventWindowFramebufferResized.create(time, Window.primary, Window.fbSize, Window.deltaI));
+            
+            Window.viewMatrix.setOrtho(0, Window.fbSize.x, Window.fbSize.y, 0, -1F, 1F);
+        }
+        
+        if (Window.shouldClose)
+        {
+            Window.open = false;
+            Engine.Events.post(EventWindowClosed.create(time, Window.primary));
+            Engine.stop();
+        }
+        
+        if (Window.shouldRefresh)
+        {
+            Window.shouldRefresh = false;
+            Engine.Events.post(EventWindowRefreshed.create(time, Window.primary));
+        }
+        
+        if (Window.dropped != null)
+        {
+            Path[] paths = new Path[Window.dropped.length];
+            for (int i = 0; i < Window.dropped.length; i++) paths[i] = Paths.get(Window.dropped[i]);
+            Window.dropped = null;
+            Engine.Events.post(EventWindowDropped.create(time, Window.primary, paths));
+        }
+        
+        if (updateMonitor)
+        {
+            Monitor prevMonitor = Window.monitor;
+            
+            int overlap, maxOverlap = 0;
+            for (Monitor monitor : Monitor.monitors.values())
+            {
+                if ((overlap = Window.overlapArea(monitor)) > maxOverlap)
+                {
+                    maxOverlap     = overlap;
+                    Window.monitor = monitor;
+                }
+            }
+            
+            if (Window.monitor != prevMonitor)
+            {
+                Engine.Events.post(EventWindowMonitorChanged.create(time, Window.primary, prevMonitor, Window.monitor));
+            }
+        }
+    }
+    
+    public static void makeCurrent()
+    {
+        long thread = Thread.currentThread().getId();
+        
+        Window.LOGGER.fine("Making Window Context Current in Thread=%s", thread);
+        
+        glfwMakeContextCurrent(Window.handle);
+        org.lwjgl.opengl.GL.createCapabilities();
+    }
+    
+    static void unbindContext()
+    {
+        long thread = Thread.currentThread().getId();
+        
+        Window.LOGGER.fine("Removing Window Context in Thread=%s", thread);
+        
+        org.lwjgl.opengl.GL.setCapabilities(null);
+        glfwMakeContextCurrent(MemoryUtil.NULL);
+    }
+    
+    private static void windowFocusCallback(long handle, boolean focused)
+    {
+        Window.focusedChanges = focused;
+    }
+    
+    private static void windowIconifyCallback(long handle, boolean iconified)
+    {
+        Window.iconifiedChanges = iconified;
+    }
+    
+    private static void windowMaximizeCallback(long handle, boolean maximized)
+    {
+        Window.maximizedChanges = maximized;
+    }
+    
+    private static void windowCloseCallback(long handle)
+    {
+        Window.shouldClose = true;
+    }
+    
+    private static void windowRefreshCallback(long handle)
+    {
+        Window.shouldRefresh = true;
+    }
+    
+    private static void windowPosCallback(long handle, int x, int y)
+    {
+        Window.posChanges.set(x, y);
+    }
+    
+    private static void windowSizeCallback(long handle, int width, int height)
+    {
+        Window.sizeChanges.set(width, height);
+    }
+    
+    private static void windowContentScaleCallback(long handle, float xScale, float yScale)
+    {
+        Window.scaleChanges.set(xScale, yScale);
+    }
+    
+    private static void windowFramebufferSizeCallback(long handle, int width, int height)
+    {
+        Window.fbSizeChanges.set(width, height);
+    }
+    
+    private static void windowDropCallback(long handle, int count, long names)
+    {
+        Window.dropped = new String[count];
+        PointerBuffer charPointers = MemoryUtil.memPointerBuffer(names, count);
+        for (int i = 0; i < count; i++) Window.dropped[i] = MemoryUtil.memUTF8(charPointers.get(i));
+    }
+    
+    private static void mouseEnteredCallback(long handle, boolean entered)
+    {
+        Mouse.window         = Window.primary;
+        Mouse.enteredChanges = entered;
+    }
+    
+    private static void mousePosCallback(long handle, double x, double y)
+    {
+        Mouse.window = Window.primary;
+        Mouse.posChanges.set(x, y);
+    }
+    
+    private static void mouseScrollCallback(long handle, double dx, double dy)
+    {
+        Mouse.window = Window.primary;
+        Mouse.scrollChanges.add(dx, dy);
+    }
+    
+    private static void mouseButtonCallback(long handle, int button, int action, int mods)
+    {
+        Mouse.window = Window.primary;
+        Mouse.buttonStateChanges.offer(new Pair<>(Mouse.Button.valueOf(button), action));
+        Modifier.activeMods = mods;
+    }
+    
+    private static void keyboardCharCallback(long handle, int codePoint)
+    {
+        Keyboard.window = Window.primary;
+        Keyboard.charChanges.offer(codePoint);
+    }
+    
+    private static void keyboardKeyCallback(long handle, int key, int scancode, int action, int mods)
+    {
+        Keyboard.window = Window.primary;
+        Keyboard.keyStateChanges.offer(new Pair<>(Keyboard.Key.get(key, scancode), action));
+        Modifier.activeMods = mods;
+    }
+    
+    // -------------------- Properties -------------------- //
+    
+    static String name;
+    static long   handle;
+    
+    static Monitor monitor;
+    
+    static boolean windowed;
+    
+    static boolean open;
+    
+    static int refreshRate;
+    
+    static final Vector2i minSize = new Vector2i();
+    static final Vector2i maxSize = new Vector2i();
+    
+    static final AABBi bounds = new AABBi();
+    
+    static final Matrix4d viewMatrix = new Matrix4d();
+    
+    // -------------------- State Objects -------------------- //
+    
+    static boolean vsync;
+    static boolean vsyncChanges;
+    
+    static boolean focused;
+    static boolean focusedChanges;
+    
+    static boolean iconified;
+    static boolean iconifiedChanges;
+    
+    static boolean maximized;
+    static boolean maximizedChanges;
+    
+    static final Vector2i pos        = new Vector2i();
+    static final Vector2i posChanges = new Vector2i();
+    
+    static final Vector2i size        = new Vector2i();
+    static final Vector2i sizeChanges = new Vector2i();
+    
+    static final Vector2d scale        = new Vector2d();
+    static final Vector2d scaleChanges = new Vector2d();
+    
+    static final Vector2i fbSize        = new Vector2i();
+    static final Vector2i fbSizeChanges = new Vector2i();
+    
+    static boolean shouldClose;
+    static boolean shouldRefresh;
+    
+    static String[] dropped;
+    
+    // -------------------- Utility Objects -------------------- //
+    
+    private static final Vector2i deltaI              = new Vector2i();
+    private static final Vector2d deltaD              = new Vector2d();
+    private static final Vector2d windowToScreen      = new Vector2d();
+    private static final Vector2d screenToWindow      = new Vector2d();
+    private static final Vector2d windowToFramebuffer = new Vector2d();
+    private static final Vector2d framebufferToWindow = new Vector2d();
+    
+    // -------------------- Instance -------------------- //
+    
+    private Window() {}
     
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Window window = (Window) o;
-        return this.handle == window.handle;
-    }
-    
-    @Override
-    public int hashCode()
-    {
-        return Objects.hash(this.handle);
+        return this == o;
     }
     
     @Override
     public String toString()
     {
-        return "Window{name='" + (this.name != null ? this.name : this.handle) + "'}";
+        return "Window{name='WindowMain'}";
     }
     
     // -------------------- Properties -------------------- //
@@ -447,27 +474,45 @@ public class Window
      *
      * @param title The new title.
      */
-    public void title(CharSequence title)
+    public static void title(CharSequence title)
     {
-        Window.LOGGER.finest("Setting Title for %s: \"%s\"", this, title);
+        Window.LOGGER.finest("Setting Title for %s: \"%s\"", Window.primary, title);
         
-        Engine.Delegator.runTask(() -> glfwSetWindowTitle(this.handle, title));
+        Engine.Delegator.runTask(() -> glfwSetWindowTitle(Window.handle, title));
     }
     
     /**
      * @return The current monitor that the window is in.
      */
-    public Monitor monitor()
+    public static Monitor monitor()
     {
-        return this.monitor;
+        return Window.monitor;
+    }
+    
+    public static int overlapArea(@NotNull Monitor monitor)
+    {
+        Monitor.VideoMode current = Objects.requireNonNull(monitor.videoMode());
+        
+        int mx = monitor.x();
+        int my = monitor.y();
+        int mw = current.width;
+        int mh = current.height;
+        
+        int wx = x();
+        int wy = y();
+        int ww = width();
+        int wh = height();
+        
+        return Math.max(0, Math.min(wx + ww, mx + mw) - Math.max(wx, mx)) *
+               Math.max(0, Math.min(wy + wh, my + mh) - Math.max(wy, my));
     }
     
     /**
      * @return Retrieves if the window is in windowed mode.
      */
-    public boolean windowed()
+    public static boolean windowed()
     {
-        return this.windowed;
+        return Window.windowed;
     }
     
     /**
@@ -489,43 +534,43 @@ public class Window
      *
      * @param windowed The new windowed mode state.
      */
-    public void windowed(boolean windowed)
+    public static void windowed(boolean windowed)
     {
         Engine.Delegator.runTask(() -> {
-            this.windowed = windowed;
-            long monitor = this.windowed ? MemoryUtil.NULL : this.monitor.handle;
+            Window.windowed = windowed;
+            long monitor = Window.windowed ? MemoryUtil.NULL : Window.monitor.handle;
             
-            int x = ((this.monitor.primaryVideoMode.width - this.size.x) >> 1) + this.monitor.x();
-            int y = ((this.monitor.primaryVideoMode.height - this.size.y) >> 1) + this.monitor.y();
+            int x = ((Window.monitor.primaryVideoMode.width - Window.size.x) >> 1) + Window.monitor.x();
+            int y = ((Window.monitor.primaryVideoMode.height - Window.size.y) >> 1) + Window.monitor.y();
             
-            glfwSetWindowMonitor(this.handle, monitor, x, y, this.size.x, this.size.y, this.refreshRate);
+            glfwSetWindowMonitor(Window.handle, monitor, x, y, Window.size.x, Window.size.y, Window.refreshRate);
         });
     }
     
     /**
      * @return If the window is open.
      */
-    public boolean isOpen()
+    public static boolean isOpen()
     {
-        return this.open;
+        return Window.open;
     }
     
     /**
      * Requests that the window close.
      */
-    public void close()
+    public static void close()
     {
-        Window.LOGGER.finest("Closing", this);
+        Window.LOGGER.finest("Closing", Window.primary);
         
-        this.shouldClose = true;
+        Window.shouldClose = true;
     }
     
     /**
      * @return Retrieves the refresh rate of the window, or {@link Window#DONT_CARE}
      */
-    public int refreshRate()
+    public static int refreshRate()
     {
-        return this.refreshRate;
+        return Window.refreshRate;
     }
     
     /**
@@ -533,13 +578,13 @@ public class Window
      *
      * @param refreshRate The new refresh rate.
      */
-    public void refreshRate(int refreshRate)
+    public static void refreshRate(int refreshRate)
     {
         Engine.Delegator.runTask(() -> {
-            this.refreshRate = refreshRate;
+            Window.refreshRate = refreshRate;
             
-            long monitor = this.windowed ? MemoryUtil.NULL : this.monitor.handle;
-            glfwSetWindowMonitor(this.handle, monitor, this.pos.x, this.pos.y, this.size.x, this.size.y, this.refreshRate);
+            long monitor = Window.windowed ? MemoryUtil.NULL : Window.monitor.handle;
+            glfwSetWindowMonitor(Window.handle, monitor, Window.pos.x, Window.pos.y, Window.size.x, Window.size.y, Window.refreshRate);
         });
     }
     
@@ -562,9 +607,9 @@ public class Window
      *
      * @param icons The new icons.
      */
-    public void icons(Image... icons)
+    public static void icons(Image... icons)
     {
-        Window.LOGGER.finest("Setting Icons in %s: %s", this, icons);
+        Window.LOGGER.finest("Setting Icons in %s: %s", Window.primary, icons);
         
         Engine.Delegator.runTask(() -> {
             try (MemoryStack stack = MemoryStack.stackPush())
@@ -593,7 +638,7 @@ public class Window
                     }
                 }
                 
-                glfwSetWindowIcon(this.handle, buffer);
+                glfwSetWindowIcon(Window.handle, buffer);
             }
         });
     }
@@ -601,9 +646,9 @@ public class Window
     /**
      * @return Retrieves the current aspect ratio of the window.
      */
-    public double aspectRatio()
+    public static double aspectRatio()
     {
-        return (double) this.fbSize.x / (double) this.fbSize.y;
+        return (double) Window.fbSize.x / (double) Window.fbSize.y;
     }
     
     /**
@@ -625,11 +670,11 @@ public class Window
      * @param numer the numerator of the desired aspect ratio, or {@link Window#DONT_CARE}
      * @param denom the denominator of the desired aspect ratio, or {@link Window#DONT_CARE}
      */
-    public void aspectRatio(int numer, int denom)
+    public static void aspectRatio(int numer, int denom)
     {
-        Window.LOGGER.finest("Setting Aspect Ratio for %s: %s/%s", this, numer, denom);
+        Window.LOGGER.finest("Setting Aspect Ratio for %s: %s/%s", Window.primary, numer, denom);
         
-        Engine.Delegator.runTask(() -> glfwSetWindowAspectRatio(this.handle, numer, denom));
+        Engine.Delegator.runTask(() -> glfwSetWindowAspectRatio(Window.handle, numer, denom));
     }
     
     /**
@@ -640,20 +685,20 @@ public class Window
      * If the window is a full screen window, the resolution chosen for the
      * window is restored on the selected monitor.
      */
-    public void restore()
+    public static void restore()
     {
-        Window.LOGGER.finest("Restoring", this);
+        Window.LOGGER.finest("Restoring", Window.primary);
         
-        Engine.Delegator.runTask(() -> glfwRestoreWindow(this.handle));
+        Engine.Delegator.runTask(() -> glfwRestoreWindow(Window.handle));
     }
     
     /**
      * @return Retrieves if the window is resizable <i>by the user</i>.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean resizable()
+    public static boolean resizable()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_RESIZABLE) == GLFW_TRUE);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_RESIZABLE) == GLFW_TRUE);
     }
     
     /**
@@ -661,51 +706,51 @@ public class Window
      *
      * @param resizable if the window is resizable <i>by the user</i>.
      */
-    public void resizable(boolean resizable)
+    public static void resizable(boolean resizable)
     {
-        Window.LOGGER.finest("Setting Resizable Flag for %s: %s", this, resizable);
+        Window.LOGGER.finest("Setting Resizable Flag for %s: %s", Window.primary, resizable);
         
-        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(this.handle, GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE));
+        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(Window.handle, GLFW_RESIZABLE, resizable ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves if the window is visible. Window visibility can be controlled with {@link #show} and {@link #hide}.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean visible()
+    public static boolean visible()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_VISIBLE) == GLFW_TRUE);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_VISIBLE) == GLFW_TRUE);
     }
     
     /**
      * Makes the window visible if it was previously hidden. If the window is
      * already visible or is in full screen mode, this function does nothing.
      */
-    public void show()
+    public static void show()
     {
-        Window.LOGGER.finest("Showing", this);
+        Window.LOGGER.finest("Showing", Window.primary);
         
-        Engine.Delegator.runTask(() -> glfwShowWindow(this.handle));
+        Engine.Delegator.runTask(() -> glfwShowWindow(Window.handle));
     }
     
     /**
      * Hides the window, if it was previously visible. If the window is already
      * hidden or is in full screen mode, this function does nothing.
      */
-    public void hide()
+    public static void hide()
     {
-        Window.LOGGER.finest("Hiding", this);
+        Window.LOGGER.finest("Hiding", Window.primary);
         
-        Engine.Delegator.runTask(() -> glfwHideWindow(this.handle));
+        Engine.Delegator.runTask(() -> glfwHideWindow(Window.handle));
     }
     
     /**
      * @return Retrieves if the window has decorations such as a border, a close widget, etc.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean decorated()
+    public static boolean decorated()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_DECORATED) == GLFW_TRUE);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_DECORATED) == GLFW_TRUE);
     }
     
     /**
@@ -714,18 +759,18 @@ public class Window
      *
      * @param decorated if the window has decorations.
      */
-    public void decorated(boolean decorated)
+    public static void decorated(boolean decorated)
     {
-        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(this.handle, GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE));
+        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(Window.handle, GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves if the window is floating, also called topmost or always-on-top.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean floating()
+    public static boolean floating()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_FLOATING) == GLFW_TRUE);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_FLOATING) == GLFW_TRUE);
     }
     
     /**
@@ -734,27 +779,27 @@ public class Window
      *
      * @param floating if the window is floating.
      */
-    public void floating(boolean floating)
+    public static void floating(boolean floating)
     {
-        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(this.handle, GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE));
+        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(Window.handle, GLFW_FLOATING, floating ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
      * @return Retrieves if the cursor is currently directly over the content area of the window, with no other windows between.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean hovered()
+    public static boolean hovered()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_HOVERED) == GLFW_TRUE);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_HOVERED) == GLFW_TRUE);
     }
     
     /**
      * @return Retrieves if input focuses on calling show window.
      */
     @SuppressWarnings("ConstantConditions")
-    public boolean focusOnShow()
+    public static boolean focusOnShow()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(this.handle, GLFW_FOCUS_ON_SHOW) == GLFW_TRUE);
+        return Engine.Delegator.waitReturnTask(() -> glfwGetWindowAttrib(Window.handle, GLFW_FOCUS_ON_SHOW) == GLFW_TRUE);
     }
     
     /**
@@ -762,9 +807,9 @@ public class Window
      *
      * @param focusOnShow if input focuses on calling show window.
      */
-    public void focusOnShow(boolean focusOnShow)
+    public static void focusOnShow(boolean focusOnShow)
     {
-        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(this.handle, GLFW_FOCUS_ON_SHOW, focusOnShow ? GLFW_TRUE : GLFW_FALSE));
+        Engine.Delegator.runTask(() -> glfwSetWindowAttrib(Window.handle, GLFW_FOCUS_ON_SHOW, focusOnShow ? GLFW_TRUE : GLFW_FALSE));
     }
     
     /**
@@ -774,9 +819,9 @@ public class Window
      *
      * @return The minimum size, in screen coordinates, of the content area.
      */
-    public Vector2ic minSize()
+    public static Vector2ic minSize()
     {
-        return this.minSize;
+        return Window.minSize;
     }
     
     /**
@@ -786,9 +831,9 @@ public class Window
      *
      * @return The maximum size, in screen coordinates, of the content area.
      */
-    public Vector2ic maxSize()
+    public static Vector2ic maxSize()
     {
-        return this.maxSize;
+        return Window.maxSize;
     }
     
     /**
@@ -807,12 +852,12 @@ public class Window
      * @param maxWidth  the maximum width, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
      * @param maxHeight the maximum height, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
      */
-    public void sizeLimits(int minWidth, int minHeight, int maxWidth, int maxHeight)
+    public static void sizeLimits(int minWidth, int minHeight, int maxWidth, int maxHeight)
     {
-        this.minSize.set(minWidth, minHeight);
-        this.maxSize.set(maxWidth, maxHeight);
+        Window.minSize.set(minWidth, minHeight);
+        Window.maxSize.set(maxWidth, maxHeight);
         
-        Engine.Delegator.runTask(() -> glfwSetWindowSizeLimits(this.handle, minWidth, minHeight, maxWidth, maxHeight));
+        Engine.Delegator.runTask(() -> glfwSetWindowSizeLimits(Window.handle, minWidth, minHeight, maxWidth, maxHeight));
     }
     
     /**
@@ -829,7 +874,7 @@ public class Window
      * @param min the minimum size, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
      * @param max the maximum size, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
      */
-    public void sizeLimits(@NotNull Vector2ic min, @NotNull Vector2ic max)
+    public static void sizeLimits(@NotNull Vector2ic min, @NotNull Vector2ic max)
     {
         sizeLimits(min.x(), min.y(), max.x(), max.y());
     }
@@ -837,17 +882,17 @@ public class Window
     /**
      * @return An axis-aligned bounding box of the window's content-area.
      */
-    public AABBic bounds()
+    public static AABBic bounds()
     {
-        return this.bounds;
+        return Window.bounds;
     }
     
     /**
      * @return A read-only framebuffer view transformation matrix for this window.
      */
-    public Matrix4dc viewMatrix()
+    public static Matrix4dc viewMatrix()
     {
-        return this.viewMatrix;
+        return Window.viewMatrix;
     }
     
     /**
@@ -864,7 +909,7 @@ public class Window
      * @return An {@link Integer} array with the edge sizes: {@code {left, top, right, bottom}}
      */
     @SuppressWarnings("ConstantConditions")
-    public int @NotNull [] getFrameSize()
+    public static int @NotNull [] getFrameSize()
     {
         return Engine.Delegator.waitReturnTask(() -> {
             try (MemoryStack stack = MemoryStack.stackPush())
@@ -874,7 +919,7 @@ public class Window
                 IntBuffer right  = stack.callocInt(1);
                 IntBuffer bottom = stack.callocInt(1);
                 
-                glfwGetWindowFrameSize(this.handle, left, top, right, bottom);
+                glfwGetWindowFrameSize(Window.handle, left, top, right, bottom);
                 
                 return new int[] {left.get(), top.get(), right.get(), bottom.get()};
             }
@@ -888,9 +933,9 @@ public class Window
      *
      * @param string a UTF-8 encoded string
      */
-    public void setClipboard(ByteBuffer string)
+    public static void setClipboard(ByteBuffer string)
     {
-        Engine.Delegator.runTask(() -> glfwSetClipboardString(this.handle, string));
+        Engine.Delegator.runTask(() -> glfwSetClipboardString(Window.handle, string));
     }
     
     /**
@@ -900,9 +945,9 @@ public class Window
      *
      * @param string a UTF-8 encoded string
      */
-    public void setClipboard(CharSequence string)
+    public static void setClipboard(CharSequence string)
     {
-        Engine.Delegator.runTask(() -> glfwSetClipboardString(this.handle, string));
+        Engine.Delegator.runTask(() -> glfwSetClipboardString(Window.handle, string));
     }
     
     /**
@@ -915,9 +960,9 @@ public class Window
      * {@code null} if an error occurred
      */
     @Nullable
-    public String getClipboard()
+    public static String getClipboard()
     {
-        return Engine.Delegator.waitReturnTask(() -> glfwGetClipboardString(this.handle));
+        return Engine.Delegator.waitReturnTask(() -> glfwGetClipboardString(Window.handle));
     }
     
     /**
@@ -930,9 +975,9 @@ public class Window
      * {@code null} if an error occurred
      */
     @SuppressWarnings("ConstantConditions")
-    public long getClipboardRaw()
+    public static long getClipboardRaw()
     {
-        return Engine.Delegator.waitReturnTask(() -> nglfwGetClipboardString(this.handle));
+        return Engine.Delegator.waitReturnTask(() -> nglfwGetClipboardString(Window.handle));
     }
     
     // -------------------- State Properties -------------------- //
@@ -940,9 +985,9 @@ public class Window
     /**
      * @return Retrieves the vsync status for the current OpenGL or OpenGL ES context
      */
-    public boolean vsync()
+    public static boolean vsync()
     {
-        return this.vsync;
+        return Window.vsync;
     }
     
     /**
@@ -953,9 +998,9 @@ public class Window
      *
      * @param vsync the new vsync status
      */
-    public void vsync(boolean vsync)
+    public static void vsync(boolean vsync)
     {
-        this.vsyncChanges = vsync;
+        Window.vsyncChanges = vsync;
     }
     
     /**
@@ -963,9 +1008,9 @@ public class Window
      *
      * @return if the window has input focus
      */
-    public boolean focused()
+    public static boolean focused()
     {
-        return this.focused;
+        return Window.focused;
     }
     
     /**
@@ -987,9 +1032,9 @@ public class Window
      * For a less disruptive way of getting the user's attention, see
      * {@link #requestFocus}.
      */
-    public void focus()
+    public static void focus()
     {
-        Engine.Delegator.runTask(() -> glfwFocusWindow(this.handle));
+        Engine.Delegator.runTask(() -> glfwFocusWindow(Window.handle));
     }
     
     /**
@@ -1002,17 +1047,17 @@ public class Window
      * Once the user has given attention, usually by focusing the window or
      * application, the system will end the request automatically.
      */
-    public void requestFocus()
+    public static void requestFocus()
     {
-        Engine.Delegator.runTask(() -> glfwRequestWindowAttention(this.handle));
+        Engine.Delegator.runTask(() -> glfwRequestWindowAttention(Window.handle));
     }
     
     /**
      * @return Retrieves whether the window is iconified, whether by the user or with {@link #iconify}.
      */
-    public boolean iconified()
+    public static boolean iconified()
     {
-        return this.iconified;
+        return Window.iconified;
     }
     
     /**
@@ -1022,17 +1067,17 @@ public class Window
      * If the window is a full screen window, the original monitor resolution
      * is restored until the window is restored.
      */
-    public void iconify()
+    public static void iconify()
     {
-        Engine.Delegator.runTask(() -> glfwIconifyWindow(this.handle));
+        Engine.Delegator.runTask(() -> glfwIconifyWindow(Window.handle));
     }
     
     /**
      * @return Retrieves whether the window is maximized, whether by the user or {@link #maximize}.
      */
-    public boolean maximized()
+    public static boolean maximized()
     {
-        return this.maximized;
+        return Window.maximized;
     }
     
     /**
@@ -1041,9 +1086,9 @@ public class Window
      * <p>
      * If the window is a full screen window, this function does nothing.
      */
-    public void maximize()
+    public static void maximize()
     {
-        Engine.Delegator.runTask(() -> glfwMaximizeWindow(this.handle));
+        Engine.Delegator.runTask(() -> glfwMaximizeWindow(Window.handle));
     }
     
     /**
@@ -1052,9 +1097,9 @@ public class Window
      *
      * @return The position of the upper-left corner of the content area
      */
-    public Vector2ic pos()
+    public static Vector2ic pos()
     {
-        return this.pos;
+        return Window.pos;
     }
     
     /**
@@ -1063,9 +1108,9 @@ public class Window
      *
      * @return The x-coordinate of the upper-left corner of the content area
      */
-    public int x()
+    public static int x()
     {
-        return this.pos.x;
+        return Window.pos.x;
     }
     
     /**
@@ -1074,9 +1119,9 @@ public class Window
      *
      * @return The y-coordinate of the upper-left corner of the content area
      */
-    public int y()
+    public static int y()
     {
-        return this.pos.y;
+        return Window.pos.y;
     }
     
     /**
@@ -1094,9 +1139,9 @@ public class Window
      * @param x The x-coordinate of the upper-left corner of the content area.
      * @param y The y-coordinate of the upper-left corner of the content area.
      */
-    public void pos(int x, int y)
+    public static void pos(int x, int y)
     {
-        Engine.Delegator.waitRunTask(() -> glfwSetWindowPos(this.handle, x, y));
+        Engine.Delegator.waitRunTask(() -> glfwSetWindowPos(Window.handle, x, y));
     }
     
     /**
@@ -1113,7 +1158,7 @@ public class Window
      *
      * @param pos The position of the upper-left corner of the content area.
      */
-    public void pos(@NotNull Vector2ic pos)
+    public static void pos(@NotNull Vector2ic pos)
     {
         pos(pos.x(), pos.y());
     }
@@ -1125,9 +1170,9 @@ public class Window
      *
      * @return The size, in screen coordinates, of the content area.
      */
-    public Vector2ic size()
+    public static Vector2ic size()
     {
-        return this.size;
+        return Window.size;
     }
     
     /**
@@ -1137,9 +1182,9 @@ public class Window
      *
      * @return The width, in screen coordinates, of the content area.
      */
-    public int width()
+    public static int width()
     {
-        return this.size.x;
+        return Window.size.x;
     }
     
     /**
@@ -1149,9 +1194,9 @@ public class Window
      *
      * @return The height, in screen coordinates, of the content area.
      */
-    public int height()
+    public static int height()
     {
-        return this.size.y;
+        return Window.size.y;
     }
     
     /**
@@ -1168,9 +1213,9 @@ public class Window
      * @param width  The desired width, in screen coordinates, of the window content area
      * @param height The desired height, in screen coordinates, of the window content area
      */
-    public void size(int width, int height)
+    public static void size(int width, int height)
     {
-        Engine.Delegator.waitRunTask(() -> glfwSetWindowSize(this.handle, width, height));
+        Engine.Delegator.waitRunTask(() -> glfwSetWindowSize(Window.handle, width, height));
     }
     
     /**
@@ -1186,7 +1231,7 @@ public class Window
      *
      * @param size The desired size, in screen coordinates, of the window content area
      */
-    public void size(@NotNull Vector2ic size)
+    public static void size(@NotNull Vector2ic size)
     {
         size(size.x(), size.y());
     }
@@ -1208,9 +1253,9 @@ public class Window
      *
      * @return the content scale for the window.
      */
-    public Vector2dc contentScale()
+    public static Vector2dc contentScale()
     {
-        return this.scale;
+        return Window.scale;
     }
     
     /**
@@ -1230,9 +1275,9 @@ public class Window
      *
      * @return the horizontal content scale for the window.
      */
-    public double contentScaleX()
+    public static double contentScaleX()
     {
-        return this.scale.x;
+        return Window.scale.x;
     }
     
     /**
@@ -1252,9 +1297,9 @@ public class Window
      *
      * @return the vertical content scale for the window.
      */
-    public double contentScaleY()
+    public static double contentScaleY()
     {
-        return this.scale.y;
+        return Window.scale.y;
     }
     
     /**
@@ -1264,9 +1309,9 @@ public class Window
      *
      * @return The size, in pixels, of the framebuffer
      */
-    public Vector2ic framebufferSize()
+    public static Vector2ic framebufferSize()
     {
-        return this.fbSize;
+        return Window.fbSize;
     }
     
     /**
@@ -1276,9 +1321,9 @@ public class Window
      *
      * @return The width, in pixels, of the framebuffer
      */
-    public int framebufferWidth()
+    public static int framebufferWidth()
     {
-        return this.fbSize.x;
+        return Window.fbSize.x;
     }
     
     /**
@@ -1288,9 +1333,9 @@ public class Window
      *
      * @return The height, in pixels, of the framebuffer
      */
-    public int framebufferHeight()
+    public static int framebufferHeight()
     {
-        return this.fbSize.y;
+        return Window.fbSize.y;
     }
     
     // -------------------- Utility Methods -------------------- //
@@ -1305,7 +1350,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc windowToScreen(double x, double y, @NotNull Vector2d out)
+    public static Vector2dc windowToScreen(double x, double y, @NotNull Vector2d out)
     {
         out.x = x - x();
         out.y = y - y();
@@ -1321,7 +1366,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc windowToScreen(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    public static Vector2dc windowToScreen(@NotNull Vector2dc pos, @NotNull Vector2d out)
     {
         return windowToScreen(pos.x(), pos.y(), out);
     }
@@ -1338,9 +1383,9 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc windowToScreen(double x, double y)
+    public static Vector2dc windowToScreen(double x, double y)
     {
-        return windowToScreen(x, y, this.windowToScreen);
+        return windowToScreen(x, y, Window.windowToScreen);
     }
     
     /**
@@ -1354,9 +1399,9 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc windowToScreen(@NotNull Vector2dc pos)
+    public static Vector2dc windowToScreen(@NotNull Vector2dc pos)
     {
-        return windowToScreen(pos.x(), pos.y(), this.windowToScreen);
+        return windowToScreen(pos.x(), pos.y(), Window.windowToScreen);
     }
     
     /**
@@ -1369,7 +1414,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc screenToWindow(double x, double y, @NotNull Vector2d out)
+    public static Vector2dc screenToWindow(double x, double y, @NotNull Vector2d out)
     {
         out.x = x + x();
         out.y = y + y();
@@ -1385,7 +1430,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc screenToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    public static Vector2dc screenToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
     {
         return screenToWindow(pos.x(), pos.y(), out);
     }
@@ -1402,9 +1447,9 @@ public class Window
      * @return The results
      */
     @NotNull
-    public Vector2dc screenToWindow(double x, double y)
+    public static Vector2dc screenToWindow(double x, double y)
     {
-        return screenToWindow(x, y, this.screenToWindow);
+        return screenToWindow(x, y, Window.screenToWindow);
     }
     
     /**
@@ -1418,9 +1463,9 @@ public class Window
      * @return The results
      */
     @NotNull
-    public Vector2dc screenToWindow(@NotNull Vector2dc pos)
+    public static Vector2dc screenToWindow(@NotNull Vector2dc pos)
     {
-        return screenToWindow(pos.x(), pos.y(), this.screenToWindow);
+        return screenToWindow(pos.x(), pos.y(), Window.screenToWindow);
     }
     
     /**
@@ -1433,7 +1478,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc windowToFramebuffer(double x, double y, @NotNull Vector2d out)
+    public static Vector2dc windowToFramebuffer(double x, double y, @NotNull Vector2d out)
     {
         out.x = (x * framebufferWidth() / width());
         out.y = (y * framebufferHeight() / height());
@@ -1449,7 +1494,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc windowToFramebuffer(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    public static Vector2dc windowToFramebuffer(@NotNull Vector2dc pos, @NotNull Vector2d out)
     {
         return windowToFramebuffer(pos.x(), pos.y(), out);
     }
@@ -1466,9 +1511,9 @@ public class Window
      * @return The results.
      */
     @NotNull
-    public Vector2dc windowToFramebuffer(double x, double y)
+    public static Vector2dc windowToFramebuffer(double x, double y)
     {
-        return windowToFramebuffer(x, y, this.windowToFramebuffer);
+        return windowToFramebuffer(x, y, Window.windowToFramebuffer);
     }
     
     /**
@@ -1482,9 +1527,9 @@ public class Window
      * @return The results.
      */
     @NotNull
-    public Vector2dc windowToFramebuffer(@NotNull Vector2dc pos)
+    public static Vector2dc windowToFramebuffer(@NotNull Vector2dc pos)
     {
-        return windowToFramebuffer(pos.x(), pos.y(), this.windowToFramebuffer);
+        return windowToFramebuffer(pos.x(), pos.y(), Window.windowToFramebuffer);
     }
     
     /**
@@ -1497,7 +1542,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc framebufferToWindow(double x, double y, @NotNull Vector2d out)
+    public static Vector2dc framebufferToWindow(double x, double y, @NotNull Vector2d out)
     {
         out.x = (x * width() / framebufferWidth());
         out.y = (y * height() / framebufferHeight());
@@ -1513,7 +1558,7 @@ public class Window
      * @return The results stored in {@code out}.
      */
     @NotNull
-    public Vector2dc framebufferToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    public static Vector2dc framebufferToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
     {
         return framebufferToWindow(pos.x(), pos.y(), out);
     }
@@ -1530,9 +1575,9 @@ public class Window
      * @return The results.
      */
     @NotNull
-    public Vector2dc framebufferToWindow(double x, double y)
+    public static Vector2dc framebufferToWindow(double x, double y)
     {
-        return framebufferToWindow(x, y, this.framebufferToWindow);
+        return framebufferToWindow(x, y, Window.framebufferToWindow);
     }
     
     /**
@@ -1546,132 +1591,16 @@ public class Window
      * @return The results.
      */
     @NotNull
-    public Vector2dc framebufferToWindow(@NotNull Vector2dc pos)
+    public static Vector2dc framebufferToWindow(@NotNull Vector2dc pos)
     {
-        return framebufferToWindow(pos.x(), pos.y(), this.framebufferToWindow);
+        return framebufferToWindow(pos.x(), pos.y(), Window.framebufferToWindow);
     }
     
     // -------------------- Updating -------------------- //
     
-    public void swap()
+    public static void swap()
     {
-        glfwSwapBuffers(this.handle);
-    }
-    
-    // -------------------- State Updating -------------------- //
-    
-    void processEvents(long time)
-    {
-        boolean updateMonitor = false;
-        
-        if (this.vsync != this.vsyncChanges)
-        {
-            this.vsync = this.vsyncChanges;
-            glfwSwapInterval(this.vsync ? 1 : 0);
-            Engine.Events.post(EventWindowVsyncChanged.create(time, this, this.vsync));
-        }
-        
-        if (this.focused != this.focusedChanges)
-        {
-            this.focused = this.focusedChanges;
-            Engine.Events.post(EventWindowFocused.create(time, this, this.focused));
-        }
-        
-        if (this.iconified != this.iconifiedChanges)
-        {
-            this.iconified = this.iconifiedChanges;
-            Engine.Events.post(EventWindowIconified.create(time, this, this.iconified));
-        }
-        
-        if (this.maximized != this.maximizedChanges)
-        {
-            this.maximized = this.maximizedChanges;
-            Engine.Events.post(EventWindowMaximized.create(time, this, this.maximized));
-        }
-        
-        if (this.pos.x != this.posChanges.x || this.pos.y != this.posChanges.y)
-        {
-            this.posChanges.sub(this.pos, this.deltaI);
-            this.pos.set(this.posChanges);
-            Engine.Events.post(EventWindowMoved.create(time, this, this.pos, this.deltaI));
-            
-            updateMonitor = true;
-        }
-        
-        if (this.size.x != this.sizeChanges.x || this.size.y != this.sizeChanges.y)
-        {
-            this.sizeChanges.sub(this.size, this.deltaI);
-            this.size.set(this.sizeChanges);
-            Engine.Events.post(EventWindowResized.create(time, this, this.size, this.deltaI));
-            
-            updateMonitor = true;
-        }
-        
-        if (Double.compare(this.scale.x, this.scaleChanges.x) != 0 || Double.compare(this.scale.y, this.scaleChanges.y) != 0)
-        {
-            this.scaleChanges.sub(this.scale, this.deltaD);
-            this.scale.set(this.scaleChanges);
-            Engine.Events.post(EventWindowContentScaleChanged.create(time, this, this.scale, this.deltaD));
-        }
-        
-        if (this.fbSize.x != this.fbSizeChanges.x || this.fbSize.y != this.fbSizeChanges.y)
-        {
-            this.fbSizeChanges.sub(this.fbSize, this.deltaI);
-            this.fbSize.set(this.fbSizeChanges);
-            Engine.Events.post(EventWindowFramebufferResized.create(time, this, this.fbSize, this.deltaI));
-            
-            this.viewMatrix.setOrtho(0, this.fbSize.x, this.fbSize.y, 0, -1F, 1F);
-        }
-        
-        if (this.shouldClose)
-        {
-            this.open = false;
-            Engine.Events.post(EventWindowClosed.create(time, this));
-        }
-        
-        if (this.shouldRefresh)
-        {
-            this.shouldRefresh = false;
-            Engine.Events.post(EventWindowRefreshed.create(time, this));
-        }
-        
-        if (this.dropped != null)
-        {
-            Path[] paths = new Path[this.dropped.length];
-            for (int i = 0; i < this.dropped.length; i++) paths[i] = Paths.get(this.dropped[i]);
-            this.dropped = null;
-            Engine.Events.post(EventWindowDropped.create(time, this, paths));
-        }
-        
-        if (updateMonitor)
-        {
-            Monitor prevMonitor = this.monitor;
-            
-            int overlap, maxOverlap = 0;
-            for (Monitor monitor : Monitor.monitors.values())
-            {
-                if ((overlap = monitor.windowOverlap(this)) > maxOverlap)
-                {
-                    maxOverlap   = overlap;
-                    this.monitor = monitor;
-                }
-            }
-            
-            if (this.monitor != prevMonitor)
-            {
-                Engine.Events.post(EventWindowMonitorChanged.create(time, this, prevMonitor, this.monitor));
-            }
-        }
-    }
-    
-    void releaseCallbacks()
-    {
-        Window.LOGGER.finer("Destroying", this);
-        
-        Engine.Delegator.waitRunTask(() -> {
-            glfwFreeCallbacks(this.handle);
-            glfwDestroyWindow(this.handle);
-        });
+        glfwSwapBuffers(Window.handle);
     }
     
     // -------------------- Utility Classes -------------------- //
@@ -1750,8 +1679,9 @@ public class Window
          */
         public @NotNull Window build()
         {
-            unbindContext();
-            return Objects.requireNonNull(Engine.Delegator.waitReturnTask(() -> new Window(this)));
+            // unbindContext();
+            throw new RuntimeException("Not Implemented Yet");
+            // return Objects.requireNonNull(Engine.Delegator.waitReturnTask(() -> new Window(this)));
         }
         
         /**

@@ -6,8 +6,8 @@ import org.joml.Vector2ic;
 
 public class AABBi implements AABBic
 {
-    public final Vector2i pos;
-    public final Vector2i size;
+    public Vector2i pos;
+    public Vector2i size;
     
     protected final Vector2i min = new Vector2i();
     protected final Vector2i max = new Vector2i();
@@ -117,6 +117,34 @@ public class AABBi implements AABBic
     @Override
     public AABBic aabb()
     {
+        return this;
+    }
+    
+    public AABBi set(int x, int y, int width, int height)
+    {
+        this.pos  = new Vector2i(x, y);
+        this.size = new Vector2i(width, height);
+        return this;
+    }
+    
+    public AABBi set(@NotNull Vector2ic pos, @NotNull Vector2ic size)
+    {
+        this.pos  = new Vector2i(pos);
+        this.size = new Vector2i(size);
+        return this;
+    }
+    
+    public AABBi set(@NotNull Vector2i pos, @NotNull Vector2i size)
+    {
+        this.pos  = pos;
+        this.size = size;
+        return this;
+    }
+    
+    public AABBi set(@NotNull AABBic other)
+    {
+        this.pos  = new Vector2i(other.pos());
+        this.size = new Vector2i(other.size());
         return this;
     }
 }

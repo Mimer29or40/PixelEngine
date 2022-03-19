@@ -836,8 +836,8 @@ public final class Debug
         
         protected void draw()
         {
-            this.width  = Window.primary().framebufferWidth();
-            this.height = Window.primary().framebufferHeight() - Debug.headerSize;
+            this.width  = Window.framebufferWidth();
+            this.height = Window.framebufferHeight() - Debug.headerSize;
             drawImpl();
         }
         
