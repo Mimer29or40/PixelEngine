@@ -131,8 +131,8 @@ public final class Layer
     
     static void events()
     {
-        int fbWidth  = Window.primary.framebufferWidth();
-        int fbHeight = Window.primary.framebufferHeight();
+        int fbWidth  = Window.framebufferWidth();
+        int fbHeight = Window.framebufferHeight();
         
         for (Layer layer : Layer.layers.values())
         {

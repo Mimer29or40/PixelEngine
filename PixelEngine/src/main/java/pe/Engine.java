@@ -446,7 +446,7 @@ public abstract class Engine
             
             Extensions.postSetup();
             
-            if (Window.primary != null)
+            if (Window.isOpen())
             {
                 Window.unbindContext();
                 
@@ -520,7 +520,7 @@ public abstract class Engine
                                 // NuklearGUI.draw();
                                 // ImGUI.draw();
                                 
-                                Window.primary.swap();
+                                Window.swap();
                                 
                                 // TODO Profiler End Frame
                                 

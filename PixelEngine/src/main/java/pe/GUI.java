@@ -153,13 +153,13 @@ public final class GUI
             MemoryUtil.memCopy(text, MemoryUtil.memAddress(str), len);
             str.put(len, (byte) 0);
             
-            Window.primary.setClipboard(str);
+            Window.setClipboard(str);
         }
     }
     
     private static void paste(long handle, long edit)
     {
-        long text = Window.primary.getClipboardRaw();
+        long text = Window.getClipboardRaw();
         if (text != MemoryUtil.NULL) nnk_textedit_paste(edit, text, nnk_strlen(text));
     }
     
