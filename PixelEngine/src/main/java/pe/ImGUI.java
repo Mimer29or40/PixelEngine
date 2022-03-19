@@ -1,9 +1,14 @@
 package pe;
 
 import imgui.ImGui;
+import imgui.ImGuiIO;
+import imgui.flag.ImGuiConfigFlags;
 import imgui.gl3.ImGuiImplGl3;
 import imgui.glfw.ImGuiImplGlfw;
 import rutils.Logger;
+
+import static org.lwjgl.glfw.GLFW.glfwGetCurrentContext;
+import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
 
 public class ImGUI
 {
@@ -16,6 +21,8 @@ public class ImGUI
     {
         // Setup Dear ImGui context
         ImGui.createContext();
+        ImGuiIO io = ImGui.getIO();
+        io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         
         // Setup Platform/Renderer bindings
         imGuiGl3  = new ImGuiImplGl3();
@@ -53,5 +60,13 @@ public class ImGUI
         // Render dear imgui into screen
         ImGui.render();
         imGuiGl3.renderDrawData(ImGui.getDrawData());
+        
+        if (ImGui.getIO().hasConfigFlags(ImGuiConfigFlags.ViewportsEnable))
+        {
+            final long window = glfwGetCurrentContext();
+            ImGui.updatePlatformWindows();
+            ImGui.renderPlatformWindowsDefault();
+            glfwMakeContextCurrent(window);
+        }
     }
 }

@@ -35,7 +35,8 @@ public class Window
     
     static final Map<Long, Window> windows = new LinkedHashMap<>();
     static       Window            primary = null;
-    static       Window            current = null;
+    
+    static final Map<Long, GLCapabilities> contexts = new LinkedHashMap<>();
     
     static void setup(int width, int height, double pixelWidth, double pixelHeight)
     {
@@ -66,47 +67,63 @@ public class Window
     {
         Window.LOGGER.fine("Destroy");
         
-        Window.makeCurrent(null);
+        unbindContext();
         for (Window window : Window.windows.values()) window.releaseCallbacks();
+        
+        Window.windows.clear();
+        Window.primary = null;
     }
     
     static void events(long time)
     {
-        long[] handlesToRemove = Window.windows.values()
-                                               .stream()
-                                               .filter(w -> !w.isOpen())
-                                               .mapToLong(w -> w.handle)
-                                               .toArray();
+        List<Long> handlesToRemove = new ArrayList<>();
+        for (Window window : Window.windows.values())
+        {
+            window.processEvents(time);
+            
+            if (!window.isOpen()) handlesToRemove.add(window.handle);
+        }
         
-        Window.windows.values().forEach(w -> w.processEvents(time));
+        long primaryHandle = Window.primary.handle;
         
         for (long handle : handlesToRemove)
         {
-            Window removed = Window.windows.remove(handle);
-            removed.releaseCallbacks();
-            if (removed == Window.primary) Engine.stop();
+            if (handle == primaryHandle)
+            {
+                Engine.stop();
+            }
+            else
+            {
+                Window removed = Window.windows.remove(handle);
+                removed.releaseCallbacks();
+            }
         }
     }
     
     public static void makeCurrent(@Nullable Window window)
     {
-        if (Window.current != window)
-        {
-            Window.current = window;
-            if (window != null)
-            {
-                Window.LOGGER.finer("Binding Context for", window);
-                
-                org.lwjgl.opengl.GL.setCapabilities(window.capabilities);
-                glfwMakeContextCurrent(window.handle);
-            }
-            else
-            {
-                Window.LOGGER.finer("Unbinding Context");
-                
-                glfwMakeContextCurrent(MemoryUtil.NULL);
-            }
-        }
+        if (window == null) window = Window.primary;
+        
+        if (glfwGetCurrentContext() == window.handle) return;
+        
+        long thread = Thread.currentThread().getId();
+        
+        Window.LOGGER.fine("Binding Context(%s) in Thread=%s", window.handle, thread);
+        
+        glfwMakeContextCurrent(window.handle);
+        
+        Window.contexts.computeIfAbsent(thread, t -> org.lwjgl.opengl.GL.createCapabilities());
+    }
+    
+    static void unbindContext()
+    {
+        long thread = Thread.currentThread().getId();
+        
+        Window.LOGGER.fine("Unbinding Context in Thread=%s", thread);
+        
+        org.lwjgl.opengl.GL.setCapabilities(null);
+        Window.contexts.remove(thread);
+        glfwMakeContextCurrent(MemoryUtil.NULL);
     }
     
     @UnmodifiableView
@@ -250,8 +267,6 @@ public class Window
     
     final Matrix4d viewMatrix;
     
-    final GLCapabilities capabilities;
-    
     // -------------------- State Objects -------------------- //
     
     boolean vsync;
@@ -307,7 +322,6 @@ public class Window
         long   monitor = this.windowed ? MemoryUtil.NULL : this.monitor.handle;
         long   window  = Window.primary != null ? Window.primary.handle : MemoryUtil.NULL;
         
-        glfwMakeContextCurrent(MemoryUtil.NULL);
         this.handle = glfwCreateWindow(builder.size.x(), builder.size.y(), title, monitor, window);
         if (this.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the window");
         
@@ -380,10 +394,6 @@ public class Window
         this.bounds = new AABBi(this.pos, this.size);
         
         this.viewMatrix = new Matrix4d().setOrtho(0, this.fbSize.x, this.fbSize.y, 0, -1F, 1F);
-        
-        Window.current = this;
-        glfwMakeContextCurrent(this.handle);
-        this.capabilities = org.lwjgl.opengl.GL.createCapabilities();
         
         Modifier.lockKeyMods(this, builder.lockKeyMods);
         
@@ -511,7 +521,7 @@ public class Window
     }
     
     /**
-     * @return Retrieves the refresh rate of the window, or {@link org.lwjgl.glfw.GLFW#GLFW_DONT_CARE DONT_CARE}
+     * @return Retrieves the refresh rate of the window, or {@link Window#DONT_CARE}
      */
     public int refreshRate()
     {
@@ -606,9 +616,8 @@ public class Window
      * must be greater than zero. For example, the common 16:9 aspect ratio is
      * as 16 and 9, respectively.
      * <p>
-     * If the numerator and denominator is set to
-     * {@link Window#DONT_CARE} then the aspect
-     * ratio limit is disabled.
+     * If the numerator and denominator is set to {@link Window#DONT_CARE} then
+     * the aspect ratio limit is disabled.
      * <p>
      * The aspect ratio is applied immediately to a windowed mode window and
      * may cause it to be resized.
@@ -793,10 +802,10 @@ public class Window
      * The maximum dimensions must be greater than or equal to the minimum
      * dimensions and all must be greater than or equal to zero.
      *
-     * @param minWidth  the minimum width, in screen coordinates, of the content area, or {@link #DONT_CARE}
-     * @param minHeight the minimum height, in screen coordinates, of the content area, or {@link #DONT_CARE}
-     * @param maxWidth  the maximum width, in screen coordinates, of the content area, or {@link #DONT_CARE}
-     * @param maxHeight the maximum height, in screen coordinates, of the content area, or {@link #DONT_CARE}
+     * @param minWidth  the minimum width, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
+     * @param minHeight the minimum height, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
+     * @param maxWidth  the maximum width, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
+     * @param maxHeight the maximum height, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
      */
     public void sizeLimits(int minWidth, int minHeight, int maxWidth, int maxHeight)
     {
@@ -817,8 +826,8 @@ public class Window
      * The maximum dimensions must be greater than or equal to the minimum
      * dimensions and all must be greater than or equal to zero.
      *
-     * @param min the minimum size, in screen coordinates, of the content area, or {@link #DONT_CARE}
-     * @param max the maximum size, in screen coordinates, of the content area, or {@link #DONT_CARE}
+     * @param min the minimum size, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
+     * @param max the maximum size, in screen coordinates, of the content area, or {@link Window#DONT_CARE}
      */
     public void sizeLimits(@NotNull Vector2ic min, @NotNull Vector2ic max)
     {
@@ -826,7 +835,7 @@ public class Window
     }
     
     /**
-     * @return A axis-aligned bounding box of the window's content-area.
+     * @return An axis-aligned bounding box of the window's content-area.
      */
     public AABBic bounds()
     {
@@ -964,12 +973,12 @@ public class Window
      * already be visible and not iconified.
      * <p>
      * By default, both windowed and full screen mode windows are focused when
-     * initially created. Set the {@link Builder#focused(Boolean)} FOCUSED}
+     * initially created. Set the {@link Builder#focused(Boolean) focused}
      * flag to disable this behavior.
      * <p>
      * Also by default, windowed mode windows are focused when shown with
-     * {@link #show}. Set the {@link Builder#focusOnShow(boolean)} window hint
-     * to disable this behavior.
+     * {@link #show}. Set the {@link Builder#focusOnShow(Boolean) focusOnShow}
+     * window hint to disable this behavior.
      * <p>
      * <b>Do not use this function</b> to steal focus from other applications
      * unless you are certain that is what the user wants. Focus stealing can
@@ -1741,6 +1750,7 @@ public class Window
          */
         public @NotNull Window build()
         {
+            unbindContext();
             return Objects.requireNonNull(Engine.Delegator.waitReturnTask(() -> new Window(this)));
         }
         
@@ -1935,7 +1945,7 @@ public class Window
         /**
          * This function sets if the window's frame rate should be locked to its monitor's refresh rate.
          *
-         * @param vsync if the window will be locked the its monitor's refresh rate..
+         * @param vsync if the window will be locked to its monitor's refresh rate.
          * @return This instance for call chaining.
          */
         public Builder vsync(boolean vsync)
@@ -2346,9 +2356,8 @@ public class Window
         
         /**
          * Specifies the desired number of samples to use for multisampling.
-         * Zero disables multisampling. A value of
-         * {@link Window#DONT_CARE} means the
-         * application has no preference.
+         * Zero disables multisampling. A value of {@link Window#DONT_CARE}
+         * means the application has no preference.
          *
          * @param samples the desired number of samples. In the range:<br>0 to {@link Integer#MAX_VALUE} or {@link Window#DONT_CARE}
          * @return This instance for call chaining.
@@ -2397,9 +2406,8 @@ public class Window
         
         /**
          * Specifies the desired refresh rate for full screen windows. A value
-         * of {@link Window#DONT_CARE} means the
-         * highest available refresh rate will be used. This hint is ignored
-         * for windowed mode windows.
+         * of {@link Window#DONT_CARE} means the highest available refresh rate
+         * will be used. This hint is ignored for windowed mode windows.
          *
          * @param refreshRate the desired refresh rate for full screen windows. In the range:<br>0 to {@link Integer#MAX_VALUE} or {@link Window#DONT_CARE}
          * @return This instance for call chaining.

@@ -448,7 +448,7 @@ public abstract class Engine
             
             if (Window.primary != null)
             {
-                Window.makeCurrent(null);
+                Window.unbindContext();
                 
                 final CountDownLatch latch = new CountDownLatch(1);
                 
@@ -484,8 +484,10 @@ public abstract class Engine
                                     
                                     GLState.defaultState();
                                     GLState.wireframe(Engine.wireframe);
-                                    
-                                    GLBatch.get().start();
+    
+                                    GLBatch.bind(null);
+                                    GLBatch defaultBatch = GLBatch.get();
+                                    defaultBatch.start();
                                     
                                     // Engine.renderer.start(); // TODO
                                     
@@ -506,7 +508,7 @@ public abstract class Engine
                                     
                                     // Engine.renderer.finish(); // TODO
                                     
-                                    GLBatch.BatchStats stats = GLBatch.get().stop();
+                                    GLBatch.BatchStats stats = defaultBatch.stop();
                                     
                                     Engine.vertices = stats.vertices();
                                     Engine.draws    = stats.draws();
