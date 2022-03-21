@@ -1,5 +1,6 @@
 package pe;
 
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 import pe.color.Color;
 import pe.color.ColorFormat;
@@ -72,21 +73,23 @@ public final class Capture
             // NOTE: We record one gif frame every 10 game frames
             if ((Capture.frameCounter % GIF_RECORD_FRAMERATE) == 0)
             {
-                long time = Time.getNS();
+                long time  = Time.getNS();
                 long delta = time - Capture.lastFrame;
                 Capture.lastFrame = time;
                 
-                // Get image data for the current frame (from backbuffer)
+                // Get image data for the current frame (from back buffer)
                 // NOTE: This process is quite slow... :(
                 
                 int w = Window.framebufferWidth();
                 int h = Window.framebufferHeight();
                 
-                Color.Buffer data = GLState.readFrontBuffer(0, 0, w, h);
-                Image image = Image.load(data, w, h, 1, data.format());
+                Color.Buffer data  = GLState.readFrontBuffer(0, 0, w, h);
+                Image        image = Image.load(data, w, h, 1, data.format());
                 
-                Capture.encoder.addFrame(image, (int) (delta / 1_000_000));
-    
+                boolean result = Capture.encoder.addFrame(image, (int) (delta / 1_000_000));
+                
+                if (!result) Capture.LOGGER.warning("Could not add frame to", Capture.timestamp);
+                
                 image.delete(); // Free image data
             }
         }
@@ -97,7 +100,12 @@ public final class Capture
         stopRecording();
     }
     
-    private static void startRecording()
+    public static void takeScreenShot()
+    {
+        Capture.screenShot = String.format("ScreenShot - %s.png", Time.timeStamp());
+    }
+    
+    public static void startRecording()
     {
         if (Capture.recording) return;
         
@@ -106,12 +114,19 @@ public final class Capture
         Capture.frameCounter = 0;
         Capture.timestamp    = String.format("Recording - %s.gif", Time.timeStamp());
         
-        Capture.encoder.start(Capture.timestamp, Window.framebufferWidth(), Window.framebufferHeight());
+        boolean result = Capture.encoder.start(Capture.timestamp, Window.framebufferWidth(), Window.framebufferHeight());
         
-        Capture.LOGGER.info("Start animated GIF recording: %s", Capture.timestamp);
+        if (result)
+        {
+            Capture.LOGGER.info("Started GIF Recording: %s", Capture.timestamp);
+        }
+        else
+        {
+            Capture.LOGGER.warning("Could not start GIF recording");
+        }
     }
     
-    private static void stopRecording()
+    public static void stopRecording()
     {
         if (!Capture.recording) return;
         
@@ -119,14 +134,10 @@ public final class Capture
         
         boolean result = Capture.encoder.finish();
         
-        Capture.LOGGER.info("Finish GIF Recording. Result:", result ? "Success" : "Failure");
+        Capture.LOGGER.info("Finished GIF Recording. Result:", result ? "Success" : "Failure");
     }
     
-    public static void takeScreenShot()
-    {
-        Capture.screenShot = String.format("ScreenShot - %s.png", Time.timeStamp());
-    }
-    
+    @SuppressWarnings("unused")
     private static class GIFEncoder
     {
         // -------------------- Per Gif State -------------------- //
@@ -352,8 +363,7 @@ public final class Capture
                 if (!this.firstFrame) writePalette(results.colorTable());
                 
                 // encode and write pixel data
-                LZWEncoder encoder = new LZWEncoder(this.width, this.height, results.pixels(), results.colorDepth());
-                encoder.encode(this.stream);
+                LZW.encode(results.pixels(), results.colorDepth(), this.stream);
                 
                 this.firstFrame = false;
                 
@@ -377,9 +387,9 @@ public final class Capture
             try
             {
                 // gif trailer
-                write(0x3B);
-                flush();
-                if (this.shouldClose) close();
+                this.stream.write(0x3B);
+                this.stream.flush();
+                if (this.shouldClose) this.stream.close();
             }
             catch (IOException e)
             {
@@ -555,9 +565,7 @@ public final class Capture
             final byte[] pixels = new byte[nPix];
             
             // initialize quantizer
-            NeuQuant nq = new NeuQuant(rawPixels, len, this.quality);
-            
-            final byte[]    colorTable = nq.process(); // create reduced palette
+            final byte[]    colorTable = NeuQuantize.quantize(rawPixels, this.quality); // create reduced palette
             final boolean[] usedEntry  = new boolean[256];
             // convert map from BGR to RGB
             for (int i = 0; i < colorTable.length; i += 3)
@@ -571,7 +579,7 @@ public final class Capture
             int k = 0;
             for (int i = 0; i < nPix; i++)
             {
-                int index = nq.map(rawPixels[k++] & 0xFF, rawPixels[k++] & 0xFF, rawPixels[k++] & 0xFF);
+                int index = NeuQuantize.map(rawPixels[k++] & 0xFF, rawPixels[k++] & 0xFF, rawPixels[k++] & 0xFF);
                 pixels[i]        = (byte) index;
                 usedEntry[index] = true;
             }
@@ -638,13 +646,13 @@ public final class Capture
         protected void writeGraphicCtrlExt(int delay, int transIndex) throws IOException
         {
             // extension introducer
-            write(0x21);
+            this.stream.write(0x21);
             
             // GCE label
-            write(0xF9);
+            this.stream.write(0xF9);
             
             // data block size
-            write(4);
+            this.stream.write(4);
             
             int transparency, dispose;
             if (this.transparentColor < 0)
@@ -662,14 +670,14 @@ public final class Capture
             if (this.dispose >= 0) dispose = this.dispose & 7;
             
             // packed fields
-            write((((0 & 0b0111) << 5) |       // 1:3 reserved
-                   ((dispose & 0b0111) << 2) | // 4:6 disposal
-                   ((0 & 0b0001) << 1) |       // 7   user input - 0 = none
-                   (transparency & 0b0001)));  // 8   transparency flag
+            this.stream.write((((0 & 0b0111) << 5) |       // 1:3 reserved
+                               ((dispose & 0b0111) << 2) | // 4:6 disposal
+                               ((0 & 0b0001) << 1) |       // 7   user input - 0 = none
+                               (transparency & 0b0001)));  // 8   transparency flag
             
             writeShort(delay / 10); // delay x 1/100 sec
-            write(transIndex); // transparent color index
-            write(0); // block terminator
+            this.stream.write(transIndex); // transparent color index
+            this.stream.write(0); // block terminator
         }
         
         /**
@@ -679,7 +687,7 @@ public final class Capture
         protected void writeImageDesc(int palletSize) throws IOException
         {
             // image separator
-            write(0x2C);
+            this.stream.write(0x2C);
             
             // image position x,y = 0,0
             writeShort(0);
@@ -693,16 +701,16 @@ public final class Capture
             if (this.firstFrame)
             {
                 // no LCT  - GCT is used for first (or only) frame
-                write(0);
+                this.stream.write(0);
             }
             else
             {
                 // specify normal LCT
-                write((((1 & 0b0001) << 7) |    // 1 local color table  1=yes
-                       ((0 & 0b0001) << 6) |    // 2 interlace - 0=no
-                       ((0 & 0b0001) << 5) |    // 3 sorted - 0=no
-                       ((0 & 0b0011) << 3) |    // 4-5 reserved
-                       (palletSize & 0b0111))); // 6-8 size of color table
+                this.stream.write((((1 & 0b0001) << 7) |    // 1 local color table  1=yes
+                                   ((0 & 0b0001) << 6) |    // 2 interlace - 0=no
+                                   ((0 & 0b0001) << 5) |    // 3 sorted - 0=no
+                                   ((0 & 0b0011) << 3) |    // 4-5 reserved
+                                   (palletSize & 0b0111))); // 6-8 size of color table
             }
         }
         
@@ -717,16 +725,16 @@ public final class Capture
             writeShort(this.height);
             
             // packed fields
-            write((((1 & 0b0001) << 7) |    // 1  : global color table flag = 1 (gct used)
-                   ((7 & 0b0111) << 4) |    // 2-4: color resolution = 7
-                   ((0 & 0b0001) << 3) |    // 5  : gct sort flag = 0
-                   (palletSize & 0b0111))); // 6-8: gct size
+            this.stream.write((((1 & 0b0001) << 7) |    // 1  : global color table flag = 1 (gct used)
+                               ((7 & 0b0111) << 4) |    // 2-4: color resolution = 7
+                               ((0 & 0b0001) << 3) |    // 5  : gct sort flag = 0
+                               (palletSize & 0b0111))); // 6-8: gct size
             
             // background color index
-            write(0);
+            this.stream.write(0);
             
             // pixel aspect ratio - assume 1:1
-            write(0);
+            this.stream.write(0);
         }
         
         /**
@@ -736,28 +744,28 @@ public final class Capture
         protected void writeNetscapeExt() throws IOException
         {
             // extension introducer
-            write(0x21);
+            this.stream.write(0x21);
             
             // app extension label
-            write(0xFF);
+            this.stream.write(0xFF);
             
             // block size
-            write(11);
+            this.stream.write(11);
             
             // app id + auth code
             writeString("NETSCAPE" + "2.0");
             
             // sub-block size
-            write(3);
+            this.stream.write(3);
             
             // loop sub-block id
-            write(1);
+            this.stream.write(1);
             
             // loop count (extra iterations, 0=repeat forever)
             writeShort(this.repeat);
             
             // block terminator
-            write(0);
+            this.stream.write(0);
         }
         
         /**
@@ -765,9 +773,9 @@ public final class Capture
          */
         protected void writePalette(byte[] colorTab) throws IOException
         {
-            write(colorTab);
+            this.stream.write(colorTab);
             int n = (3 * 256) - colorTab.length;
-            for (int i = 0; i < n; i++) write(0);
+            for (int i = 0; i < n; i++) this.stream.write(0);
         }
         
         /**
@@ -775,8 +783,8 @@ public final class Capture
          */
         protected void writeShort(int value) throws IOException
         {
-            write(value & 0xFF);
-            write((value >> 8) & 0xFF);
+            this.stream.write(value & 0xFF);
+            this.stream.write((value >> 8) & 0xFF);
         }
         
         /**
@@ -784,43 +792,10 @@ public final class Capture
          */
         protected void writeString(String s) throws IOException
         {
-            for (int i = 0; i < s.length(); i++) write((byte) s.charAt(i));
-        }
-        
-        // -------------------- Stream Methods -------------------- //
-        
-        protected void write(int b) throws IOException
-        {
-            this.stream.write(b);
-        }
-        
-        protected void write(byte[] b) throws IOException
-        {
-            this.stream.write(b);
-        }
-        
-        protected void flush() throws IOException
-        {
-            this.stream.flush();
-        }
-        
-        protected void close() throws IOException
-        {
-            this.stream.close();
+            for (int i = 0; i < s.length(); i++) this.stream.write((byte) s.charAt(i));
         }
         
         // -------------------- Utility Methods -------------------- //
-        
-        /**
-         * Returns true if the exact matching color is existing, and used in the
-         * color palette, otherwise, return false. This method has to be called
-         * before finishing the image, because after finished the palette is
-         * destroyed, and it will always return false.
-         */
-        protected static boolean isColorUsed(int color, byte[] colorTable, boolean[] usedEntry)
-        {
-            return findExact(color, colorTable, usedEntry) != -1;
-        }
         
         /**
          * Returns index of palette exactly matching to color c or -1 if there is no exact matching.
@@ -891,792 +866,780 @@ public final class Capture
         {
             return new int[] {(c >> 16) & 0xFF, (c >> 8) & 0xFF, (c) & 0xFF};
         }
+    }
+    
+    private interface AnalyzeResults
+    {
+        byte[] pixels();
         
-        private interface AnalyzeResults
-        {
-            byte[] pixels();
-            
-            byte[] colorTable();
-            
-            int colorDepth();
-            
-            int palletSize();
-            
-            int transparentIndex();
-        }
+        byte[] colorTable();
         
-        @SuppressWarnings({"FieldMayBeFinal", "SpellCheckingInspection"})
-        private static class LZWEncoder
+        int colorDepth();
+        
+        int palletSize();
+        
+        int transparentIndex();
+    }
+    
+    private static class LZW
+    {
+        /**
+         * General Defines
+         *
+         * <ul>
+         *     <li>{@link #HASH_SIZE}: 80% occupancy</li>
+         *     <li>{@link #MAX_BIT_DEPTH}</li>
+         *     <li>{@link #MAX_MAX_CODE}: Should <b>NEVER</b> generate this code</li>
+         * </ul>
+         *
+         * @noinspection JavaDoc
+         */
+        private static final int
+                HASH_SIZE     = 5003,
+                MAX_BIT_DEPTH = 12,
+                MAX_MAX_CODE  = 1 << MAX_BIT_DEPTH;
+        
+        private static final int[] MASKS = {
+                0x0000,
+                0x0001, 0x0003, 0x0007, 0x000F,
+                0x001F, 0x003F, 0x007F, 0x00FF,
+                0x01FF, 0x03FF, 0x07FF, 0x0FFF,
+                0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
+        };
+        
+        /**
+         * Initial Number of Bits
+         */
+        private static int initBitDepth;
+        
+        /**
+         * Number of bits/code
+         */
+        private static int bitDepth;
+        
+        /**
+         * Maximum Code, given n_bits
+         */
+        private static int maxCode;
+        
+        private static int[] hashTable;
+        private static int[] codeTable;
+        
+        /**
+         * Block Compression Parameters. After all codes are used up, and
+         * compression rate changes, start over.
+         */
+        private static boolean clearFlag = false;
+        
+        private static int clearCode;
+        private static int eofCode;
+        
+        /**
+         * First unused entry
+         */
+        private static int freeEntry;
+        
+        private static int curBitDepth;
+        private static int curAccum;
+        
+        /**
+         * Number of characters so far in this 'packet'
+         */
+        private static int accumulatorIndex;
+        
+        /**
+         * Define the storage for the packet accumulator
+         */
+        private static byte[] accumulator;
+        
+        /**
+         * Algorithm: Use open addressing double hashing (no chaining) on the
+         * prefix code / next character combination. We do a variant of Knuth's
+         * algorithm D (vol. 3, sec. 6.4) along with G. Knott's
+         * relatively-prime secondary probe.  Here, the modular division first
+         * probe is gives way to a faster exclusive-or manipulation. Also do
+         * block compression with an adaptive reset, whereby the code table is
+         * cleared when the compression ratio decreases, but after the table
+         * fills. The variable-length output codes are re-sized at this point,
+         * and a special CLEAR code is generated for the decompressor. Late
+         * addition: construct the table according to file size for noticeable
+         * speed improvement on small files. Please direct questions about this
+         * implementation to ames!jaw.
+         * <p>
+         * Maintain a BITS character long buffer (so that 8 codes will fit in
+         * it exactly). Use the VAX insv instruction to insert each code in
+         * turn. When the buffer fills up empty it and start over.
+         *
+         * @param data     The array of data formatted to encode.
+         * @param bitDepth The bit depth. Usually 8.
+         * @param stream   The stream to output the data.
+         * @throws IOException Writing to the stream failed.
+         */
+        public static void encode(byte[] data, int bitDepth, OutputStream stream) throws IOException
         {
-            private static final int EOF = -1;
+            LZW.initBitDepth = Math.max(2, bitDepth) + 1;
             
-            private int imgW, imgH;
-            private byte[] pixAry;
-            private int    initCodeSize;
-            private int    remaining;
-            private int    curPixel;
+            LZW.bitDepth = LZW.initBitDepth;
+            LZW.maxCode  = (1 << LZW.bitDepth) - 1;
             
-            // GIFCOMPR.C       - GIF Image compression routines
-            //
-            // Lempel-Ziv compression based on 'compress'.  GIF modifications by
-            // David Rowley (mgardi@watdcsu.waterloo.edu)
+            LZW.hashTable = new int[LZW.HASH_SIZE];
+            LZW.codeTable = new int[LZW.HASH_SIZE];
             
-            // General DEFINEs
+            // Set up the necessary values
+            LZW.clearFlag = false;
             
-            static final int BITS = 12;
+            LZW.clearCode = 1 << (LZW.initBitDepth - 1);
+            LZW.eofCode   = LZW.clearCode + 1;
+            LZW.freeEntry = LZW.clearCode + 2;
             
-            static final int HSIZE = 5003; // 80% occupancy
+            LZW.curAccum    = 0;
+            LZW.curBitDepth = 0;
             
-            // GIF Image compression - modified 'compress'
-            //
-            // Based on: compress.c - File compression ala IEEE Computer, June 1984.
-            //
-            // By Authors:  Spencer W. Thomas      (decvax!harpo!utah-cs!utah-gr!thomas)
-            //              Jim McKie              (decvax!mcvax!jim)
-            //              Steve Davies           (decvax!vax135!petsd!peora!srd)
-            //              Ken Turkowski          (decvax!decwrl!turtlevax!ken)
-            //              James A. Woods         (decvax!ihnp4!ames!jaw)
-            //              Joe Orost              (decvax!vax135!petsd!joe)
+            LZW.accumulatorIndex = 0; // clear packet
+            LZW.accumulator      = new byte[256];
             
-            int n_bits; // number of bits/code
-            int maxbits    = BITS; // user settable max # bits/code
-            int maxcode; // maximum code, given n_bits
-            int maxmaxcode = 1 << BITS; // should NEVER generate this code
+            // compress and write the pixel data
             
-            int[] htab    = new int[HSIZE];
-            int[] codetab = new int[HSIZE];
+            int hashShift = 0;
+            for (int i = LZW.HASH_SIZE; i < 65536; i *= 2) ++hashShift;
+            hashShift = 8 - hashShift; // set hash code range bound
             
-            int hsize = HSIZE; // for dynamic table sizing
+            Arrays.fill(LZW.hashTable, -1); // clear hash table
             
-            int free_ent = 0; // first unused entry
+            stream.write(LZW.initBitDepth - 1); // write "initial code size" byte
             
-            // block compression parameters -- after all codes are used up,
-            // and compression rate changes, start over.
-            boolean clear_flg = false;
+            output(LZW.clearCode, stream);
             
-            // Algorithm:  use open addressing double hashing (no chaining) on the
-            // prefix code / next character combination.  We do a variant of Knuth's
-            // algorithm D (vol. 3, sec. 6.4) along with G. Knott's relatively-prime
-            // secondary probe.  Here, the modular division first probe is gives way
-            // to a faster exclusive-or manipulation.  Also do block compression with
-            // an adaptive reset, whereby the code table is cleared when the compression
-            // ratio decreases, but after the table fills.  The variable-length output
-            // codes are re-sized at this point, and a special CLEAR code is generated
-            // for the decompressor.  Late addition:  construct the table according to
-            // file size for noticeable speed improvement on small files.  Please direct
-            // questions about this implementation to ames!jaw.
-            
-            int g_init_bits;
-            
-            int ClearCode;
-            int EOFCode;
-            
-            // output
-            //
-            // Output the given code.
-            // Inputs:
-            //      code:   A n_bits-bit integer.  If == -1, then EOF.  This assumes
-            //              that n_bits =< wordsize - 1.
-            // Outputs:
-            //      Outputs code to the file.
-            // Assumptions:
-            //      Chars are 8 bits long.
-            // Algorithm:
-            //      Maintain a BITS character long buffer (so that 8 codes will
-            // fit in it exactly).  Use the VAX insv instruction to insert each
-            // code in turn.  When the buffer fills up empty it and start over.
-            
-            int cur_accum = 0;
-            int cur_bits  = 0;
-            
-            int[] masks = {
-                    0x0000,
-                    0x0001, 0x0003, 0x0007, 0x000F,
-                    0x001F, 0x003F, 0x007F, 0x00FF,
-                    0x01FF, 0x03FF, 0x07FF, 0x0FFF,
-                    0x1FFF, 0x3FFF, 0x7FFF, 0xFFFF
-            };
-            
-            // Number of characters so far in this 'packet'
-            int a_count;
-            
-            // Define the storage for the packet accumulator
-            byte[] accum = new byte[256];
-            
-            //----------------------------------------------------------------------------
-            LZWEncoder(int width, int height, byte[] pixels, int color_depth)
+            int byteIndex = 0;
+            int prevByte  = data[byteIndex] & 0xFF;
+            outer_loop:
+            for (int n = data.length; byteIndex < n; ++byteIndex)
             {
-                imgW         = width;
-                imgH         = height;
-                pixAry       = pixels;
-                initCodeSize = Math.max(2, color_depth);
-            }
-            
-            // Add a character to the end of the current packet, and if it is 254
-            // characters, flush the packet to disk.
-            void char_out(byte c, OutputStream outs) throws IOException
-            {
-                accum[a_count++] = c;
-                if (a_count >= 254) flush_char(outs);
-            }
-            
-            void compress(int init_bits, OutputStream outs) throws IOException
-            {
-                int fcode;
-                int i /* = 0 */;
-                int c;
-                int ent;
-                int disp;
-                int hsize_reg;
-                int hshift;
+                int curByte = data[byteIndex] & 0xFF;
                 
-                // Set up the globals:  g_init_bits - initial number of bits
-                g_init_bits = init_bits;
+                int hash      = (curByte << LZW.MAX_BIT_DEPTH) + prevByte;
+                int hashIndex = (curByte << hashShift) ^ prevByte; // xor hashing
                 
-                // Set up the necessary values
-                clear_flg = false;
-                n_bits    = g_init_bits;
-                maxcode   = MAXCODE(n_bits);
-                
-                ClearCode = 1 << (init_bits - 1);
-                EOFCode   = ClearCode + 1;
-                free_ent  = ClearCode + 2;
-                
-                a_count = 0; // clear packet
-                
-                ent = nextPixel();
-                
-                hshift = 0;
-                for (fcode = hsize; fcode < 65536; fcode *= 2) ++hshift;
-                hshift = 8 - hshift; // set hash code range bound
-                
-                hsize_reg = hsize;
-                Arrays.fill(htab, -1); // clear hash table
-                
-                output(ClearCode, outs);
-                
-                outer_loop:
-                while ((c = nextPixel()) != EOF)
+                if (LZW.hashTable[hashIndex] == hash)
                 {
-                    fcode = (c << maxbits) + ent;
-                    i     = (c << hshift) ^ ent; // xor hashing
-                    
-                    if (htab[i] == fcode)
+                    prevByte = LZW.codeTable[hashIndex];
+                    continue;
+                }
+                else if (LZW.hashTable[hashIndex] >= 0) // non-empty slot
+                {
+                    int secondaryHash = hashIndex == 0 ? 1 : LZW.HASH_SIZE - hashIndex; // secondary hash (after G. Knott)
+                    do
                     {
-                        ent = codetab[i];
-                        continue;
-                    }
-                    else if (htab[i] >= 0) // non-empty slot
-                    {
-                        disp = hsize_reg - i; // secondary hash (after G. Knott)
-                        if (i == 0) disp = 1;
-                        do
-                        {
-                            if ((i -= disp) < 0)
-                            {i += hsize_reg;}
-                            
-                            if (htab[i] == fcode)
-                            {
-                                ent = codetab[i];
-                                continue outer_loop;
-                            }
-                        } while (htab[i] >= 0);
-                    }
-                    output(ent, outs);
-                    ent = c;
-                    if (free_ent < maxmaxcode)
-                    {
-                        codetab[i] = free_ent++; // code -> hashtable
-                        htab[i]    = fcode;
-                    }
-                    else
-                    {
-                        Arrays.fill(htab, -1);
-                        free_ent  = ClearCode + 2;
-                        clear_flg = true;
+                        if ((hashIndex -= secondaryHash) < 0) hashIndex += LZW.HASH_SIZE;
                         
-                        output(ClearCode, outs);
-                    }
+                        if (LZW.hashTable[hashIndex] == hash)
+                        {
+                            prevByte = LZW.codeTable[hashIndex];
+                            continue outer_loop;
+                        }
+                    } while (LZW.hashTable[hashIndex] >= 0);
                 }
-                // Put out the final code.
-                output(ent, outs);
-                output(EOFCode, outs);
-            }
-            
-            //----------------------------------------------------------------------------
-            void encode(OutputStream os) throws IOException
-            {
-                os.write(initCodeSize); // write "initial code size" byte
-                
-                remaining = imgW * imgH; // reset navigation variables
-                curPixel  = 0;
-                
-                compress(initCodeSize + 1, os); // compress and write the pixel data
-                
-                os.write(0); // write block terminator
-            }
-            
-            // Flush the packet to disk, and reset the accumulator
-            void flush_char(OutputStream outs) throws IOException
-            {
-                if (a_count > 0)
+                output(prevByte, stream);
+                if (LZW.freeEntry < LZW.MAX_MAX_CODE)
                 {
-                    outs.write(a_count);
-                    outs.write(accum, 0, a_count);
-                    a_count = 0;
+                    LZW.codeTable[hashIndex] = LZW.freeEntry++; // code -> hashtable
+                    LZW.hashTable[hashIndex] = hash;
                 }
-            }
-            
-            final int MAXCODE(int n_bits)
-            {
-                return (1 << n_bits) - 1;
-            }
-            
-            //----------------------------------------------------------------------------
-            // Return the next pixel from the image
-            //----------------------------------------------------------------------------
-            private int nextPixel()
-            {
-                if (remaining == 0) return EOF;
-                
-                --remaining;
-                
-                byte pix = pixAry[curPixel++];
-                
-                return pix & 0xFF;
-            }
-            
-            void output(int code, OutputStream outs) throws IOException
-            {
-                cur_accum &= masks[cur_bits];
-                
-                if (cur_bits > 0)
-                {cur_accum |= (code << cur_bits);}
                 else
-                {cur_accum = code;}
-                
-                cur_bits += n_bits;
-                
-                while (cur_bits >= 8)
                 {
-                    char_out((byte) (cur_accum & 0xFF), outs);
-                    cur_accum >>= 8;
-                    cur_bits -= 8;
+                    Arrays.fill(LZW.hashTable, -1);
+                    LZW.freeEntry = LZW.clearCode + 2;
+                    LZW.clearFlag = true;
+                    
+                    output(LZW.clearCode, stream);
+                }
+                prevByte = curByte;
+            }
+            // Put out the final code.
+            output(prevByte, stream);
+            output(LZW.eofCode, stream);
+            
+            // write block terminator
+            stream.write(0);
+        }
+        
+        /**
+         * Add a character to the end of the current packet, and if it is 254
+         * characters, flush the packet to disk.
+         */
+        private static void writeAccumulator(byte c, OutputStream stream) throws IOException
+        {
+            LZW.accumulator[LZW.accumulatorIndex++] = c;
+            if (LZW.accumulatorIndex >= 254) flushAccumulator(stream);
+        }
+        
+        /**
+         * Flush the packet to disk, and reset the accumulator.
+         */
+        private static void flushAccumulator(OutputStream stream) throws IOException
+        {
+            if (LZW.accumulatorIndex > 0)
+            {
+                stream.write(LZW.accumulatorIndex);
+                stream.write(LZW.accumulator, 0, LZW.accumulatorIndex);
+                LZW.accumulatorIndex = 0;
+            }
+        }
+        
+        private static void output(int code, OutputStream stream) throws IOException
+        {
+            LZW.curAccum &= LZW.MASKS[LZW.curBitDepth];
+            LZW.curAccum = LZW.curBitDepth > 0 ? LZW.curAccum | (code << LZW.curBitDepth) : code;
+            LZW.curBitDepth += LZW.bitDepth;
+            
+            while (LZW.curBitDepth >= 8)
+            {
+                writeAccumulator((byte) (LZW.curAccum & 0xFF), stream);
+                LZW.curAccum >>= 8;
+                LZW.curBitDepth -= 8;
+            }
+            
+            // If the next entry is going to be too big for the code size,
+            // then increase it, if possible.
+            if (LZW.freeEntry > LZW.maxCode || LZW.clearFlag)
+            {
+                if (LZW.clearFlag)
+                {
+                    LZW.bitDepth  = LZW.initBitDepth;
+                    LZW.maxCode   = (1 << LZW.bitDepth) - 1;
+                    LZW.clearFlag = false;
+                }
+                else
+                {
+                    ++LZW.bitDepth;
+                    LZW.maxCode = LZW.bitDepth == LZW.MAX_BIT_DEPTH ? LZW.MAX_MAX_CODE : (1 << LZW.bitDepth) - 1;
+                }
+            }
+            
+            if (code == LZW.eofCode)
+            {
+                // At EOF, write the rest of the buffer.
+                while (LZW.curBitDepth > 0)
+                {
+                    writeAccumulator((byte) (LZW.curAccum & 0xFF), stream);
+                    LZW.curAccum >>= 8;
+                    LZW.curBitDepth -= 8;
                 }
                 
-                // If the next entry is going to be too big for the code size,
-                // then increase it, if possible.
-                if (free_ent > maxcode || clear_flg)
+                flushAccumulator(stream);
+            }
+        }
+    }
+    
+    private static class NeuQuantize
+    {
+        /**
+         * Number of Colors Used
+         */
+        protected static final int NET_SIZE = 256;
+        
+        /**
+         * Four Primes near 500. Assume no image has a length so large that it is
+         * divisible by all four primes.
+         */
+        protected static final int PRIME1 = 499;
+        protected static final int PRIME2 = 491;
+        protected static final int PRIME3 = 487;
+        protected static final int PRIME4 = 503;
+        
+        /**
+         * Minimum Size for Input Image.
+         */
+        protected static final int MIN_PICTURE_BYTES = 3 * PRIME4;
+        
+        /**
+         * Network Definitions
+         *
+         * <ul>
+         *     <li>{@link #MAX_NET_POS}</li>
+         *     <li>{@link #NET_BIAS_SHIFT}: Bias for Color Values</li>
+         *     <li>{@link #N_CYCLES}: Number of Learning Cycles</li>
+         * </ul>
+         *
+         * @noinspection JavaDoc
+         */
+        protected static final int
+                MAX_NET_POS    = NET_SIZE - 1,
+                NET_BIAS_SHIFT = 4,
+                N_CYCLES       = 100;
+        
+        /**
+         * Frequency and Bias Definitions
+         *
+         * <ul>
+         *     <li>{@link #INT_BIAS_SHIFT}</li>
+         *     <li>{@link #INT_BIAS}: Bias for Fractions</li>
+         *     <li>{@link #GAMMA_SHIFT}</li>
+         *     <li>{@link #GAMMA} {@code = 1024}</li>
+         *     <li>{@link #BETA_SHIFT}</li>
+         *     <li>{@link #BETA} {@code = 1/1024}</li>
+         *     <li>{@link #BETA_GAMMA}</li>
+         * </ul>
+         *
+         * @noinspection JavaDoc
+         */
+        @SuppressWarnings("unused")
+        protected static final int
+                INT_BIAS_SHIFT = 16,
+                INT_BIAS       = 1 << INT_BIAS_SHIFT,
+                GAMMA_SHIFT    = 10,
+                GAMMA          = 1 << GAMMA_SHIFT,
+                BETA_SHIFT     = 10,
+                BETA           = INT_BIAS >> BETA_SHIFT,
+                BETA_GAMMA     = INT_BIAS << (GAMMA_SHIFT - BETA_SHIFT);
+        
+        /**
+         * Decreasing Radius Factor Definitions
+         * <p>
+         * For 256 columns, radius starts at {@code 32.0} bias by {@code 6} bits
+         * and decreases by a factor of {@code 1/30} each cycle
+         *
+         * <ul>
+         *     <li{@link #INIT_RAD}</li>
+         *     <li{@link #RADIUS_BIAS_SHIFT}</li>
+         *     <li{@link #RADIUS_BIAS}</li>
+         *     <li{@link #INIT_RADIUS}</li>
+         *     <li{@link #RADIUS_DEC}</li>
+         * </ul>
+         *
+         * @noinspection JavaDoc
+         */
+        protected static final int
+                INIT_RAD          = NET_SIZE >> 3,
+                RADIUS_BIAS_SHIFT = 6,
+                RADIUS_BIAS       = 1 << RADIUS_BIAS_SHIFT,
+                INIT_RADIUS       = INIT_RAD * RADIUS_BIAS,
+                RADIUS_DEC        = 30;
+        
+        /**
+         * Decreasing Alpha Factor Definitions
+         * <p>
+         * For 256 columns, radius starts at {@code 32.0} bias by {@code 6} bits
+         * and decreases by a factor of {@code 1/30} each cycle
+         *
+         * <ul>
+         *     <li{@link #ALPHA_BIAS_SHIFT}: Alpha starts at {@code 1.0}</li>
+         *     <li{@link #INIT_ALPHA}</li>
+         * </ul>
+         *
+         * @noinspection JavaDoc
+         */
+        protected static final int
+                ALPHA_BIAS_SHIFT = 10,
+                INIT_ALPHA       = 1 << ALPHA_BIAS_SHIFT;
+        
+        /**
+         * {@link #RAD_BIAS} and {@link #ALPHA_RAD_BIAS} used for {@link #radPower} calculation
+         *
+         * @noinspection JavaDoc, RedundantSuppression
+         */
+        protected static final int
+                RAD_BIAS_SHIFT       = 8,
+                RAD_BIAS             = 1 << RAD_BIAS_SHIFT,
+                ALPHA_RAD_BIAS_SHIFT = ALPHA_BIAS_SHIFT + RAD_BIAS_SHIFT,
+                ALPHA_RAD_BIAS       = 1 << ALPHA_RAD_BIAS_SHIFT;
+        
+        /*
+         * Types and Global Variables
+         * --------------------------
+         */
+        
+        /**
+         * The input image.
+         */
+        protected static byte[] pixels;
+        
+        /**
+         * Sampling Factor {@code [1..30]}
+         */
+        protected static int sampleFactor;
+        
+        /**
+         * The Network Itself
+         * <p>
+         * {@code network = new int[}{@link #NET_SIZE}{@code ][4]}
+         */
+        protected static int[][] network;
+        
+        /**
+         * For Network Lookup - Really 256
+         * <p>
+         * {@code netIndex = new int[256]}
+         */
+        protected static int[] netIndex;
+        
+        /**
+         * Bias and Frequency Arrays for Learning
+         * <p>
+         * {@code bias = new int[}{@link #NET_SIZE}{@code ]}
+         * <p>
+         * {@code freq = new int[}{@link #NET_SIZE}{@code ]}
+         */
+        protected static int[] bias, freq;
+        
+        /**
+         * radPower for pre-computation.
+         * <p>
+         * {@code radPower = new int[}{@link #INIT_RAD}{@code ]}
+         */
+        protected static int[] radPower;
+        
+        /**
+         * biased by 10 bits
+         */
+        protected static int alphaDec;
+        
+        /**
+         * Initialise network in range (0,0,0) to (255,255,255), set parameters,
+         * and create reduced palette
+         */
+        public static byte @NotNull [] quantize(byte @NotNull [] pixels, int sampleFactor)
+        {
+            NeuQuantize.pixels       = pixels;
+            NeuQuantize.sampleFactor = sampleFactor;
+            
+            NeuQuantize.network  = new int[NeuQuantize.NET_SIZE][];
+            NeuQuantize.netIndex = new int[256];
+            NeuQuantize.bias     = new int[NeuQuantize.NET_SIZE];
+            NeuQuantize.freq     = new int[NeuQuantize.NET_SIZE];
+            NeuQuantize.radPower = new int[NeuQuantize.INIT_RAD];
+            
+            for (int i = 0; i < NeuQuantize.NET_SIZE; i++)
+            {
+                int initial = (i << (NeuQuantize.NET_BIAS_SHIFT + 8)) / NeuQuantize.NET_SIZE;
+                
+                NeuQuantize.network[i] = new int[] {initial, initial, initial, 0};
+            }
+            Arrays.fill(NeuQuantize.netIndex, 0);
+            Arrays.fill(NeuQuantize.bias, 0);
+            Arrays.fill(NeuQuantize.freq, NeuQuantize.INT_BIAS / NeuQuantize.NET_SIZE); // 1/NET_SIZE
+            Arrays.fill(NeuQuantize.radPower, 0);
+            
+            learn();
+            
+            // Unbias network to give byte values 0..255 and record position i to prepare for sort
+            for (int i = 0; i < NeuQuantize.NET_SIZE; i++)
+            {
+                NeuQuantize.network[i][0] >>= NeuQuantize.NET_BIAS_SHIFT;
+                NeuQuantize.network[i][1] >>= NeuQuantize.NET_BIAS_SHIFT;
+                NeuQuantize.network[i][2] >>= NeuQuantize.NET_BIAS_SHIFT;
+                NeuQuantize.network[i][3] =   i; /* record color no */
+            }
+            
+            inxBuild();
+            
+            byte[] map   = new byte[3 * NeuQuantize.NET_SIZE];
+            int[]  index = new int[NeuQuantize.NET_SIZE];
+            
+            for (int i = 0; i < NeuQuantize.NET_SIZE; i++) index[NeuQuantize.network[i][3]] = i;
+            
+            for (int i = 0, k = 0; i < NeuQuantize.NET_SIZE; i++)
+            {
+                int j = index[i];
+                map[k++] = (byte) (NeuQuantize.network[j][0]);
+                map[k++] = (byte) (NeuQuantize.network[j][1]);
+                map[k++] = (byte) (NeuQuantize.network[j][2]);
+            }
+            return map;
+        }
+        
+        /**
+         * Search for BGR values 0..255 (after net is unbiased) and return color
+         * index
+         */
+        public static int map(int b, int g, int r)
+        {
+            int bestDist = 1000; /* biggest possible dist is 256*3 */
+            int best     = -1;
+            
+            // i: index on g
+            // j: start at netIndex[g] and work outwards
+            for (int i = NeuQuantize.netIndex[g], j = i - 1; i < NeuQuantize.NET_SIZE || j >= 0; )
+            {
+                if (i < NeuQuantize.NET_SIZE)
                 {
-                    if (clear_flg)
+                    int[] p    = NeuQuantize.network[i];
+                    int   dist = p[1] - g; /* inx key */
+                    if (dist >= bestDist)
                     {
-                        maxcode   = MAXCODE(n_bits = g_init_bits);
-                        clear_flg = false;
+                        i = NeuQuantize.NET_SIZE; /* stop iter */
                     }
                     else
                     {
-                        ++n_bits;
-                        if (n_bits == maxbits)
-                        {maxcode = maxmaxcode;}
-                        else
-                        {maxcode = MAXCODE(n_bits);}
+                        i++;
+                        dist = Math.abs(dist) + Math.abs(p[0] - b);
+                        if (dist < bestDist)
+                        {
+                            dist += Math.abs(p[2] - r);
+                            if (dist < bestDist)
+                            {
+                                bestDist = dist;
+                                best     = p[3];
+                            }
+                        }
                     }
                 }
-                
-                if (code == EOFCode)
+                if (j >= 0)
                 {
-                    // At EOF, write the rest of the buffer.
-                    while (cur_bits > 0)
+                    int[] p    = NeuQuantize.network[j];
+                    int   dist = g - p[1]; /* inx key - reverse dif */
+                    if (dist >= bestDist)
                     {
-                        char_out((byte) (cur_accum & 0xFF), outs);
-                        cur_accum >>= 8;
-                        cur_bits -= 8;
+                        j = -1; /* stop iter */
                     }
-                    
-                    flush_char(outs);
+                    else
+                    {
+                        j--;
+                        dist = Math.abs(dist) + Math.abs(p[0] - b);
+                        if (dist < bestDist)
+                        {
+                            dist += Math.abs(p[2] - r);
+                            if (dist < bestDist)
+                            {
+                                bestDist = dist;
+                                best     = p[3];
+                            }
+                        }
+                    }
+                }
+            }
+            return (best);
+        }
+        
+        /**
+         * Main Learning Loop
+         * ------------------
+         */
+        private static void learn()
+        {
+            int j, b, g, r;
+            int radius, rad, alpha, samplePixels;
+            
+            if (NeuQuantize.pixels.length < NeuQuantize.MIN_PICTURE_BYTES) NeuQuantize.sampleFactor = 1;
+            
+            NeuQuantize.alphaDec = 30 + ((NeuQuantize.sampleFactor - 1) / 3);
+            samplePixels         = NeuQuantize.pixels.length / (3 * NeuQuantize.sampleFactor);
+            alpha                = NeuQuantize.INIT_ALPHA;
+            radius               = NeuQuantize.INIT_RADIUS;
+            
+            rad = radius >> NeuQuantize.RADIUS_BIAS_SHIFT;
+            // if (rad <= 1) rad = 0;
+            
+            for (int i = 0; i < rad; i++)
+            {
+                NeuQuantize.radPower[i] = alpha * (((rad * rad - i * i) * NeuQuantize.RAD_BIAS) / (rad * rad));
+            }
+            
+            int step;
+            if (NeuQuantize.pixels.length < NeuQuantize.MIN_PICTURE_BYTES)
+            {
+                step = 3;
+            }
+            else if ((NeuQuantize.pixels.length % NeuQuantize.PRIME1) != 0)
+            {
+                step = 3 * NeuQuantize.PRIME1;
+            }
+            else if ((NeuQuantize.pixels.length % NeuQuantize.PRIME2) != 0)
+            {
+                step = 3 * NeuQuantize.PRIME2;
+            }
+            else if ((NeuQuantize.pixels.length % NeuQuantize.PRIME3) != 0)
+            {
+                step = 3 * NeuQuantize.PRIME3;
+            }
+            else
+            {
+                step = 3 * NeuQuantize.PRIME4;
+            }
+            
+            int delta = samplePixels / NeuQuantize.N_CYCLES;
+            if (delta == 0) delta = 1;
+            for (int i = 0, pix = 0; i < samplePixels; )
+            {
+                b = (NeuQuantize.pixels[pix] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
+                g = (NeuQuantize.pixels[pix + 1] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
+                r = (NeuQuantize.pixels[pix + 2] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
+                j = contest(b, g, r);
+                
+                alterSingle(alpha, j, b, g, r);
+                if (rad != 0) alterNeighbours(rad, j, b, g, r); /* alter neighbours */
+                
+                pix += step;
+                if (pix >= NeuQuantize.pixels.length) pix -= NeuQuantize.pixels.length;
+                
+                i++;
+                
+                if (i % delta == 0)
+                {
+                    alpha -= alpha / NeuQuantize.alphaDec;
+                    radius -= radius / NeuQuantize.RADIUS_DEC;
+                    rad = radius >> NeuQuantize.RADIUS_BIAS_SHIFT;
+                    if (rad <= 1) rad = 0;
+                    for (j = 0; j < rad; j++)
+                    {
+                        NeuQuantize.radPower[j] = alpha * (((rad * rad - j * j) * NeuQuantize.RAD_BIAS) / (rad * rad));
+                    }
                 }
             }
         }
         
-        @SuppressWarnings({"SpellCheckingInspection", "RedundantCast", "PointlessArithmeticExpression", "CatchMayIgnoreException", "ConstantConditions", "unused"})
-        private static class NeuQuant
+        /**
+         * Insertion sort of network and building of netIndex[0..255] (to do after unbias)
+         */
+        private static void inxBuild()
         {
-            
-            protected static final int netsize = 256; /* number of colours used */
-            
-            /* four primes near 500 - assume no image has a length so large */
-            /* that it is divisible by all four primes */
-            protected static final int prime1 = 499;
-            protected static final int prime2 = 491;
-            protected static final int prime3 = 487;
-            protected static final int prime4 = 503;
-            
-            protected static final int minpicturebytes = (3 * prime4);
-            /* minimum size for input image */
-
-	    /* Program Skeleton
-        ----------------
-        [select samplefac in range 1..30]
-        [read image from input file]
-        pic = (unsigned char*) malloc(3*width*height);
-        initnet(pic,3*width*height,samplefac);
-        learn();
-        unbiasnet();
-        [write output image header, using writecolourmap(f)]
-        inxbuild();
-        write output image using inxsearch(b,g,r)      */
-
-	    /* Network Definitions
-        ------------------- */
-            
-            protected static final int maxnetpos    = (netsize - 1);
-            protected static final int netbiasshift = 4; /* bias for colour values */
-            protected static final int ncycles      = 100; /* no. of learning cycles */
-            
-            /* defs for freq and bias */
-            protected static final int intbiasshift = 16; /* bias for fractions */
-            protected static final int intbias      = (((int) 1) << intbiasshift);
-            protected static final int gammashift   = 10; /* gamma = 1024 */
-            protected static final int gamma        = (((int) 1) << gammashift);
-            protected static final int betashift    = 10;
-            protected static final int beta         = (intbias >> betashift); /* beta = 1/1024 */
-            protected static final int betagamma    = (intbias << (gammashift - betashift));
-            
-            /* defs for decreasing radius factor */
-            protected static final int initrad         = (netsize >> 3); /* for 256 cols, radius starts */
-            protected static final int radiusbiasshift = 6; /* at 32.0 biased by 6 bits */
-            protected static final int radiusbias      = (((int) 1) << radiusbiasshift);
-            protected static final int initradius      = (initrad * radiusbias); /* and decreases by a */
-            protected static final int radiusdec       = 30; /* factor of 1/30 each cycle */
-            
-            /* defs for decreasing alpha factor */
-            protected static final int alphabiasshift = 10; /* alpha starts at 1.0 */
-            protected static final int initalpha      = (((int) 1) << alphabiasshift);
-            
-            protected int alphadec; /* biased by 10 bits */
-            
-            /* radbias and alpharadbias used for radpower calculation */
-            protected static final int radbiasshift   = 8;
-            protected static final int radbias        = (((int) 1) << radbiasshift);
-            protected static final int alpharadbshift = (alphabiasshift + radbiasshift);
-            protected static final int alpharadbias   = (((int) 1) << alpharadbshift);
-
-    	/* Types and Global Variables
-	-------------------------- */
-            
-            protected byte[] thepicture; /* the input image itself */
-            protected int    lengthcount; /* lengthcount = H*W*3 */
-            
-            protected int samplefac; /* sampling factor 1..30 */
-            
-            //   typedef int pixel[4];                /* BGRc */
-            protected int[][] network; /* the network itself - [netsize][4] */
-            
-            protected int[] netindex = new int[256];
-            /* for network lookup - really 256 */
-            
-            protected int[] bias     = new int[netsize];
-            /* bias and freq arrays for learning */
-            protected int[] freq     = new int[netsize];
-            protected int[] radpower = new int[initrad];
-            /* radpower for precomputation */
-            
-            /* Initialise network in range (0,0,0) to (255,255,255) and set parameters
-               ----------------------------------------------------------------------- */
-            public NeuQuant(byte[] thepic, int len, int sample)
+            int prevCol  = 0;
+            int startPos = 0;
+            for (int i = 0; i < NeuQuantize.NET_SIZE; i++)
             {
-                
-                int   i;
-                int[] p;
-                
-                thepicture  = thepic;
-                lengthcount = len;
-                samplefac   = sample;
-                
-                network = new int[netsize][];
-                for (i = 0; i < netsize; i++)
+                int[] p        = NeuQuantize.network[i];
+                int   smallPos = i;
+                int   smallVal = p[1]; /* index on g */
+                /* find smallest in [i..NET_SIZE-1] */
+                for (int j = i + 1; j < NeuQuantize.NET_SIZE; j++)
                 {
-                    network[i] = new int[4];
-                    p          = network[i];
-                    p[0]       = p[1] = p[2] = (i << (netbiasshift + 8)) / netsize;
-                    freq[i]    = intbias / netsize; /* 1/netsize */
-                    bias[i]    = 0;
-                }
-            }
-            
-            public byte[] colorMap()
-            {
-                byte[] map   = new byte[3 * netsize];
-                int[]  index = new int[netsize];
-                for (int i = 0; i < netsize; i++)
-                {index[network[i][3]] = i;}
-                int k = 0;
-                for (int i = 0; i < netsize; i++)
-                {
-                    int j = index[i];
-                    map[k++] = (byte) (network[j][0]);
-                    map[k++] = (byte) (network[j][1]);
-                    map[k++] = (byte) (network[j][2]);
-                }
-                return map;
-            }
-            
-            /* Insertion sort of network and building of netindex[0..255] (to do after unbias)
-               ------------------------------------------------------------------------------- */
-            public void inxbuild()
-            {
-                
-                int   i, j, smallpos, smallval;
-                int[] p;
-                int[] q;
-                int   previouscol, startpos;
-                
-                previouscol = 0;
-                startpos    = 0;
-                for (i = 0; i < netsize; i++)
-                {
-                    p        = network[i];
-                    smallpos = i;
-                    smallval = p[1]; /* index on g */
-                    /* find smallest in i..netsize-1 */
-                    for (j = i + 1; j < netsize; j++)
-                    {
-                        q = network[j];
-                        if (q[1] < smallval)
-                        { /* index on g */
-                            smallpos = j;
-                            smallval = q[1]; /* index on g */
-                        }
-                    }
-                    q = network[smallpos];
-                    /* swap p (i) and q (smallpos) entries */
-                    if (i != smallpos)
-                    {
-                        j    = q[0];
-                        q[0] = p[0];
-                        p[0] = j;
-                        j    = q[1];
-                        q[1] = p[1];
-                        p[1] = j;
-                        j    = q[2];
-                        q[2] = p[2];
-                        p[2] = j;
-                        j    = q[3];
-                        q[3] = p[3];
-                        p[3] = j;
-                    }
-                    /* smallval entry is now in position i */
-                    if (smallval != previouscol)
-                    {
-                        netindex[previouscol] = (startpos + i) >> 1;
-                        for (j = previouscol + 1; j < smallval; j++)
-                        {netindex[j] = i;}
-                        previouscol = smallval;
-                        startpos    = i;
+                    int[] q = NeuQuantize.network[j];
+                    if (q[1] < smallVal)
+                    { /* index on g */
+                        smallPos = j;
+                        smallVal = q[1]; /* index on g */
                     }
                 }
-                netindex[previouscol] = (startpos + maxnetpos) >> 1;
-                for (j = previouscol + 1; j < 256; j++)
-                {netindex[j] = maxnetpos; /* really 256 */}
-            }
-            
-            /* Main Learning Loop
-               ------------------ */
-            public void learn()
-            {
-                
-                int    i, j, b, g, r;
-                int    radius, rad, alpha, step, delta, samplepixels;
-                byte[] p;
-                int    pix, lim;
-                
-                if (lengthcount < minpicturebytes)
-                {samplefac = 1;}
-                alphadec     = 30 + ((samplefac - 1) / 3);
-                p            = thepicture;
-                pix          = 0;
-                lim          = lengthcount;
-                samplepixels = lengthcount / (3 * samplefac);
-                delta        = samplepixels / ncycles;
-                alpha        = initalpha;
-                radius       = initradius;
-                
-                rad = radius >> radiusbiasshift;
-                if (rad <= 1)
-                {rad = 0;}
-                for (i = 0; i < rad; i++)
+                int[] q = NeuQuantize.network[smallPos];
+                /* swap p(i) and q(smallPos) entries */
+                if (i != smallPos)
                 {
-                    radpower[i] = alpha * (((rad * rad - i * i) * radbias) / (rad * rad));
-                }
-                
-                //fprintf(stderr,"beginning 1D learning: initial radius=%d\n", rad);
-                
-                if (lengthcount < minpicturebytes)
-                {step = 3;}
-                else if ((lengthcount % prime1) != 0)
-                {step = 3 * prime1;}
-                else
-                {
-                    if ((lengthcount % prime2) != 0)
-                    {step = 3 * prime2;}
-                    else
-                    {
-                        if ((lengthcount % prime3) != 0)
-                        {step = 3 * prime3;}
-                        else
-                        {step = 3 * prime4;}
-                    }
-                }
-                
-                i = 0;
-                while (i < samplepixels)
-                {
-                    b = (p[pix + 0] & 0xFF) << netbiasshift;
-                    g = (p[pix + 1] & 0xFF) << netbiasshift;
-                    r = (p[pix + 2] & 0xFF) << netbiasshift;
-                    j = contest(b, g, r);
+                    int temp;
                     
-                    altersingle(alpha, j, b, g, r);
-                    if (rad != 0)
-                    {alterneigh(rad, j, b, g, r); /* alter neighbours */}
-                    
-                    pix += step;
-                    if (pix >= lim)
-                    {pix -= lengthcount;}
-                    
-                    i++;
-                    if (delta == 0)
-                    {delta = 1;}
-                    if (i % delta == 0)
-                    {
-                        alpha -= alpha / alphadec;
-                        radius -= radius / radiusdec;
-                        rad = radius >> radiusbiasshift;
-                        if (rad <= 1)
-                        {rad = 0;}
-                        for (j = 0; j < rad; j++)
-                        {
-                            radpower[j] =
-                                    alpha * (((rad * rad - j * j) * radbias) / (rad * rad));
-                        }
-                    }
+                    temp = q[0];
+                    q[0] = p[0];
+                    p[0] = temp;
+                    temp = q[1];
+                    q[1] = p[1];
+                    p[1] = temp;
+                    temp = q[2];
+                    q[2] = p[2];
+                    p[2] = temp;
+                    temp = q[3];
+                    q[3] = p[3];
+                    p[3] = temp;
                 }
-                //fprintf(stderr,"finished 1D learning: final alpha=%f !\n",((float)alpha)/initalpha);
-            }
-            
-            /* Search for BGR values 0..255 (after net is unbiased) and return colour index
-               ---------------------------------------------------------------------------- */
-            public int map(int b, int g, int r)
-            {
-                
-                int   i, j, dist, a, bestd;
-                int[] p;
-                int   best;
-                
-                bestd = 1000; /* biggest possible dist is 256*3 */
-                best  = -1;
-                i     = netindex[g]; /* index on g */
-                j     = i - 1; /* start at netindex[g] and work outwards */
-                
-                while ((i < netsize) || (j >= 0))
+                /* smallVal entry is now in position i */
+                if (smallVal != prevCol)
                 {
-                    if (i < netsize)
-                    {
-                        p    = network[i];
-                        dist = p[1] - g; /* inx key */
-                        if (dist >= bestd)
-                        {i = netsize; /* stop iter */}
-                        else
-                        {
-                            i++;
-                            if (dist < 0)
-                            {dist = -dist;}
-                            a = p[0] - b;
-                            if (a < 0)
-                            {a = -a;}
-                            dist += a;
-                            if (dist < bestd)
-                            {
-                                a = p[2] - r;
-                                if (a < 0)
-                                {a = -a;}
-                                dist += a;
-                                if (dist < bestd)
-                                {
-                                    bestd = dist;
-                                    best  = p[3];
-                                }
-                            }
-                        }
-                    }
-                    if (j >= 0)
-                    {
-                        p    = network[j];
-                        dist = g - p[1]; /* inx key - reverse dif */
-                        if (dist >= bestd)
-                        {j = -1; /* stop iter */}
-                        else
-                        {
-                            j--;
-                            if (dist < 0)
-                            {dist = -dist;}
-                            a = p[0] - b;
-                            if (a < 0)
-                            {a = -a;}
-                            dist += a;
-                            if (dist < bestd)
-                            {
-                                a = p[2] - r;
-                                if (a < 0)
-                                {a = -a;}
-                                dist += a;
-                                if (dist < bestd)
-                                {
-                                    bestd = dist;
-                                    best  = p[3];
-                                }
-                            }
-                        }
-                    }
+                    NeuQuantize.netIndex[prevCol] = (startPos + i) >> 1;
+                    for (int j = prevCol + 1; j < smallVal; j++) NeuQuantize.netIndex[j] = i;
+                    prevCol  = smallVal;
+                    startPos = i;
                 }
-                return (best);
             }
             
-            public byte[] process()
-            {
-                learn();
-                unbiasnet();
-                inxbuild();
-                return colorMap();
-            }
+            NeuQuantize.netIndex[prevCol] = (startPos + NeuQuantize.MAX_NET_POS) >> 1;
+            Arrays.fill(NeuQuantize.netIndex, prevCol + 1, NeuQuantize.netIndex.length, NeuQuantize.MAX_NET_POS); // really 256
+        }
+        
+        /**
+         * Move adjacent neurons by precomputed {@code alpha*(1-((i-j)^2/[r]^2))}
+         * in {@link #radPower}{@code [|i-j|]}
+         */
+        private static void alterNeighbours(int rad, int i, int b, int g, int r)
+        {
+            int lo = Math.max(i - rad, -1);
+            int hi = Math.min(i + rad, NeuQuantize.NET_SIZE);
             
-            /* Unbias network to give byte values 0..255 and record position i to prepare for sort
-               ----------------------------------------------------------------------------------- */
-            public void unbiasnet()
+            int j = i + 1;
+            int k = i - 1;
+            int m = 1;
+            while (j < hi || k > lo)
             {
-                for (int i = 0; i < netsize; i++)
+                int a = NeuQuantize.radPower[m++];
+                if (j < hi)
                 {
-                    network[i][0] >>= netbiasshift;
-                    network[i][1] >>= netbiasshift;
-                    network[i][2] >>= netbiasshift;
-                    network[i][3] =   i; /* record colour no */
+                    int[] p = NeuQuantize.network[j++];
+                    try
+                    {
+                        p[0] -= (a * (p[0] - b)) / NeuQuantize.ALPHA_RAD_BIAS;
+                        p[1] -= (a * (p[1] - g)) / NeuQuantize.ALPHA_RAD_BIAS;
+                        p[2] -= (a * (p[2] - r)) / NeuQuantize.ALPHA_RAD_BIAS;
+                    }
+                    catch (Exception ignored) {}
                 }
-            }
-            
-            /* Move adjacent neurons by precomputed alpha*(1-((i-j)^2/[r]^2)) in radpower[|i-j|]
-               --------------------------------------------------------------------------------- */
-            protected void alterneigh(int rad, int i, int b, int g, int r)
-            {
-                
-                int   j, k, lo, hi, a, m;
-                int[] p;
-                
-                lo = i - rad;
-                if (lo < -1)
-                {lo = -1;}
-                hi = i + rad;
-                if (hi > netsize)
-                {hi = netsize;}
-                
-                j = i + 1;
-                k = i - 1;
-                m = 1;
-                while ((j < hi) || (k > lo))
+                if (k > lo)
                 {
-                    a = radpower[m++];
-                    if (j < hi)
+                    int[] p = NeuQuantize.network[k--];
+                    try
                     {
-                        p = network[j++];
-                        try
-                        {
-                            p[0] -= (a * (p[0] - b)) / alpharadbias;
-                            p[1] -= (a * (p[1] - g)) / alpharadbias;
-                            p[2] -= (a * (p[2] - r)) / alpharadbias;
-                        }
-                        catch (Exception e)
-                        {
-                        } // prevents 1.3 miscompilation
+                        p[0] -= (a * (p[0] - b)) / NeuQuantize.ALPHA_RAD_BIAS;
+                        p[1] -= (a * (p[1] - g)) / NeuQuantize.ALPHA_RAD_BIAS;
+                        p[2] -= (a * (p[2] - r)) / NeuQuantize.ALPHA_RAD_BIAS;
                     }
-                    if (k > lo)
-                    {
-                        p = network[k--];
-                        try
-                        {
-                            p[0] -= (a * (p[0] - b)) / alpharadbias;
-                            p[1] -= (a * (p[1] - g)) / alpharadbias;
-                            p[2] -= (a * (p[2] - r)) / alpharadbias;
-                        }
-                        catch (Exception e)
-                        {
-                        }
-                    }
+                    catch (Exception ignored) {}
                 }
             }
+        }
+        
+        /**
+         * Move neuron i towards biased (b,g,r) by factor alpha
+         */
+        private static void alterSingle(int alpha, int i, int b, int g, int r)
+        {
+            // alter hit neuron
+            int[] n = NeuQuantize.network[i];
+            n[0] -= (alpha * (n[0] - b)) / NeuQuantize.INIT_ALPHA;
+            n[1] -= (alpha * (n[1] - g)) / NeuQuantize.INIT_ALPHA;
+            n[2] -= (alpha * (n[2] - r)) / NeuQuantize.INIT_ALPHA;
+        }
+        
+        /**
+         * Search for biased BGR values
+         * <p>
+         * Finds the closest neuron (minimum distance) and updates frequency.
+         * Finds the best neuron (minimum distance-bias) and returns position.
+         * For frequently chosen neurons, {@code freq[i]} is high and
+         * {@code bias[i]} is negative.
+         * <p>
+         * {@code bias[i] = }{@link #GAMMA}{@code *((1/}{@link #NET_SIZE}{@code )-freq[i])}
+         */
+        private static int contest(int b, int g, int r)
+        {
+            int bestDist     = Integer.MAX_VALUE;
+            int bestBiasDist = bestDist;
+            int bestPos      = -1;
+            int bestBiasPos  = bestPos;
             
-            /* Move neuron i towards biased (b,g,r) by factor alpha
-               ---------------------------------------------------- */
-            protected void altersingle(int alpha, int i, int b, int g, int r)
+            for (int i = 0; i < NeuQuantize.NET_SIZE; i++)
             {
+                int[] n = NeuQuantize.network[i];
                 
-                /* alter hit neuron */
-                int[] n = network[i];
-                n[0] -= (alpha * (n[0] - b)) / initalpha;
-                n[1] -= (alpha * (n[1] - g)) / initalpha;
-                n[2] -= (alpha * (n[2] - r)) / initalpha;
-            }
-            
-            /* Search for biased BGR values
-               ---------------------------- */
-            protected int contest(int b, int g, int r)
-            {
+                int dist = Math.abs(n[0] - b) +
+                           Math.abs(n[1] - g) +
+                           Math.abs(n[2] - r);
                 
-                /* finds closest neuron (min dist) and updates freq */
-                /* finds best neuron (min dist-bias) and returns position */
-                /* for frequently chosen neurons, freq[i] is high and bias[i] is negative */
-                /* bias[i] = gamma*((1/netsize)-freq[i]) */
-                
-                int   i, dist, a, biasdist, betafreq;
-                int   bestpos, bestbiaspos, bestd, bestbiasd;
-                int[] n;
-                
-                bestd       = ~(((int) 1) << 31);
-                bestbiasd   = bestd;
-                bestpos     = -1;
-                bestbiaspos = bestpos;
-                
-                for (i = 0; i < netsize; i++)
+                if (dist < bestDist)
                 {
-                    n    = network[i];
-                    dist = n[0] - b;
-                    if (dist < 0)
-                    {dist = -dist;}
-                    a = n[1] - g;
-                    if (a < 0)
-                    {a = -a;}
-                    dist += a;
-                    a = n[2] - r;
-                    if (a < 0)
-                    {a = -a;}
-                    dist += a;
-                    if (dist < bestd)
-                    {
-                        bestd   = dist;
-                        bestpos = i;
-                    }
-                    biasdist = dist - ((bias[i]) >> (intbiasshift - netbiasshift));
-                    if (biasdist < bestbiasd)
-                    {
-                        bestbiasd   = biasdist;
-                        bestbiaspos = i;
-                    }
-                               betafreq = (freq[i] >> betashift);
-                    freq[i] -= betafreq;
-                    bias[i] += (betafreq << gammashift);
+                    bestDist = dist;
+                    bestPos  = i;
                 }
-                freq[bestpos] += beta;
-                bias[bestpos] -= betagamma;
-                return (bestbiaspos);
+                
+                int biasDist = dist - (NeuQuantize.bias[i] >> (NeuQuantize.INT_BIAS_SHIFT - NeuQuantize.NET_BIAS_SHIFT));
+                if (biasDist < bestBiasDist)
+                {
+                    bestBiasDist = biasDist;
+                    bestBiasPos  = i;
+                }
+                
+                int betaFreq = NeuQuantize.freq[i] >> NeuQuantize.BETA_SHIFT;
+                NeuQuantize.bias[i] += betaFreq << NeuQuantize.GAMMA_SHIFT;
+                NeuQuantize.freq[i] -= betaFreq;
             }
+            NeuQuantize.bias[bestPos] -= NeuQuantize.BETA_GAMMA;
+            NeuQuantize.freq[bestPos] += NeuQuantize.BETA;
+            return bestBiasPos;
         }
     }
 }
