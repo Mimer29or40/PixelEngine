@@ -1,5 +1,6 @@
 package pe;
 
+import org.jetbrains.annotations.NotNull;
 import pe.color.BlendMode;
 import pe.color.Color;
 import pe.color.ColorFormat;
@@ -71,17 +72,17 @@ public class ImageTest
         assert result;
         checkered.delete();
         
-        Image noiseWhite = Image.genNoiseWhite(100, 100, 0.5);
+        Image noiseWhite = Image.genNoiseWhite(512, 512, 0.5);
         result = noiseWhite.export("out/noiseWhite.png");
         assert result;
         noiseWhite.delete();
         
-        Image noisePerlin = Image.genNoisePerlin(100, 100, 0, 0, 0.5);
+        Image noisePerlin = Image.genNoisePerlin(512, 512, 0, 0, 0.5);
         result = noisePerlin.export("out/noisePerlin.png");
         assert result;
         noisePerlin.delete();
         
-        Image noiseCellular = Image.genNoiseCellular(100, 100, 10);
+        Image noiseCellular = Image.genNoiseCellular(512, 512, 10);
         result = noiseCellular.export("out/noiseCellular.png");
         assert result;
         noiseCellular.delete();
@@ -184,6 +185,36 @@ public class ImageTest
         result = quantize1610.export("out/quantize1610.png");
         assert result;
         quantize1610.delete();
+        
+        Image neuQuantize1 = manipulee(1024, 1024).neuQuantize(1);
+        result = neuQuantize1.export("out/neuQuantize1.png");
+        assert result;
+        neuQuantize1.delete();
+        
+        Image neuQuantize10 = manipulee(1024, 1024).neuQuantize(10);
+        result = neuQuantize10.export("out/neuQuantize10.png");
+        assert result;
+        neuQuantize10.delete();
+        
+        Image neuQuantize20 = manipulee(1024, 1024).neuQuantize(20);
+        result = neuQuantize20.export("out/neuQuantize20.png");
+        assert result;
+        neuQuantize20.delete();
+        
+        Image neuQuantize30 = manipulee(1024, 1024).neuQuantize(30);
+        result = neuQuantize30.export("out/neuQuantize30.png");
+        assert result;
+        neuQuantize30.delete();
+        
+        Image neuQuantize40 = manipulee(1024, 1024).neuQuantize(40);
+        result = neuQuantize40.export("out/neuQuantize40.png");
+        assert result;
+        neuQuantize40.delete();
+        
+        Image neuQuantize50 = manipulee(1024, 1024).neuQuantize(50);
+        result = neuQuantize50.export("out/neuQuantize50.png");
+        assert result;
+        neuQuantize50.delete();
         
         Image dither5650 = manipulee().dither(5, 6, 5, 0);
         result = dither5650.export("out/dither5650.png");
@@ -460,8 +491,15 @@ public class ImageTest
         drawnImage.delete();
     }
     
+    @NotNull
     private static Image manipulee()
     {
-        return Image.genColorGradient(100, 100, Color.RED, Color.GREEN, Color.BLUE, Color.BLANK);
+        return manipulee(100, 100);
+    }
+    
+    @NotNull
+    private static Image manipulee(int width, int height)
+    {
+        return Image.genColorGradient(width, height, Color.RED, Color.GREEN, Color.BLUE, Color.BLANK);
     }
 }

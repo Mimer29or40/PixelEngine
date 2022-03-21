@@ -1107,10 +1107,11 @@ public final class EXT_GIF extends Extension
          * Four Primes near 500. Assume no image has a length so large that it is
          * divisible by all four primes.
          */
-        protected static final int PRIME1 = 499;
-        protected static final int PRIME2 = 491;
-        protected static final int PRIME3 = 487;
-        protected static final int PRIME4 = 503;
+        protected static final int
+                PRIME1 = 499,
+                PRIME2 = 491,
+                PRIME3 = 487,
+                PRIME4 = 503;
         
         /**
          * Minimum Size for Input Image.
@@ -1215,16 +1216,6 @@ public final class EXT_GIF extends Extension
          */
         
         /**
-         * The input image.
-         */
-        protected static byte[] pixels;
-        
-        /**
-         * Sampling Factor {@code [1..30]}
-         */
-        protected static int sampleFactor;
-        
-        /**
          * The Network Itself
          * <p>
          * {@code network = new int[}{@link #NET_SIZE}{@code ][4]}
@@ -1262,17 +1253,21 @@ public final class EXT_GIF extends Extension
         /**
          * Initialise network in range (0,0,0) to (255,255,255), set parameters,
          * and create reduced palette
+         *
+         * @param pixels       The input image.
+         * @param sampleFactor Sampling Factor {@code [1..30]}
          */
         public static byte @NotNull [] quantize(byte @NotNull [] pixels, int sampleFactor)
         {
-            NeuQuantize.pixels       = pixels;
-            NeuQuantize.sampleFactor = sampleFactor;
+            sampleFactor = pixels.length < NeuQuantize.MIN_PICTURE_BYTES ? 1 : sampleFactor;
             
             NeuQuantize.network  = new int[NeuQuantize.NET_SIZE][];
             NeuQuantize.netIndex = new int[256];
             NeuQuantize.bias     = new int[NeuQuantize.NET_SIZE];
             NeuQuantize.freq     = new int[NeuQuantize.NET_SIZE];
             NeuQuantize.radPower = new int[NeuQuantize.INIT_RAD];
+            
+            NeuQuantize.alphaDec = 30 + ((sampleFactor - 1) / 3);
             
             for (int i = 0; i < NeuQuantize.NET_SIZE; i++)
             {
@@ -1285,7 +1280,7 @@ public final class EXT_GIF extends Extension
             Arrays.fill(NeuQuantize.freq, NeuQuantize.INT_BIAS / NeuQuantize.NET_SIZE); // 1/NET_SIZE
             Arrays.fill(NeuQuantize.radPower, 0);
             
-            learn();
+            learn(pixels, sampleFactor);
             
             // Unbias network to give byte values 0..255 and record position i to prepare for sort
             for (int i = 0; i < NeuQuantize.NET_SIZE; i++)
@@ -1298,11 +1293,10 @@ public final class EXT_GIF extends Extension
             
             inxBuild();
             
-            byte[] map   = new byte[3 * NeuQuantize.NET_SIZE];
-            int[]  index = new int[NeuQuantize.NET_SIZE];
-            
+            int[] index = new int[NeuQuantize.NET_SIZE];
             for (int i = 0; i < NeuQuantize.NET_SIZE; i++) index[NeuQuantize.network[i][3]] = i;
             
+            byte[] map = new byte[3 * NeuQuantize.NET_SIZE];
             for (int i = 0, k = 0; i < NeuQuantize.NET_SIZE; i++)
             {
                 int j = index[i];
@@ -1373,26 +1367,20 @@ public final class EXT_GIF extends Extension
                     }
                 }
             }
-            return (best);
+            return best;
         }
         
         /**
          * Main Learning Loop
          * ------------------
          */
-        private static void learn()
+        private static void learn(byte @NotNull [] pixels, int sampleFactor)
         {
-            int j, b, g, r;
-            int radius, rad, alpha, samplePixels;
+            int samplePixels = pixels.length / (3 * sampleFactor);
+            int alpha        = NeuQuantize.INIT_ALPHA;
+            int radius       = NeuQuantize.INIT_RADIUS;
+            int rad          = radius >> NeuQuantize.RADIUS_BIAS_SHIFT;
             
-            if (NeuQuantize.pixels.length < NeuQuantize.MIN_PICTURE_BYTES) NeuQuantize.sampleFactor = 1;
-            
-            NeuQuantize.alphaDec = 30 + ((NeuQuantize.sampleFactor - 1) / 3);
-            samplePixels         = NeuQuantize.pixels.length / (3 * NeuQuantize.sampleFactor);
-            alpha                = NeuQuantize.INIT_ALPHA;
-            radius               = NeuQuantize.INIT_RADIUS;
-            
-            rad = radius >> NeuQuantize.RADIUS_BIAS_SHIFT;
             // if (rad <= 1) rad = 0;
             
             for (int i = 0; i < rad; i++)
@@ -1401,19 +1389,19 @@ public final class EXT_GIF extends Extension
             }
             
             int step;
-            if (NeuQuantize.pixels.length < NeuQuantize.MIN_PICTURE_BYTES)
+            if (pixels.length < NeuQuantize.MIN_PICTURE_BYTES)
             {
                 step = 3;
             }
-            else if ((NeuQuantize.pixels.length % NeuQuantize.PRIME1) != 0)
+            else if ((pixels.length % NeuQuantize.PRIME1) != 0)
             {
                 step = 3 * NeuQuantize.PRIME1;
             }
-            else if ((NeuQuantize.pixels.length % NeuQuantize.PRIME2) != 0)
+            else if ((pixels.length % NeuQuantize.PRIME2) != 0)
             {
                 step = 3 * NeuQuantize.PRIME2;
             }
-            else if ((NeuQuantize.pixels.length % NeuQuantize.PRIME3) != 0)
+            else if ((pixels.length % NeuQuantize.PRIME3) != 0)
             {
                 step = 3 * NeuQuantize.PRIME3;
             }
@@ -1426,16 +1414,17 @@ public final class EXT_GIF extends Extension
             if (delta == 0) delta = 1;
             for (int i = 0, pix = 0; i < samplePixels; )
             {
-                b = (NeuQuantize.pixels[pix] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
-                g = (NeuQuantize.pixels[pix + 1] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
-                r = (NeuQuantize.pixels[pix + 2] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
-                j = contest(b, g, r);
+                int b = (pixels[pix] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
+                int g = (pixels[pix + 1] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
+                int r = (pixels[pix + 2] & 0xFF) << NeuQuantize.NET_BIAS_SHIFT;
                 
-                alterSingle(alpha, j, b, g, r);
-                if (rad != 0) alterNeighbours(rad, j, b, g, r); /* alter neighbours */
+                int bestBiasPos = contest(b, g, r);
+                
+                alterSingle(alpha, bestBiasPos, b, g, r);
+                if (rad != 0) alterNeighbours(rad, bestBiasPos, b, g, r); /* alter neighbours */
                 
                 pix += step;
-                if (pix >= NeuQuantize.pixels.length) pix -= NeuQuantize.pixels.length;
+                if (pix >= pixels.length) pix -= pixels.length;
                 
                 i++;
                 
@@ -1445,9 +1434,9 @@ public final class EXT_GIF extends Extension
                     radius -= radius / NeuQuantize.RADIUS_DEC;
                     rad = radius >> NeuQuantize.RADIUS_BIAS_SHIFT;
                     if (rad <= 1) rad = 0;
-                    for (j = 0; j < rad; j++)
+                    for (bestBiasPos = 0; bestBiasPos < rad; bestBiasPos++)
                     {
-                        NeuQuantize.radPower[j] = alpha * (((rad * rad - j * j) * NeuQuantize.RAD_BIAS) / (rad * rad));
+                        NeuQuantize.radPower[bestBiasPos] = alpha * (((rad * rad - bestBiasPos * bestBiasPos) * NeuQuantize.RAD_BIAS) / (rad * rad));
                     }
                 }
             }
@@ -1512,13 +1501,13 @@ public final class EXT_GIF extends Extension
          * Move adjacent neurons by precomputed {@code alpha*(1-((i-j)^2/[r]^2))}
          * in {@link #radPower}{@code [|i-j|]}
          */
-        private static void alterNeighbours(int rad, int i, int b, int g, int r)
+        private static void alterNeighbours(int rad, int bestBiasPos, int b, int g, int r)
         {
-            int lo = Math.max(i - rad, -1);
-            int hi = Math.min(i + rad, NeuQuantize.NET_SIZE);
+            int lo = Math.max(bestBiasPos - rad, -1);
+            int hi = Math.min(bestBiasPos + rad, NeuQuantize.NET_SIZE);
             
-            int j = i + 1;
-            int k = i - 1;
+            int j = bestBiasPos + 1;
+            int k = bestBiasPos - 1;
             int m = 1;
             while (j < hi || k > lo)
             {
@@ -1551,10 +1540,10 @@ public final class EXT_GIF extends Extension
         /**
          * Move neuron i towards biased (b,g,r) by factor alpha
          */
-        private static void alterSingle(int alpha, int i, int b, int g, int r)
+        private static void alterSingle(int alpha, int bestBiasPos, int b, int g, int r)
         {
             // alter hit neuron
-            int[] n = NeuQuantize.network[i];
+            int[] n = NeuQuantize.network[bestBiasPos];
             n[0] -= (alpha * (n[0] - b)) / NeuQuantize.INIT_ALPHA;
             n[1] -= (alpha * (n[1] - g)) / NeuQuantize.INIT_ALPHA;
             n[2] -= (alpha * (n[2] - r)) / NeuQuantize.INIT_ALPHA;

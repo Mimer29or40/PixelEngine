@@ -14,6 +14,7 @@ import rutils.Logger;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static org.lwjgl.stb.STBImage.stbi_load_from_memory;
@@ -1239,6 +1240,368 @@ public class Image
             }
             
             pixels.free();
+        }
+        return this;
+    }
+    
+    /**
+     * Quantize the image to only 256 colors.
+     *
+     * @param sampleFactor Sampling Factor {@code [1..30]}
+     * @return This
+     */
+    public @NotNull Image neuQuantize(int sampleFactor)
+    {
+        if (this.data != null)
+        {
+            int sizeof = this.data.sizeof();
+            
+            final int NET_SIZE = 256;
+            final int
+                    PRIME1 = 499,
+                    PRIME2 = 491,
+                    PRIME3 = 487,
+                    PRIME4 = 503;
+            final int MIN_PICTURE_BYTES = sizeof * PRIME4;
+            final int
+                    MAX_NET_POS = NET_SIZE - 1,
+                    NET_BIAS_SHIFT = 4,
+                    N_CYCLES = 100;
+            @SuppressWarnings("unused")
+            final int
+                    INT_BIAS_SHIFT = 16,
+                    INT_BIAS = 1 << INT_BIAS_SHIFT,
+                    GAMMA_SHIFT = 10,
+                    GAMMA = 1 << GAMMA_SHIFT,
+                    BETA_SHIFT = 10,
+                    BETA = INT_BIAS >> BETA_SHIFT,
+                    BETA_GAMMA = INT_BIAS << (GAMMA_SHIFT - BETA_SHIFT);
+            final int
+                    INIT_RAD = NET_SIZE >> 3,
+                    RADIUS_BIAS_SHIFT = 6,
+                    RADIUS_BIAS = 1 << RADIUS_BIAS_SHIFT,
+                    INIT_RADIUS = INIT_RAD * RADIUS_BIAS,
+                    RADIUS_DEC = 30;
+            final int
+                    ALPHA_BIAS_SHIFT = 10,
+                    INIT_ALPHA = 1 << ALPHA_BIAS_SHIFT;
+            final int
+                    RAD_BIAS_SHIFT = 8,
+                    RAD_BIAS = 1 << RAD_BIAS_SHIFT,
+                    ALPHA_RAD_BIAS_SHIFT = ALPHA_BIAS_SHIFT + RAD_BIAS_SHIFT,
+                    ALPHA_RAD_BIAS = 1 << ALPHA_RAD_BIAS_SHIFT;
+            
+            int dataSize = this.data.capacity() * sizeof;
+            
+            sampleFactor = dataSize < MIN_PICTURE_BYTES ? 1 : sampleFactor;
+            
+            int[][] network  = new int[NET_SIZE][];
+            int[]   netIndex = new int[256];
+            int[]   bias     = new int[NET_SIZE];
+            int[]   freq     = new int[NET_SIZE];
+            int[]   radPower = new int[INIT_RAD];
+            
+            int alphaDec = 30 + ((sampleFactor - 1) / sizeof);
+            
+            for (int i = 0; i < NET_SIZE; i++)
+            {
+                int initial = (i << (NET_BIAS_SHIFT + 8)) / NET_SIZE;
+                
+                network[i] = new int[] {initial, initial, initial, initial, 0};
+            }
+            Arrays.fill(netIndex, 0);
+            Arrays.fill(bias, 0);
+            Arrays.fill(freq, INT_BIAS / NET_SIZE); // 1/NET_SIZE
+            Arrays.fill(radPower, 0);
+            
+            int samplePixels = dataSize / (sizeof * sampleFactor);
+            int alpha        = INIT_ALPHA;
+            int radius       = INIT_RADIUS;
+            int rad          = radius >> RADIUS_BIAS_SHIFT;
+            
+            // if (rad <= 1) rad = 0;
+            
+            for (int i = 0, rad2 = rad * rad; i < rad; i++) radPower[i] = alpha * (((rad2 - i * i) * RAD_BIAS) / rad2);
+            
+            int step;
+            if (dataSize < MIN_PICTURE_BYTES)
+            {
+                step = 1;
+            }
+            else if ((dataSize % PRIME1) != 0)
+            {
+                step = PRIME1;
+            }
+            else if ((dataSize % PRIME2) != 0)
+            {
+                step = PRIME2;
+            }
+            else if ((dataSize % PRIME3) != 0)
+            {
+                step = PRIME3;
+            }
+            else
+            {
+                step = PRIME4;
+            }
+            
+            int delta = samplePixels / N_CYCLES;
+            if (delta == 0) delta = 1;
+            for (int i = 0, pix = 0; i < samplePixels; )
+            {
+                Color pixel = this.data.get(pix);
+                
+                int r = pixel.r() << NET_BIAS_SHIFT;
+                int g = pixel.g() << NET_BIAS_SHIFT;
+                int b = pixel.b() << NET_BIAS_SHIFT;
+                int a = pixel.a() << NET_BIAS_SHIFT;
+                
+                int bestDist     = Integer.MAX_VALUE;
+                int bestBiasDist = Integer.MAX_VALUE;
+                int bestPos      = -1;
+                int bestBiasPos  = -1;
+                
+                for (int j = 0; j < NET_SIZE; j++)
+                {
+                    int[] n = network[j];
+                    
+                    int dist = Math.abs(n[0] - r) +
+                               Math.abs(n[1] - g) +
+                               Math.abs(n[2] - b) +
+                               Math.abs(n[3] - a);
+                    
+                    if (dist < bestDist)
+                    {
+                        bestDist = dist;
+                        bestPos  = j;
+                    }
+                    
+                    int biasDist = dist - (bias[j] >> (INT_BIAS_SHIFT - NET_BIAS_SHIFT));
+                    if (biasDist < bestBiasDist)
+                    {
+                        bestBiasDist = biasDist;
+                        bestBiasPos  = j;
+                    }
+                    
+                    int betaFreq = freq[j] >> BETA_SHIFT;
+                    bias[j] += betaFreq << GAMMA_SHIFT;
+                    freq[j] -= betaFreq;
+                }
+                bias[bestPos] -= BETA_GAMMA;
+                freq[bestPos] += BETA;
+                
+                // alter hit neuron
+                int[] n = network[bestBiasPos];
+                n[0] -= (alpha * (n[0] - r)) / INIT_ALPHA;
+                n[1] -= (alpha * (n[1] - g)) / INIT_ALPHA;
+                n[2] -= (alpha * (n[2] - b)) / INIT_ALPHA;
+                n[3] -= (alpha * (n[3] - a)) / INIT_ALPHA;
+                if (rad != 0)
+                {
+                    // alter neighbours
+                    int lo = Math.max(bestBiasPos - rad, -1);
+                    int hi = Math.min(bestBiasPos + rad, NET_SIZE);
+                    
+                    int j = bestBiasPos + 1;
+                    int k = bestBiasPos - 1;
+                    int m = 1;
+                    while (j < hi || k > lo)
+                    {
+                        int radP = radPower[m++];
+                        if (j < hi)
+                        {
+                            int[] p = network[j++];
+                            try
+                            {
+                                p[0] -= (radP * (p[0] - r)) / ALPHA_RAD_BIAS;
+                                p[1] -= (radP * (p[1] - g)) / ALPHA_RAD_BIAS;
+                                p[2] -= (radP * (p[2] - b)) / ALPHA_RAD_BIAS;
+                                p[3] -= (radP * (p[3] - a)) / ALPHA_RAD_BIAS;
+                            }
+                            catch (Exception ignored) {}
+                        }
+                        if (k > lo)
+                        {
+                            int[] p = network[k--];
+                            try
+                            {
+                                p[0] -= (radP * (p[0] - r)) / ALPHA_RAD_BIAS;
+                                p[1] -= (radP * (p[1] - g)) / ALPHA_RAD_BIAS;
+                                p[2] -= (radP * (p[2] - b)) / ALPHA_RAD_BIAS;
+                                p[3] -= (radP * (p[3] - a)) / ALPHA_RAD_BIAS;
+                            }
+                            catch (Exception ignored) {}
+                        }
+                    }
+                }
+                
+                pix += step;
+                if (pix >= this.data.capacity()) pix -= this.data.capacity();
+                
+                i++;
+                
+                if (i % delta == 0)
+                {
+                    alpha -= alpha / alphaDec;
+                    radius -= radius / RADIUS_DEC;
+                    rad = radius >> RADIUS_BIAS_SHIFT;
+                    if (rad <= 1) rad = 0;
+                    for (bestBiasPos = 0; bestBiasPos < rad; bestBiasPos++)
+                    {
+                        radPower[bestBiasPos] = alpha * (((rad * rad - bestBiasPos * bestBiasPos) * RAD_BIAS) / (rad * rad));
+                    }
+                }
+            }
+            
+            // Unbias network to give byte values 0..255 and record position i to prepare for sort
+            for (int i = 0; i < NET_SIZE; i++)
+            {
+                network[i][0] >>= NET_BIAS_SHIFT;
+                network[i][1] >>= NET_BIAS_SHIFT;
+                network[i][2] >>= NET_BIAS_SHIFT;
+                network[i][3] >>= NET_BIAS_SHIFT;
+                network[i][4] =   i; /* record color no */
+            }
+            
+            int prevCol  = 0;
+            int startPos = 0;
+            for (int i = 0; i < NET_SIZE; i++)
+            {
+                int[] p        = network[i];
+                int   smallPos = i;
+                int   smallVal = p[1]; /* index on g */
+                /* find smallest in [i..NET_SIZE-1] */
+                for (int j = i + 1; j < NET_SIZE; j++)
+                {
+                    int[] q = network[j];
+                    if (q[1] < smallVal)
+                    { /* index on g */
+                        smallPos = j;
+                        smallVal = q[1]; /* index on g */
+                    }
+                }
+                int[] q = network[smallPos];
+                /* swap p(i) and q(smallPos) entries */
+                if (i != smallPos)
+                {
+                    int temp;
+                    
+                    temp = q[0];
+                    q[0] = p[0];
+                    p[0] = temp;
+                    temp = q[1];
+                    q[1] = p[1];
+                    p[1] = temp;
+                    temp = q[2];
+                    q[2] = p[2];
+                    p[2] = temp;
+                    temp = q[3];
+                    q[3] = p[3];
+                    p[3] = temp;
+                }
+                /* smallVal entry is now in position i */
+                if (smallVal != prevCol)
+                {
+                    netIndex[prevCol] = (startPos + i) >> 1;
+                    for (int j = prevCol + 1; j < smallVal; j++) netIndex[j] = i;
+                    prevCol  = smallVal;
+                    startPos = i;
+                }
+            }
+            
+            netIndex[prevCol] = (startPos + MAX_NET_POS) >> 1;
+            Arrays.fill(netIndex, prevCol + 1, netIndex.length, MAX_NET_POS); // really 256
+            
+            int[] index = new int[NET_SIZE];
+            for (int i = 0; i < NET_SIZE; i++) index[network[i][4]] = i;
+            
+            byte[] colorTable = new byte[sizeof * NET_SIZE];
+            for (int i = 0, k = 0; i < NET_SIZE; i++)
+            {
+                int j = index[i];
+                colorTable[k++] = (byte) network[j][0];
+                colorTable[k++] = (byte) network[j][1];
+                colorTable[k++] = (byte) network[j][2];
+                colorTable[k++] = (byte) network[j][3];
+            }
+            
+            this.data.clear();
+            for (Color color = this.data.get(); this.data.hasRemaining(); color = this.data.get())
+            {
+                int r = color.r();
+                int g = color.g();
+                int b = color.b();
+                int a = color.a();
+                
+                int bestDist = 1000; /* biggest possible dist is 256*3 */
+                int best     = -1;
+                
+                // i: index on g
+                // j: start at netIndex[g] and work outwards
+                for (int i = netIndex[g], j = i - 1; i < NET_SIZE || j >= 0; )
+                {
+                    if (i < NET_SIZE)
+                    {
+                        int[] p    = network[i];
+                        int   dist = p[1] - g; /* inx key */
+                        if (dist >= bestDist)
+                        {
+                            i = NET_SIZE; /* stop iter */
+                        }
+                        else
+                        {
+                            i++;
+                            dist = Math.abs(dist) + Math.abs(p[0] - r);
+                            if (dist < bestDist)
+                            {
+                                dist += Math.abs(p[2] - b);
+                                if (dist < bestDist)
+                                {
+                                    dist += Math.abs(p[3] - a);
+                                    if (dist < bestDist)
+                                    {
+                                        bestDist = dist;
+                                        best     = p[4];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (j >= 0)
+                    {
+                        int[] p    = network[j];
+                        int   dist = g - p[1]; /* inx key - reverse dif */
+                        if (dist >= bestDist)
+                        {
+                            j = -1; /* stop iter */
+                        }
+                        else
+                        {
+                            j--;
+                            dist = Math.abs(dist) + Math.abs(p[0] - r);
+                            if (dist < bestDist)
+                            {
+                                dist += Math.abs(p[2] - b);
+                                if (dist < bestDist)
+                                {
+                                    dist += Math.abs(p[3] - a);
+                                    if (dist < bestDist)
+                                    {
+                                        bestDist = dist;
+                                        best     = p[4];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                color.r(colorTable[(4 * best)] & 0xFF);
+                color.g(colorTable[(4 * best) + 1] & 0xFF);
+                color.b(colorTable[(4 * best) + 2] & 0xFF);
+                color.a(colorTable[(4 * best) + 3] & 0xFF);
+            }
+            this.data.clear();
         }
         return this;
     }
