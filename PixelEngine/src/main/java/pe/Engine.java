@@ -9,10 +9,7 @@ import org.lwjgl.system.MemoryUtil;
 import pe.color.Colorc;
 import pe.draw.*;
 import pe.event.Event;
-import pe.render.GLBatch;
-import pe.render.GLFramebuffer;
-import pe.render.GLProgram;
-import pe.render.GLState;
+import pe.render.*;
 import pe.util.Random;
 import rutils.Logger;
 import rutils.group.Pair;
@@ -32,6 +29,7 @@ public abstract class Engine
     
     static Engine  instance;
     static boolean mainThreadRunning, renderThreadRunning;
+    
     static Random random;
     
     static boolean wireframe = false;
@@ -119,7 +117,21 @@ public abstract class Engine
             
             Layer.setup(width, height);
             
-            GLState.defaultState();
+            int r = Layer.primary().width() >> 1;
+            int l = -r;
+            int b = Layer.primary().height() >> 1;
+            int t = -b;
+            
+            GLBatch.get().matrixMode(MatrixMode.PROJECTION);
+            GLBatch.get().loadIdentity();
+            GLBatch.get().ortho(l, r, b, t, 1.0, -1.0);
+            
+            GLBatch.get().matrixMode(MatrixMode.VIEW);
+            GLBatch.get().loadIdentity();
+            GLBatch.get().translate(l, t, 0.0);
+            
+            GLBatch.get().matrixMode(MatrixMode.MODEL);
+            GLBatch.get().loadIdentity();
         }
         
         private static void events()
@@ -165,27 +177,49 @@ public abstract class Engine
         private static void renderSetup()
         {
             Extensions.LOGGER.fine("Render Setup");
+    
+            Capture.renderSetup();
+        }
+        
+        public static void preFrame()
+        {
+            Extensions.LOGGER.finest("Pre Frame");
         }
         
         private static void preEvents()
         {
+            Extensions.LOGGER.finest("Pre Events");
         }
         
         private static void postEvents()
         {
+            Extensions.LOGGER.finest("Post Events");
+    
+            Capture.postEvents();
         }
         
         private static void preDraw()
         {
+            Extensions.LOGGER.finest("Pre Draw");
         }
         
         private static void postDraw()
         {
+            Extensions.LOGGER.finest("Post Draw");
+        }
+        
+        public static void postFrame()
+        {
+            Extensions.LOGGER.finest("Post Frame");
+            
+            Capture.postFrame();
         }
         
         private static void renderDestroy()
         {
             Extensions.LOGGER.fine("Render Destroy");
+    
+            Capture.renderDestroy();
         }
         
         private static void preDestroy()
@@ -463,6 +497,8 @@ public abstract class Engine
                         {
                             if (Time.startFrame())
                             {
+                                Extensions.preFrame();
+                                
                                 // TODO Profiler Start Frame
                                 
                                 Extensions.preEvents();
@@ -489,6 +525,22 @@ public abstract class Engine
                                     GLBatch defaultBatch = GLBatch.get();
                                     defaultBatch.start();
                                     
+                                    int r = Layer.primary().width() >> 1;
+                                    int l = -r;
+                                    int b = Layer.primary().height() >> 1;
+                                    int t = -b;
+                                    
+                                    defaultBatch.matrixMode(MatrixMode.PROJECTION);
+                                    defaultBatch.loadIdentity();
+                                    defaultBatch.ortho(l, r, b, t, 1.0, -1.0);
+                                    
+                                    defaultBatch.matrixMode(MatrixMode.VIEW);
+                                    defaultBatch.loadIdentity();
+                                    defaultBatch.translate(l, t, 0.0);
+                                    
+                                    defaultBatch.matrixMode(MatrixMode.MODEL);
+                                    defaultBatch.loadIdentity();
+                                    
                                     // Engine.renderer.start(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
@@ -503,12 +555,9 @@ public abstract class Engine
                                     Extensions.postDraw();
                                     // Engine.renderer.pop(); // TODO
                                     
-                                    // GLState.disable(GLState.DEPTH_TEST);
-                                    // GLState.drawRenderBatch(); // Update and draw internal render batch
+                                    GLBatch.BatchStats stats = defaultBatch.stop();
                                     
                                     // Engine.renderer.finish(); // TODO
-                                    
-                                    GLBatch.BatchStats stats = defaultBatch.stop();
                                     
                                     Engine.vertices = stats.vertices();
                                     Engine.draws    = stats.draws();
@@ -525,38 +574,9 @@ public abstract class Engine
                                 // TODO Profiler End Frame
                                 
                                 Time.endFrame();
+                                
+                                Extensions.postFrame();
                             }
-                            
-                            // if (Engine.screenshot != null)
-                            // {
-                            //     String fileName = Engine.screenshot + (!Engine.screenshot.endsWith(".png") ? ".png" : "");
-                            //
-                            //     int w = Engine.viewSize.x;
-                            //     int h = Engine.viewSize.y;
-                            //     int c = 3;
-                            //
-                            //     int stride = w * c;
-                            //
-                            //     ByteBuffer buf = MemoryUtil.memAlloc(w * h * c);
-                            //     GL33.glReadBuffer(GL33.GL_FRONT);
-                            //     GL33.glReadPixels(0, 0, w, h, GL33.GL_RGB, GL33.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(buf));
-                            //
-                            //     byte[] tmp1 = new byte[stride], tmp2 = new byte[stride];
-                            //     for (int i = 0, n = h >> 1, col1, col2; i < n; i++)
-                            //     {
-                            //         col1 = i * stride;
-                            //         col2 = (h - i - 1) * stride;
-                            //         buf.get(col1, tmp1);
-                            //         buf.get(col2, tmp2);
-                            //         buf.put(col1, tmp2);
-                            //         buf.put(col2, tmp1);
-                            //     }
-                            //
-                            //     if (!stbi_write_png(fileName, w, h, c, buf, stride)) Engine.LOGGER.severe("Could not take screen shot");
-                            //     MemoryUtil.memFree(buf);
-                            //
-                            //     Engine.screenshot = null;
-                            // }
                             
                             // TODO
                             // if (Time.shouldUpdate())

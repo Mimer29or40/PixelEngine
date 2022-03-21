@@ -1,5 +1,10 @@
 package pe;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public final class Time
 {
     static long start; // The System time that the engine was started
@@ -175,5 +180,11 @@ public final class Time
     public static void frameRate(int frameRate)
     {
         Time.frameTimeTarget = frameRate > 0 ? 1_000_000_000L / (long) frameRate : 0L;
+    }
+    
+    @NotNull
+    public static String timeStamp()
+    {
+        return LocalDateTime.now().format(DateTimeFormatter.ofPattern("uuuu-MM-dd HH.mm.ss"));
     }
 }

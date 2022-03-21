@@ -3,10 +3,14 @@ package pe.render;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL33;
-import pe.Layer;
+import org.lwjgl.system.MemoryUtil;
 import pe.color.BlendMode;
+import pe.color.Color;
+import pe.color.ColorFormat;
+import pe.color.Color_RGBA;
 import rutils.Logger;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class GLState
@@ -82,6 +86,8 @@ public class GLState
         
         // TODO - Setup Uniform Buffer for default things
         // TODO - Setup Default Uniform values
+        
+        GLState.defaultState();
     }
     
     public static void destroy()
@@ -128,22 +134,6 @@ public class GLState
         
         cullFace(CullFace.DEFAULT);
         winding(Winding.DEFAULT);
-        
-        int r = Layer.primary().width() >> 1;
-        int l = -r;
-        int b = Layer.primary().height() >> 1;
-        int t = -b;
-        
-        GLBatch.get().matrixMode(MatrixMode.PROJECTION);
-        GLBatch.get().loadIdentity();
-        GLBatch.get().ortho(l, r, b, t, 1.0, -1.0);
-        
-        GLBatch.get().matrixMode(MatrixMode.VIEW);
-        GLBatch.get().loadIdentity();
-        GLBatch.get().translate(l, t, 0.0);
-        
-        GLBatch.get().matrixMode(MatrixMode.MODEL);
-        GLBatch.get().loadIdentity();
     }
     
     /**
@@ -628,4 +618,120 @@ public class GLState
         }
     }
     
+    private static Color.Buffer readBuffer(int buffer, int x, int y, int width, int height, @NotNull ColorFormat format)
+    {
+        ByteBuffer data = MemoryUtil.memAlloc(width * height * format.sizeof);
+        
+        GL33.glReadBuffer(buffer);
+        GL33.glReadPixels(x, y, width, height, format.format, GL33.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(data));
+        
+        // Flip data vertically
+        int    s    = width * format.sizeof;
+        byte[] tmp1 = new byte[s], tmp2 = new byte[s];
+        for (int i = 0, n = height >> 1, col1, col2; i < n; i++)
+        {
+            col1 = i * s;
+            col2 = (height - i - 1) * s;
+            data.get(col1, tmp1);
+            data.get(col2, tmp2);
+            data.put(col1, tmp2);
+            data.put(col2, tmp1);
+        }
+        
+        return Color_RGBA.wrap(format, data);
+    }
+    
+    /**
+     * Obtains values from the front buffer from each pixel with lower
+     * left-hand corner at {@code (x + i, y + j)} for {@code 0 <= i < width}
+     * and {@code 0 <= j < height}; this pixel is said to be the i<sup>th</sup>
+     * pixel in the j<sup>th</sup> row. If any of these pixels lies outside the
+     * window allocated to the current GL context, or outside the image
+     * attached to the currently bound read framebuffer object, then the values
+     * obtained for those pixels are undefined.
+     * <p>
+     * The buffer must be explicitly freed.
+     *
+     * @param x      the left pixel coordinate
+     * @param y      the lower pixel coordinate
+     * @param width  the number of pixels to read in the x-dimension
+     * @param height the number of pixels to read in the y-dimension
+     * @param format the color format. One of:<br>{@link ColorFormat#GRAY GRAY}, {@link ColorFormat#GRAY_ALPHA GRAY_ALPHA}, {@link ColorFormat#RGB RGB}, {@link ColorFormat#RGBA RGBA}
+     * @return The new color buffer.
+     */
+    @NotNull
+    public static Color.Buffer readFrontBuffer(int x, int y, int width, int height, @NotNull ColorFormat format)
+    {
+        return readBuffer(GL33.GL_FRONT, x, y, width, height, format);
+    }
+    
+    /**
+     * Obtains values from the front buffer from each pixel with lower
+     * left-hand corner at {@code (x + i, y + j)} for {@code 0 <= i < width}
+     * and {@code 0 <= j < height}; this pixel is said to be the i<sup>th</sup>
+     * pixel in the j<sup>th</sup> row. If any of these pixels lies outside the
+     * window allocated to the current GL context, or outside the image
+     * attached to the currently bound read framebuffer object, then the values
+     * obtained for those pixels are undefined.
+     * <p>
+     * The buffer must be explicitly freed.
+     *
+     * @param x      the left pixel coordinate
+     * @param y      the lower pixel coordinate
+     * @param width  the number of pixels to read in the x-dimension
+     * @param height the number of pixels to read in the y-dimension
+     * @return The new color buffer.
+     */
+    @NotNull
+    public static Color.Buffer readFrontBuffer(int x, int y, int width, int height)
+    {
+        return readFrontBuffer(x, y, width, height, ColorFormat.RGB);
+    }
+    
+    /**
+     * Obtains values from the back buffer from each pixel with lower
+     * left-hand corner at {@code (x + i, y + j)} for {@code 0 <= i < width}
+     * and {@code 0 <= j < height}; this pixel is said to be the i<sup>th</sup>
+     * pixel in the j<sup>th</sup> row. If any of these pixels lies outside the
+     * window allocated to the current GL context, or outside the image
+     * attached to the currently bound read framebuffer object, then the values
+     * obtained for those pixels are undefined.
+     * <p>
+     * The buffer must be explicitly freed.
+     *
+     * @param x      the left pixel coordinate
+     * @param y      the lower pixel coordinate
+     * @param width  the number of pixels to read in the x-dimension
+     * @param height the number of pixels to read in the y-dimension
+     * @param format the color format. One of:<br>{@link ColorFormat#GRAY GRAY}, {@link ColorFormat#GRAY_ALPHA GRAY_ALPHA}, {@link ColorFormat#RGB RGB}, {@link ColorFormat#RGBA RGBA}
+     * @return The new color buffer.
+     */
+    @NotNull
+    public static Color.Buffer readBackBuffer(int x, int y, int width, int height, @NotNull ColorFormat format)
+    {
+        return readBuffer(GL33.GL_BACK, x, y, width, height, format);
+    }
+    
+    /**
+     * Obtains values from the back buffer from each pixel with lower
+     * left-hand corner at {@code (x + i, y + j)} for {@code 0 <= i < width}
+     * and {@code 0 <= j < height}; this pixel is said to be the i<sup>th</sup>
+     * pixel in the j<sup>th</sup> row. If any of these pixels lies outside the
+     * window allocated to the current GL context, or outside the image
+     * attached to the currently bound read framebuffer object, then the values
+     * obtained for those pixels are undefined.
+     * <p>
+     * The buffer must be explicitly freed.
+     *
+     * @param x      the left pixel coordinate
+     * @param y      the lower pixel coordinate
+     * @param width  the number of pixels to read in the x-dimension
+     * @param height the number of pixels to read in the y-dimension
+     * @return The new color buffer.
+     */
+    @NotNull
+    public static Color.Buffer readBackBuffer(int x, int y, int width, int height)
+    {
+        return readBackBuffer(x, y, width, height, ColorFormat.RGB);
+    }
 }

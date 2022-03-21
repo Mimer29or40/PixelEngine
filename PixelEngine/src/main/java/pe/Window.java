@@ -59,13 +59,13 @@ public class Window
         
         Window.windowed = builder.windowed;
         
-        Window.name = builder.name;
-        String title   = builder.title != null ? builder.title : Window.name != null ? Window.name : "Window";
-        long   monitor = Window.windowed ? MemoryUtil.NULL : Window.monitor.handle;
-        long   window  = MemoryUtil.NULL;
+        Window.name  = builder.name;
+        Window.title = builder.title != null ? builder.title : Window.name != null ? Window.name : "Window";
+        long monitor = Window.windowed ? MemoryUtil.NULL : Window.monitor.handle;
+        long window  = MemoryUtil.NULL;
         // long   window  = Window.primary != null ? Window.primary.handle : MemoryUtil.NULL;
         
-        Window.handle = glfwCreateWindow(builder.size.x(), builder.size.y(), title, monitor, window);
+        Window.handle = glfwCreateWindow(builder.size.x(), builder.size.y(), Window.title, monitor, window);
         if (Window.handle == MemoryUtil.NULL) throw new RuntimeException("Failed to create the window");
         
         Window.LOGGER.fine("Created Window");
@@ -394,6 +394,7 @@ public class Window
     // -------------------- Properties -------------------- //
     
     static String name;
+    static String title;
     static long   handle;
     
     static Monitor monitor;
@@ -474,6 +475,15 @@ public class Window
     // -------------------- Properties -------------------- //
     
     /**
+     * @return The current title of the window.
+     */
+    @NotNull
+    public static String title()
+    {
+        return Window.title;
+    }
+    
+    /**
      * Sets the window title, encoded as UTF-8, of the window.
      *
      * @param title The new title.
@@ -481,6 +491,8 @@ public class Window
     public static void title(CharSequence title)
     {
         Window.LOGGER.finest("Setting Title for %s: \"%s\"", Window.primary, title);
+        
+        Window.title = title.toString();
         
         Engine.Delegator.runTask(() -> glfwSetWindowTitle(Window.handle, title));
     }
