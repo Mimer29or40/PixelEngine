@@ -55,6 +55,39 @@ public class EngineTest extends Engine
         // Logger.setLevel(Level.FINEST);
         Logger.setLevel(Level.FINE);
         Logger.addLogFile("out/console.log");
+        Extension.register(ExtTest.class);
         start(new EngineTest());
+    }
+    
+    static class ExtTest extends Extension
+    {
+        @StageMethod(stage = Stage.PRE_SETUP)
+        static void preSetup()
+        {
+            System.out.println("preSetup");
+        }
+        
+        @StageMethod(stage = Stage.POST_SETUP)
+        static void postSetup()
+        {
+            System.out.println("postSetup");
+        }
+        
+        @StageMethod(stage = Stage.RENDER_SETUP)
+        static void renderSetup()
+        {
+            // throw new RuntimeException("Test Exception");
+        }
+        
+        @StageMethod(stage = Stage.POST_DESTROY)
+        static void postDestroy()
+        {
+            // throw new RuntimeException("Test Exception");
+        }
+        
+        private static void notAStage()
+        {
+            System.out.println("notAStage");
+        }
     }
 }

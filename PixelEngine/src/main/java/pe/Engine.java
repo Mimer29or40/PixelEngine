@@ -160,79 +160,6 @@ public abstract class Engine
         }
     }
     
-    static final class Extensions // TODO
-    {
-        private static final Logger LOGGER = new Logger();
-        
-        private static void preSetup()
-        {
-            Extensions.LOGGER.fine("Pre Setup");
-        }
-        
-        private static void postSetup()
-        {
-            Extensions.LOGGER.fine("Post Setup");
-        }
-        
-        private static void renderSetup()
-        {
-            Extensions.LOGGER.fine("Render Setup");
-    
-            Capture.renderSetup();
-        }
-        
-        public static void preFrame()
-        {
-            Extensions.LOGGER.finest("Pre Frame");
-        }
-        
-        private static void preEvents()
-        {
-            Extensions.LOGGER.finest("Pre Events");
-        }
-        
-        private static void postEvents()
-        {
-            Extensions.LOGGER.finest("Post Events");
-    
-            Capture.postEvents();
-        }
-        
-        private static void preDraw()
-        {
-            Extensions.LOGGER.finest("Pre Draw");
-        }
-        
-        private static void postDraw()
-        {
-            Extensions.LOGGER.finest("Post Draw");
-        }
-        
-        public static void postFrame()
-        {
-            Extensions.LOGGER.finest("Post Frame");
-            
-            Capture.postFrame();
-        }
-        
-        private static void renderDestroy()
-        {
-            Extensions.LOGGER.fine("Render Destroy");
-    
-            Capture.renderDestroy();
-        }
-        
-        private static void preDestroy()
-        {
-            Extensions.LOGGER.fine("Pre Destroy");
-        }
-        
-        private static void postDestroy()
-        {
-            Extensions.LOGGER.fine("Post Destroy");
-        }
-    }
-    
     public static final class Delegator
     {
         private static final Deque<Runnable>                    run               = new ArrayDeque<>();
@@ -473,12 +400,12 @@ public abstract class Engine
             Time.setup();
             // Delegator.setup(); // TODO
             
-            Extensions.preSetup();
+            Extension.executeStage(Extension.Stage.PRE_SETUP);
             
             Engine.LOGGER.info("Instance Setup");
             Engine.instance.setup();
             
-            Extensions.postSetup();
+            Extension.executeStage(Extension.Stage.POST_SETUP);
             
             if (Window.isOpen())
             {
@@ -491,22 +418,22 @@ public abstract class Engine
                     {
                         Window.makeCurrent();
                         
-                        Extensions.renderSetup();
+                        Extension.executeStage(Extension.Stage.RENDER_SETUP);
                         
                         while (Engine.renderThreadRunning)
                         {
                             if (Time.startFrame())
                             {
-                                Extensions.preFrame();
+                                Extension.executeStage(Extension.Stage.PRE_FRAME);
                                 
                                 // TODO Profiler Start Frame
                                 
-                                Extensions.preEvents();
+                                Extension.executeStage(Extension.Stage.PRE_EVENTS);
                                 
                                 Events.events();
                                 IO.events();
                                 
-                                Extensions.postEvents();
+                                Extension.executeStage(Extension.Stage.POST_EVENTS);
                                 
                                 // GUI.handleEvents();
                                 // Debug.handleEvents();
@@ -544,7 +471,7 @@ public abstract class Engine
                                     // Engine.renderer.start(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
-                                    Extensions.preDraw();
+                                    Extension.executeStage(Extension.Stage.PRE_DRAW);
                                     // Engine.renderer.pop(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
@@ -552,7 +479,7 @@ public abstract class Engine
                                     // Engine.renderer.pop(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
-                                    Extensions.postDraw();
+                                    Extension.executeStage(Extension.Stage.POST_DRAW);
                                     // Engine.renderer.pop(); // TODO
                                     
                                     GLBatch.BatchStats stats = defaultBatch.stop();
@@ -575,7 +502,7 @@ public abstract class Engine
                                 
                                 Time.endFrame();
                                 
-                                Extensions.postFrame();
+                                Extension.executeStage(Extension.Stage.POST_FRAME);
                             }
                             
                             // TODO
@@ -589,13 +516,13 @@ public abstract class Engine
                             Thread.yield();
                         }
                     }
-                    catch (Exception e)
+                    catch (Throwable e)
                     {
                         Engine.LOGGER.severe(e);
                     }
                     finally
                     {
-                        Extensions.renderDestroy();
+                        Extension.executeStageCatch(Extension.Stage.RENDER_DESTROY);
                         
                         // GUI.destroy();
                         // Debug.destroy();
@@ -623,18 +550,18 @@ public abstract class Engine
                 latch.await();
             }
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
             Engine.LOGGER.severe(e);
         }
         finally
         {
-            Extensions.preDestroy();
+            Extension.executeStageCatch(Extension.Stage.PRE_DESTROY);
             
             Engine.LOGGER.info("Instance Destroy");
             Engine.instance.destroy();
             
-            Extensions.postDestroy();
+            Extension.executeStageCatch(Extension.Stage.POST_DESTROY);
             
             org.lwjgl.opengl.GL.destroy();
             glfwTerminate();
