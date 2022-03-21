@@ -17,6 +17,6 @@ public class GUILayoutSpace extends GUILayout // TODO
     @Override
     public void layout(@NotNull NkContext ctx)
     {
-    
+        // NO-OP
     }
 }

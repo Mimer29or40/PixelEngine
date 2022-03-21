@@ -64,13 +64,16 @@ public class Extension
     public static void register(@NotNull Class<? extends Extension> clazz)
     {
         final String name = clazz.getSimpleName();
+        if (Extension.EXTENSIONS.containsKey(name))
+        {
+            Extension.LOGGER.warning("Extension \"%s\" already registered.", name);
+            return;
+        }
         
         Extension.LOGGER.info("Registering Extension:", name);
         
         Map<Stage, Method> methodMap = new EnumMap<>(Stage.class);
-        
-        Method[] methods = clazz.getDeclaredMethods();
-        for (Method m : methods)
+        for (Method m : clazz.getDeclaredMethods())
         {
             if (!m.isAnnotationPresent(StageMethod.class)) continue;
             if (!Modifier.isStatic(m.getModifiers()))
@@ -86,6 +89,11 @@ public class Extension
             methodMap.put(stage, m);
         }
         Extension.EXTENSIONS.put(name, methodMap);
+    }
+    
+    public static void registerDefaultExtensions()
+    {
+        register(EXT_GIF.class);
     }
     
     private static void invokeMethod(@NotNull Method method) throws Throwable
@@ -126,7 +134,7 @@ public class Extension
     
     @Retention(value = RUNTIME)
     @Target(value = METHOD)
-    public @interface StageMethod
+    protected @interface StageMethod
     {
         Stage stage();
     }

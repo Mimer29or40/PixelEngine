@@ -15,28 +15,28 @@ import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
-public final class Capture
+public final class EXT_GIF extends Extension
 {
     private static final Logger LOGGER = new Logger();
     
-    private static String screenShot = null;
-    
     private static GIFEncoder encoder;
-    private static boolean    recording    = false;
-    private static long       lastFrame    = 0;
-    private static int        frameCounter = 0;
-    private static String     timestamp    = null;
+    private static boolean    recording;
+    private static long       lastFrame;
+    private static int        frameCounter;
+    private static String     timestamp;
     
+    @StageMethod(stage = Stage.RENDER_SETUP)
     static void renderSetup()
     {
-        Capture.encoder = new GIFEncoder();
+        EXT_GIF.encoder = new GIFEncoder();
     }
     
+    @StageMethod(stage = Stage.POST_EVENTS)
     static void postEvents()
     {
         if (Keyboard.down(Keyboard.Key.F12) && Modifier.all(Modifier.CONTROL, Modifier.SHIFT))
         {
-            if (Capture.recording)
+            if (EXT_GIF.recording)
             {
                 stopRecording();
             }
@@ -47,35 +47,20 @@ public final class Capture
         }
     }
     
+    @StageMethod(stage = Stage.POST_FRAME)
     static void postFrame()
     {
-        if (Capture.screenShot != null)
-        {
-            String fileName = Capture.screenShot + (!Capture.screenShot.endsWith(".png") ? ".png" : "");
-            
-            int w = Window.framebufferWidth();
-            int h = Window.framebufferHeight();
-            
-            Color.Buffer data = GLState.readFrontBuffer(0, 0, w, h);
-            
-            Image image = Image.load(data, w, h, 1, data.format());
-            image.export(fileName);
-            image.delete();
-            
-            Capture.screenShot = null;
-        }
-        
-        if (Capture.recording)
+        if (EXT_GIF.recording)
         {
             final int GIF_RECORD_FRAMERATE = 10;
-            Capture.frameCounter++;
+            EXT_GIF.frameCounter++;
             
             // NOTE: We record one gif frame every 10 game frames
-            if ((Capture.frameCounter % GIF_RECORD_FRAMERATE) == 0)
+            if ((EXT_GIF.frameCounter % GIF_RECORD_FRAMERATE) == 0)
             {
                 long time  = Time.getNS();
-                long delta = time - Capture.lastFrame;
-                Capture.lastFrame = time;
+                long delta = time - EXT_GIF.lastFrame;
+                EXT_GIF.lastFrame = time;
                 
                 // Get image data for the current frame (from back buffer)
                 // NOTE: This process is quite slow... :(
@@ -86,55 +71,51 @@ public final class Capture
                 Color.Buffer data  = GLState.readFrontBuffer(0, 0, w, h);
                 Image        image = Image.load(data, w, h, 1, data.format());
                 
-                boolean result = Capture.encoder.addFrame(image, (int) (delta / 1_000_000));
+                boolean result = EXT_GIF.encoder.addFrame(image, (int) (delta / 1_000_000));
                 
-                if (!result) Capture.LOGGER.warning("Could not add frame to", Capture.timestamp);
+                if (!result) EXT_GIF.LOGGER.warning("Could not add frame to", EXT_GIF.timestamp);
                 
                 image.delete(); // Free image data
             }
         }
     }
     
+    @StageMethod(stage = Stage.RENDER_DESTROY)
     static void renderDestroy()
     {
         stopRecording();
     }
     
-    public static void takeScreenShot()
-    {
-        Capture.screenShot = String.format("ScreenShot - %s.png", Time.timeStamp());
-    }
-    
     public static void startRecording()
     {
-        if (Capture.recording) return;
+        if (EXT_GIF.recording) return;
         
-        Capture.recording    = true;
-        Capture.lastFrame    = Time.getNS();
-        Capture.frameCounter = 0;
-        Capture.timestamp    = String.format("Recording - %s.gif", Time.timeStamp());
+        EXT_GIF.recording    = true;
+        EXT_GIF.lastFrame    = Time.getNS();
+        EXT_GIF.frameCounter = 0;
+        EXT_GIF.timestamp    = String.format("Recording - %s.gif", Time.timeStamp());
         
-        boolean result = Capture.encoder.start(Capture.timestamp, Window.framebufferWidth(), Window.framebufferHeight());
+        boolean result = EXT_GIF.encoder.start(EXT_GIF.timestamp, Window.framebufferWidth(), Window.framebufferHeight());
         
         if (result)
         {
-            Capture.LOGGER.info("Started GIF Recording: %s", Capture.timestamp);
+            EXT_GIF.LOGGER.info("Started GIF Recording: %s", EXT_GIF.timestamp);
         }
         else
         {
-            Capture.LOGGER.warning("Could not start GIF recording");
+            EXT_GIF.LOGGER.warning("Could not start GIF recording");
         }
     }
     
     public static void stopRecording()
     {
-        if (!Capture.recording) return;
+        if (!EXT_GIF.recording) return;
         
-        Capture.recording = false;
+        EXT_GIF.recording = false;
         
-        boolean result = Capture.encoder.finish();
+        boolean result = EXT_GIF.encoder.finish();
         
-        Capture.LOGGER.info("Finished GIF Recording. Result:", result ? "Success" : "Failure");
+        EXT_GIF.LOGGER.info("Finished GIF Recording. Result:", result ? "Success" : "Failure");
     }
     
     @SuppressWarnings("unused")
@@ -341,10 +322,13 @@ public final class Capture
                 // build color table & map pixels
                 AnalyzeResults results = analyzePixels(pixels);
                 
+                int colorDepth = 8;
+                int palletSize = 7;
+                
                 if (this.firstFrame)
                 {
                     // logical screen descriptior
-                    writeLSD(results.palletSize());
+                    writeLSD(palletSize);
                     
                     // global color table
                     writePalette(results.colorTable());
@@ -357,13 +341,13 @@ public final class Capture
                 writeGraphicCtrlExt(delay, results.transparentIndex());
                 
                 // image descriptor
-                writeImageDesc(results.palletSize());
+                writeImageDesc(palletSize);
                 
                 // local color table
                 if (!this.firstFrame) writePalette(results.colorTable());
                 
                 // encode and write pixel data
-                LZW.encode(results.pixels(), results.colorDepth(), this.stream);
+                LZW.encode(results.pixels(), colorDepth, this.stream);
                 
                 this.firstFrame = false;
                 
@@ -583,9 +567,6 @@ public final class Capture
                 pixels[i]        = (byte) index;
                 usedEntry[index] = true;
             }
-            final int colorDepth = 8;
-            final int palletSize = 7;
-            
             // get the closest match to transparent color if specified
             final int transparentIndex;
             if (this.transparentColor > 0)
@@ -615,18 +596,6 @@ public final class Capture
                 public byte[] colorTable()
                 {
                     return colorTable;
-                }
-                
-                @Override
-                public int colorDepth()
-                {
-                    return colorDepth;
-                }
-                
-                @Override
-                public int palletSize()
-                {
-                    return palletSize;
                 }
                 
                 @Override
@@ -873,10 +842,6 @@ public final class Capture
         byte[] pixels();
         
         byte[] colorTable();
-        
-        int colorDepth();
-        
-        int palletSize();
         
         int transparentIndex();
     }

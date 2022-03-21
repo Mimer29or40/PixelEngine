@@ -29,7 +29,7 @@ public class ImGUI
         imGuiGlfw = new ImGuiImplGlfw();
         
         imGuiGl3.init("#version 330 core");
-        imGuiGlfw.init(Window.primary.handle, true);
+        imGuiGlfw.init(Window.handle, true);
         
         // Setup Dear ImGui style
         ImGui.styleColorsDark();

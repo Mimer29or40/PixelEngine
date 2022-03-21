@@ -6,10 +6,12 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
+import pe.color.Color;
 import pe.color.Colorc;
 import pe.draw.*;
 import pe.event.Event;
 import pe.render.*;
+import pe.texture.Image;
 import pe.util.Random;
 import rutils.Logger;
 import rutils.group.Pair;
@@ -36,6 +38,8 @@ public abstract class Engine
     
     static int vertices = 0;
     static int draws    = 0;
+    
+    static String screenshot = null;
     
     public static final class Events
     {
@@ -388,6 +392,8 @@ public abstract class Engine
         Thread.currentThread().setName("main");
         Engine.LOGGER.info("Starting");
         
+        Extension.registerDefaultExtensions();
+        
         try
         {
             if (Engine.instance != null) throw new IllegalStateException("Cannot call 'start' more that once.");
@@ -498,6 +504,22 @@ public abstract class Engine
                                 
                                 Window.swap();
                                 
+                                if (Engine.screenshot != null)
+                                {
+                                    String fileName = Engine.screenshot + (!Engine.screenshot.endsWith(".png") ? ".png" : "");
+                                    
+                                    int w = Window.framebufferWidth();
+                                    int h = Window.framebufferHeight();
+                                    
+                                    Color.Buffer data = GLState.readFrontBuffer(0, 0, w, h);
+                                    
+                                    Image image = Image.load(data, w, h, 1, data.format());
+                                    image.export(fileName);
+                                    image.delete();
+                                    
+                                    Engine.screenshot = null;
+                                }
+                                
                                 // TODO Profiler End Frame
                                 
                                 Time.endFrame();
@@ -588,6 +610,11 @@ public abstract class Engine
     protected static void size(int width, int height)
     {
         size(width, height, 4, 4);
+    }
+    
+    public static void takeScreenShot()
+    {
+        Engine.screenshot = String.format("Screenshot - %s.png", Time.timeStamp());
     }
     
     // -----------------------
