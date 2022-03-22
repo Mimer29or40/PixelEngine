@@ -22,14 +22,14 @@ public class GLFramebuffer
     static GLFramebuffer defaultFramebuffer;
     static GLFramebuffer current;
     
-    protected static void setup()
+    static void setup()
     {
         GLFramebuffer.LOGGER.fine("Setup");
         
         GLFramebuffer.defaultFramebuffer = new DefaultFramebuffer();
     }
     
-    protected static void destroy()
+    static void destroy()
     {
         GLFramebuffer.LOGGER.fine("Destroy");
         

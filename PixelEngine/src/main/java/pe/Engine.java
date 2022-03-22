@@ -460,7 +460,7 @@ public abstract class Engine
                                 
                                 if (!Time.paused)
                                 {
-                                    GLFramebuffer.bind(Layer.primary.framebuffer);
+                                    GLFramebuffer.bind(Layer.primary);
                                     GLProgram.bind(null);
                                     
                                     GLState.defaultState();

@@ -19,7 +19,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class Layer
+public final class Layer extends GLFramebuffer
 {
     private static final Logger LOGGER = new Logger();
     
@@ -126,7 +126,7 @@ public final class Layer
         {
             if (layer == null) continue;
             
-            layer.framebuffer.delete();
+            layer.delete();
         }
         Layer.layers.clear();
     }
@@ -174,7 +174,7 @@ public final class Layer
             
             GLProgram.Uniform.float1("aspect", layer.aspectRatio());
             
-            GLTexture.bind(layer.framebuffer.color());
+            GLTexture.bind(layer.color());
             Layer.vertexArray.drawElements(DrawMode.TRIANGLES, 6);
         }
     }
@@ -237,15 +237,13 @@ public final class Layer
     final AABBi    bounds;
     final Vector2d pixelSize;
     
-    final GLFramebuffer framebuffer;
-    
     private Layer(int width, int height)
     {
+        super(width, height);
+        
         this.size      = new Vector2i(width, height);
         this.bounds    = new AABBi();
         this.pixelSize = new Vector2d(1.0);
-        
-        this.framebuffer = GLFramebuffer.load(width, height);
     }
     
     @NotNull
@@ -254,11 +252,13 @@ public final class Layer
         return this.size;
     }
     
+    @Override
     public int width()
     {
         return this.size.x;
     }
     
+    @Override
     public int height()
     {
         return this.size.y;
@@ -289,12 +289,6 @@ public final class Layer
     public double aspectRatio()
     {
         return (width() * pixelWidth()) / (height() * pixelHeight());
-    }
-    
-    @NotNull
-    public GLFramebuffer framebuffer()
-    {
-        return this.framebuffer;
     }
     
     public enum Index
