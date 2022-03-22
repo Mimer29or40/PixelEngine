@@ -584,10 +584,10 @@ public final class Debug
         }
         if (!Debug.renderables.isEmpty())
         {
-            int fbWidth  = Window.framebufferWidth();
-            int fbHeight = Window.framebufferHeight();
+            GLFramebuffer.bind(null);
             
-            GLState.viewport(0, 0, fbWidth, fbHeight);
+            int fbWidth  = GLFramebuffer.currentWidth();
+            int fbHeight = GLFramebuffer.currentHeight();
             
             GLProgram.bind(Debug.program);
             GLProgram.Uniform.mat4("pv", Debug.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));

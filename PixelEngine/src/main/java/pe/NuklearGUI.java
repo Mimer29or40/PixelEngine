@@ -409,14 +409,13 @@ public class NuklearGUI
         
         GLState.cullFace(CullFace.NONE);
         
-        int fbWidth  = Window.framebufferWidth();
-        int fbHeight = Window.framebufferHeight();
-        
         int width  = Window.width();
         int height = Window.height();
         
         GLFramebuffer.bind(null);
-        GLState.viewport(0, 0, fbWidth, fbHeight);
+    
+        int fbWidth  = GLFramebuffer.currentWidth();
+        int fbHeight = GLFramebuffer.currentHeight();
         
         GLProgram.bind(NuklearGUI.program);
         GLProgram.Uniform.mat4("pv", NuklearGUI.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));

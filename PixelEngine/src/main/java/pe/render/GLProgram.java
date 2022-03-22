@@ -71,14 +71,14 @@ public class GLProgram
     // ----- Static -----
     // ------------------
     
-    static GLProgram defaultProg;
+    static GLProgram defaultProgram;
     static GLProgram current;
     
     static void setup()
     {
         GLProgram.LOGGER.fine("Setup");
         
-        GLProgram.defaultProg = new GLProgram(GLShader.getDefaultVert(), null, GLShader.getDefaultFrag());
+        GLProgram.defaultProgram = new GLProgram(GLShader.getDefaultVert(), null, GLShader.getDefaultFrag());
     }
     
     static void destroy()
@@ -88,14 +88,14 @@ public class GLProgram
         GL33.glUseProgram(0);
         GLProgram.current = null;
         
-        GLProgram program = GLProgram.defaultProg;
-        GLProgram.defaultProg = null;
+        GLProgram program = GLProgram.defaultProgram;
+        GLProgram.defaultProgram = null;
         program.delete();
     }
     
     public static @NotNull GLProgram getDefault()
     {
-        return GLProgram.defaultProg;
+        return GLProgram.defaultProgram;
     }
     
     /**
@@ -105,7 +105,7 @@ public class GLProgram
      */
     public static void bind(@Nullable GLProgram program)
     {
-        if (program == null) program = GLProgram.defaultProg;
+        if (program == null) program = GLProgram.defaultProgram;
         
         if (!Objects.equals(GLProgram.current, program))
         {
@@ -1068,7 +1068,7 @@ public class GLProgram
         
         if (vert == GLShader.getDefaultVert() && frag == GLShader.getDefaultFrag())
         {
-            return GLProgram.defaultProg;
+            return GLProgram.defaultProgram;
         }
         
         return new GLProgram(vert, geom, frag);
@@ -1219,7 +1219,7 @@ public class GLProgram
      */
     public void delete()
     {
-        if (!equals(GLProgram.defaultProg) && this.id > 0)
+        if (!equals(GLProgram.defaultProgram) && this.id > 0)
         {
             GLProgram.LOGGER.fine("Deleting", this);
             

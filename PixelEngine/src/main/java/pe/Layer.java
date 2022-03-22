@@ -158,13 +158,12 @@ public final class Layer
         GLFramebuffer.bind(null);
         GLProgram.bind(Layer.program);
         
-        int fbWidth  = Window.framebufferWidth();
-        int fbHeight = Window.framebufferHeight();
+        int fbWidth  = GLFramebuffer.currentWidth();
+        int fbHeight = GLFramebuffer.currentHeight();
         
         GLProgram.Uniform.vec2("framebuffer", fbWidth, fbHeight);
         
         GLState.defaultState();
-        GLState.viewport(0, 0, fbWidth, fbHeight);
         GLState.depthMode(DepthMode.NONE);
         
         GLState.clearScreenBuffers(ScreenBuffer.COLOR);
