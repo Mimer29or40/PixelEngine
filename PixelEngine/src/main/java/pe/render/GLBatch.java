@@ -2,11 +2,11 @@ package pe.render;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4d;
-import org.joml.Matrix4dc;
-import org.joml.Matrix4f;
-import org.joml.Matrix4fc;
+import org.joml.*;
 import org.lwjgl.system.MemoryUtil;
+import pe.color.Color;
+import pe.color.Color_RGBA;
+import pe.color.Colorc;
 import pe.util.buffer.Byte4;
 import pe.util.buffer.Float3;
 import rutils.Logger;
@@ -85,15 +85,25 @@ public class GLBatch
     private boolean hasStart;
     private boolean hasBegun;
     
-    private Matrix4d currentMatrix;
-    
+    private       Matrix4d currentMatrix;
     private final Matrix4d projection = new Matrix4d();
     private final Matrix4d view       = new Matrix4d();
     private final Matrix4d model      = new Matrix4d();
     private final Matrix4d mvp        = new Matrix4d();
+    private final Matrix4d normal     = new Matrix4d();
     
     private       int        matrixIndex;
     private final Matrix4d[] matrixStack;
+    
+    private final Vector3d viewVec = new Vector3d();
+    
+    private       Color currentColor;
+    private final Color diffuse  = Color_RGBA.create();
+    private final Color specular = Color_RGBA.create();
+    private final Color ambient  = Color_RGBA.create();
+    
+    private       int          colorIndex;
+    private final Color.Buffer colorStack;
     
     private       int         textureIndex;
     private final String[]    textureNames;
@@ -149,6 +159,9 @@ public class GLBatch
         this.matrixIndex = 0;
         this.matrixStack = new Matrix4d[GLState.MAX_MATRIX_STACK_SIZE];
         for (int i = 0; i < this.matrixStack.length; i++) this.matrixStack[i] = new Matrix4d();
+        
+        this.colorIndex = 0;
+        this.colorStack = Color_RGBA.create(GLState.MAX_COLOR_STACK_SIZE);
         
         this.textureIndex  = 0;
         this.textureNames  = new String[GLState.MAX_ACTIVE_TEXTURES];
@@ -385,8 +398,7 @@ public class GLBatch
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_COLOR)).set(0, this.col.flip());
             this.vertexArray.buffer(GLProgram.DEFAULT_ATTRIBUTES.indexOf(GLProgram.ATTRIBUTE_TEXCOORD2)).set(0, this.tex2.flip());
             
-            // // Setup some default shader values
-            // GL.Uniform.int1(GLProgram.MAP_DIFFUSE, 0); // Active default sampler2D: texture0 // TODO - Is this needed?
+            // Setup some default shader values
             
             // Create modelView-projection matrix and upload to shader
             this.mvp.set(this.projection);
@@ -396,11 +408,24 @@ public class GLBatch
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_VIEW, false, this.view);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MODEL, false, this.model);
             GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_MVP, false, this.mvp);
-            // GLProgram.UNIFORM_MATRIX_NORMAL;
-            // GLProgram.UNIFORM_VECTOR_VIEW;
-            // GLProgram.UNIFORM_COLOR_DIFFUSE;
-            // GLProgram.UNIFORM_COLOR_SPECULAR;
-            // GLProgram.UNIFORM_COLOR_AMBIENT;
+            GLProgram.Uniform.mat4(GLProgram.UNIFORM_MATRIX_NORMAL, false, this.normal);
+            GLProgram.Uniform.vec3(GLProgram.UNIFORM_VECTOR_VIEW, this.viewVec);
+            GLProgram.Uniform.color(GLProgram.UNIFORM_COLOR_DIFFUSE, this.diffuse);
+            GLProgram.Uniform.color(GLProgram.UNIFORM_COLOR_SPECULAR, this.specular);
+            GLProgram.Uniform.color(GLProgram.UNIFORM_COLOR_AMBIENT, this.ambient);
+            
+            // TODO - Is this needed?
+            GLProgram.Uniform.int1(GLProgram.MAP_DIFFUSE, 0);
+            GLProgram.Uniform.int1(GLProgram.MAP_SPECULAR, 1);
+            GLProgram.Uniform.int1(GLProgram.MAP_NORMAL, 2);
+            GLProgram.Uniform.int1(GLProgram.MAP_ROUGHNESS, 3);
+            GLProgram.Uniform.int1(GLProgram.MAP_OCCLUSION, 4);
+            GLProgram.Uniform.int1(GLProgram.MAP_EMISSION, 5);
+            GLProgram.Uniform.int1(GLProgram.MAP_HEIGHT, 6);
+            GLProgram.Uniform.int1(GLProgram.MAP_CUBEMAP, 7);
+            GLProgram.Uniform.int1(GLProgram.MAP_IRRADIANCE, 8);
+            GLProgram.Uniform.int1(GLProgram.MAP_PREFILTER, 9);
+            GLProgram.Uniform.int1(GLProgram.MAP_BRDF, 10);
             
             activate();
             
@@ -486,22 +511,24 @@ public class GLBatch
      *             <li>{@link MatrixMode#PROJECTION PROJECTION}</li>
      *             <li>{@link MatrixMode#VIEW VIEW}</li>
      *             <li>{@link MatrixMode#MODEL MODEL}</li>
+     *             <li>{@link MatrixMode#NORMAL NORMAL}</li>
      *             </ul>
      */
     public void matrixMode(@NotNull MatrixMode mode)
     {
-        GLBatch.LOGGER.finest("Setting MatrixStack Mode:", mode);
+        GLBatch.LOGGER.finest("Setting Matrix Mode:", mode);
         
         this.currentMatrix = switch (mode)
                 {
                     case PROJECTION -> this.projection;
                     case VIEW -> this.view;
                     case MODEL -> this.model;
+                    case NORMAL -> this.normal;
                 };
     }
     
     /**
-     * @return A read-only view out the currently selected matrix
+     * @return A read-only view of the currently selected matrix
      */
     public @NotNull Matrix4dc getMatrix()
     {
@@ -528,7 +555,7 @@ public class GLBatch
      */
     public void setMatrix(@NotNull Matrix4fc mat)
     {
-        GLBatch.LOGGER.finest("Setting:", mat);
+        GLBatch.LOGGER.finest("Setting Matrix:", mat);
         
         this.currentMatrix.set(mat);
     }
@@ -553,7 +580,7 @@ public class GLBatch
      */
     public void setMatrix(@NotNull Matrix4dc mat)
     {
-        GLBatch.LOGGER.finest("Setting:", mat);
+        GLBatch.LOGGER.finest("Setting Matrix:", mat);
         
         this.currentMatrix.set(mat);
     }
@@ -759,7 +786,7 @@ public class GLBatch
      */
     public void pushMatrix()
     {
-        GLBatch.LOGGER.finest("Pushing Stack");
+        GLBatch.LOGGER.finest("Pushing Matrix Stack");
         
         this.matrixStack[this.matrixIndex++].set(this.currentMatrix);
     }
@@ -770,9 +797,102 @@ public class GLBatch
      */
     public void popMatrix()
     {
-        GLBatch.LOGGER.finest("Popping Stack");
+        GLBatch.LOGGER.finest("Popping Matrix Stack");
         
         this.currentMatrix.set(this.matrixStack[--this.matrixIndex]);
+    }
+    
+    /**
+     * Set the current matrix mode.
+     *
+     * @param mode the matrix mode. One of:<ul>
+     *             <li>{@link ColorMode#DIFFUSE DIFFUSE}</li>
+     *             <li>{@link ColorMode#SPECULAR SPECULAR}</li>
+     *             <li>{@link ColorMode#AMBIENT AMBIENT}</li>
+     *             </ul>
+     */
+    public void colorMode(@NotNull ColorMode mode)
+    {
+        GLBatch.LOGGER.finest("Setting Color Mode:", mode);
+        
+        this.currentColor = switch (mode)
+                {
+                    case DIFFUSE -> this.diffuse;
+                    case SPECULAR -> this.specular;
+                    case AMBIENT -> this.ambient;
+                };
+    }
+    
+    /**
+     * @return A read-only view of the currently selected color
+     */
+    public @NotNull Colorc getColor()
+    {
+        return this.currentColor;
+    }
+    
+    /**
+     * Sets the current color to the specified color.
+     *
+     * @param color color data
+     */
+    public void setColor(@NotNull Colorc color)
+    {
+        GLBatch.LOGGER.finest("Setting Color:", color);
+        
+        this.currentColor.set(color);
+    }
+    
+    /**
+     * Sets the current color to black.
+     * <p>
+     * Calling this function is equivalent to calling {@link #setColor} with the following color:
+     * <table class=striped>
+     * <tr><td>0</td><td>0</td><td>0</td><td>255</td></tr>
+     * </table>
+     */
+    public void loadBlack()
+    {
+        GLBatch.LOGGER.finest("Setting Color to Black");
+        
+        this.currentColor.set(0, 0, 0, 255);
+    }
+    
+    /**
+     * Sets the current color to white.
+     * <p>
+     * Calling this function is equivalent to calling {@link #setColor} with the following color:
+     * <table class=striped>
+     * <tr><td>255</td><td>255</td><td>255</td><td>255</td></tr>
+     * </table>
+     */
+    public void loadWhite()
+    {
+        GLBatch.LOGGER.finest("Setting Color to Black");
+        
+        this.currentColor.set(255, 255, 255, 255);
+    }
+    
+    /**
+     * Pushes the current color stack down by one, duplicating the current
+     * color in both the y of the stack and the entry below it.
+     */
+    public void pushColor()
+    {
+        GLBatch.LOGGER.finest("Pushing Color Stack");
+        
+        this.colorStack.put(this.colorIndex++, this.currentColor);
+    }
+    
+    /**
+     * Pops the y entry off the current color stack, replacing the current
+     * color with the color that was the second entry in the stack.
+     */
+    public void popColor()
+    {
+        GLBatch.LOGGER.finest("Popping Color Stack");
+        
+        this.currentColor.set(this.colorStack.get(--this.colorIndex));
     }
     
     public void addTexture(@NotNull String name, @NotNull GLTexture texture)

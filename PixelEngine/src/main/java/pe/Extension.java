@@ -22,7 +22,7 @@ public class Extension
     
     private static final Map<String, Map<Stage, Method>> EXTENSIONS = new HashMap<>();
     
-    static void executeStage(@NotNull Stage stage) throws Throwable
+    static void stage(@NotNull Stage stage) throws Throwable
     {
         Extension.LOGGER.log(stage.logLevel, stage.name());
         
@@ -38,7 +38,7 @@ public class Extension
         }
     }
     
-    static void executeStageCatch(@NotNull Stage stage)
+    static void stageCatch(@NotNull Stage stage)
     {
         Extension.LOGGER.log(stage.logLevel, stage.name());
         

@@ -136,6 +136,18 @@ public abstract class Engine
             
             GLBatch.get().matrixMode(MatrixMode.MODEL);
             GLBatch.get().loadIdentity();
+            
+            GLBatch.get().matrixMode(MatrixMode.NORMAL);
+            GLBatch.get().loadIdentity();
+            
+            GLBatch.get().colorMode(ColorMode.DIFFUSE);
+            GLBatch.get().loadWhite();
+            
+            GLBatch.get().colorMode(ColorMode.SPECULAR);
+            GLBatch.get().loadWhite();
+            
+            GLBatch.get().colorMode(ColorMode.AMBIENT);
+            GLBatch.get().loadWhite();
         }
         
         private static void events()
@@ -406,12 +418,12 @@ public abstract class Engine
             Time.setup();
             // Delegator.setup(); // TODO
             
-            Extension.executeStage(Extension.Stage.PRE_SETUP);
+            Extension.stage(Extension.Stage.PRE_SETUP);
             
             Engine.LOGGER.info("Instance Setup");
             Engine.instance.setup();
             
-            Extension.executeStage(Extension.Stage.POST_SETUP);
+            Extension.stage(Extension.Stage.POST_SETUP);
             
             if (Window.isOpen())
             {
@@ -424,22 +436,22 @@ public abstract class Engine
                     {
                         Window.makeCurrent();
                         
-                        Extension.executeStage(Extension.Stage.RENDER_SETUP);
+                        Extension.stage(Extension.Stage.RENDER_SETUP);
                         
                         while (Engine.renderThreadRunning)
                         {
                             if (Time.startFrame())
                             {
-                                Extension.executeStage(Extension.Stage.PRE_FRAME);
+                                Extension.stage(Extension.Stage.PRE_FRAME);
                                 
                                 // TODO Profiler Start Frame
                                 
-                                Extension.executeStage(Extension.Stage.PRE_EVENTS);
+                                Extension.stage(Extension.Stage.PRE_EVENTS);
                                 
                                 Events.events();
                                 IO.events();
                                 
-                                Extension.executeStage(Extension.Stage.POST_EVENTS);
+                                Extension.stage(Extension.Stage.POST_EVENTS);
                                 
                                 // GUI.handleEvents();
                                 // Debug.handleEvents();
@@ -474,10 +486,22 @@ public abstract class Engine
                                     defaultBatch.matrixMode(MatrixMode.MODEL);
                                     defaultBatch.loadIdentity();
                                     
+                                    defaultBatch.matrixMode(MatrixMode.NORMAL);
+                                    defaultBatch.loadIdentity();
+                                    
+                                    defaultBatch.colorMode(ColorMode.DIFFUSE);
+                                    defaultBatch.loadWhite();
+                                    
+                                    defaultBatch.colorMode(ColorMode.SPECULAR);
+                                    defaultBatch.loadWhite();
+                                    
+                                    defaultBatch.colorMode(ColorMode.AMBIENT);
+                                    defaultBatch.loadWhite();
+                                    
                                     // Engine.renderer.start(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
-                                    Extension.executeStage(Extension.Stage.PRE_DRAW);
+                                    Extension.stage(Extension.Stage.PRE_DRAW);
                                     // Engine.renderer.pop(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
@@ -485,7 +509,7 @@ public abstract class Engine
                                     // Engine.renderer.pop(); // TODO
                                     
                                     // Engine.renderer.push(); // TODO
-                                    Extension.executeStage(Extension.Stage.POST_DRAW);
+                                    Extension.stage(Extension.Stage.POST_DRAW);
                                     // Engine.renderer.pop(); // TODO
                                     
                                     GLBatch.BatchStats stats = defaultBatch.stop();
@@ -524,7 +548,7 @@ public abstract class Engine
                                 
                                 Time.endFrame();
                                 
-                                Extension.executeStage(Extension.Stage.POST_FRAME);
+                                Extension.stage(Extension.Stage.POST_FRAME);
                             }
                             
                             // TODO
@@ -544,7 +568,7 @@ public abstract class Engine
                     }
                     finally
                     {
-                        Extension.executeStageCatch(Extension.Stage.RENDER_DESTROY);
+                        Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
                         
                         // GUI.destroy();
                         // Debug.destroy();
@@ -578,12 +602,12 @@ public abstract class Engine
         }
         finally
         {
-            Extension.executeStageCatch(Extension.Stage.PRE_DESTROY);
+            Extension.stageCatch(Extension.Stage.PRE_DESTROY);
             
             Engine.LOGGER.info("Instance Destroy");
             Engine.instance.destroy();
             
-            Extension.executeStageCatch(Extension.Stage.POST_DESTROY);
+            Extension.stageCatch(Extension.Stage.POST_DESTROY);
             
             org.lwjgl.opengl.GL.destroy();
             glfwTerminate();
