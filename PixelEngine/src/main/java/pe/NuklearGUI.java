@@ -12,7 +12,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.BlendMode;
 import pe.event.*;
-import pe.gui.GUIWindow;
+import pe.guiOld.GUIWindow;
 import pe.render.*;
 import rutils.IOUtil;
 import rutils.Logger;
