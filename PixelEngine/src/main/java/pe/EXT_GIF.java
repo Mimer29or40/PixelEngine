@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryStack;
 import pe.color.Color;
 import pe.color.ColorFormat;
-import pe.render.GLState;
+import pe.render.GL;
 import pe.texture.Image;
 import rutils.Logger;
 
@@ -68,7 +68,7 @@ public final class EXT_GIF extends Extension
                 int w = Window.framebufferWidth();
                 int h = Window.framebufferHeight();
                 
-                Color.Buffer data  = GLState.readFrontBuffer(0, 0, w, h);
+                Color.Buffer data  = GL.readFrontBuffer(0, 0, w, h);
                 Image        image = Image.load(data, w, h, 1, data.format());
                 
                 boolean result = EXT_GIF.encoder.addFrame(image, (int) (delta / 1_000_000));

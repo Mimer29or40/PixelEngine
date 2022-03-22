@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@SuppressWarnings("UnusedReturnValue")
 public class GLProgram
 {
     private static final Logger LOGGER = new Logger();
@@ -71,14 +72,11 @@ public class GLProgram
     // ----- Static -----
     // ------------------
     
-    static GLProgram defaultProgram;
-    static GLProgram current;
-    
     static void setup()
     {
         GLProgram.LOGGER.fine("Setup");
         
-        GLProgram.defaultProgram = new GLProgram(GLShader.getDefaultVert(), null, GLShader.getDefaultFrag());
+        GL.defaultProgram = new GLProgram(GL.defaultVertShader, null, GL.defaultFragShader);
     }
     
     static void destroy()
@@ -86,16 +84,11 @@ public class GLProgram
         GLProgram.LOGGER.fine("Destroy");
         
         GL33.glUseProgram(0);
-        GLProgram.current = null;
+        GL.currentProgram = null;
         
-        GLProgram program = GLProgram.defaultProgram;
-        GLProgram.defaultProgram = null;
+        GLProgram program = GL.defaultProgram;
+        GL.defaultProgram = null;
         program.delete();
-    }
-    
-    public static @NotNull GLProgram getDefault()
-    {
-        return GLProgram.defaultProgram;
     }
     
     /**
@@ -105,18 +98,16 @@ public class GLProgram
      */
     public static void bind(@Nullable GLProgram program)
     {
-        if (program == null) program = GLProgram.defaultProgram;
+        if (program == null) program = GL.defaultProgram;
         
-        if (!Objects.equals(GLProgram.current, program))
-        {
-            GLProgram.LOGGER.finest("Binding Program:", program);
-            
-            GLProgram.current = program;
-            
-            GL33.glUseProgram(program.id);
-        }
+        GLProgram.LOGGER.finest("Binding Program:", program);
+        
+        GL.currentProgram = program;
+        
+        GL33.glUseProgram(program.id);
     }
     
+    @SuppressWarnings("unused")
     public static final class Attribute
     {
         /**
@@ -127,9 +118,9 @@ public class GLProgram
          */
         public static void short1(@NotNull String name, short value)
         {
-            GLProgram.LOGGER.finest("%s: Setting short Attribute: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting short Attribute: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glVertexAttrib1s(GLProgram.current.getAttribute(name), value);
+            GL33.glVertexAttrib1s(GL.currentProgram.getAttribute(name), value);
         }
         
         /**
@@ -140,9 +131,9 @@ public class GLProgram
          */
         public static void int1(@NotNull String name, int value)
         {
-            GLProgram.LOGGER.finest("%s: Setting int Attribute: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting int Attribute: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glVertexAttribI1i(GLProgram.current.getAttribute(name), value);
+            GL33.glVertexAttribI1i(GL.currentProgram.getAttribute(name), value);
         }
         
         /**
@@ -153,9 +144,9 @@ public class GLProgram
          */
         public static void uint1(@NotNull String name, long value)
         {
-            GLProgram.LOGGER.finest("%s: Setting uint Attribute: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting uint Attribute: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glVertexAttribI1ui(GLProgram.current.getAttribute(name), (int) (value & 0xFFFFFFFFL));
+            GL33.glVertexAttribI1ui(GL.currentProgram.getAttribute(name), (int) (value & 0xFFFFFFFFL));
         }
         
         /**
@@ -166,9 +157,9 @@ public class GLProgram
          */
         public static void float1(@NotNull String name, double value)
         {
-            GLProgram.LOGGER.finest("%s: Setting float Attribute: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting float Attribute: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glVertexAttrib1f(GLProgram.current.getAttribute(name), (float) value);
+            GL33.glVertexAttrib1f(GL.currentProgram.getAttribute(name), (float) value);
         }
         
         /**
@@ -180,9 +171,9 @@ public class GLProgram
          */
         public static void svec2(@NotNull String name, short x, short y)
         {
-            GLProgram.LOGGER.finest("%s: Setting svec2 Attribute: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting svec2 Attribute: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glVertexAttrib2s(GLProgram.current.getAttribute(name), x, y);
+            GL33.glVertexAttrib2s(GL.currentProgram.getAttribute(name), x, y);
         }
         
         /**
@@ -194,9 +185,9 @@ public class GLProgram
          */
         public static void ivec2(@NotNull String name, int x, int y)
         {
-            GLProgram.LOGGER.finest("%s: Setting ivec2 Attribute: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting ivec2 Attribute: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glVertexAttribI2i(GLProgram.current.getAttribute(name), x, y);
+            GL33.glVertexAttribI2i(GL.currentProgram.getAttribute(name), x, y);
         }
         
         /**
@@ -208,9 +199,9 @@ public class GLProgram
          */
         public static void uvec2(@NotNull String name, long x, long y)
         {
-            GLProgram.LOGGER.finest("%s: Setting uvec2 Attribute: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting uvec2 Attribute: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glVertexAttribI2ui(GLProgram.current.getAttribute(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL));
+            GL33.glVertexAttribI2ui(GL.currentProgram.getAttribute(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL));
         }
         
         /**
@@ -222,9 +213,9 @@ public class GLProgram
          */
         public static void vec2(@NotNull String name, double x, double y)
         {
-            GLProgram.LOGGER.finest("%s: Setting vec2 Attribute: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting vec2 Attribute: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glVertexAttrib2f(GLProgram.current.getAttribute(name), (float) x, (float) y);
+            GL33.glVertexAttrib2f(GL.currentProgram.getAttribute(name), (float) x, (float) y);
         }
         
         /**
@@ -281,9 +272,9 @@ public class GLProgram
          */
         public static void svec3(@NotNull String name, short x, short y, short z)
         {
-            GLProgram.LOGGER.finest("%s: Setting svec3 Attribute: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting svec3 Attribute: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glVertexAttrib3s(GLProgram.current.getAttribute(name), x, y, z);
+            GL33.glVertexAttrib3s(GL.currentProgram.getAttribute(name), x, y, z);
         }
         
         /**
@@ -296,9 +287,9 @@ public class GLProgram
          */
         public static void ivec3(@NotNull String name, int x, int y, int z)
         {
-            GLProgram.LOGGER.finest("%s: Setting ivec3 Attribute: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting ivec3 Attribute: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glVertexAttribI3i(GLProgram.current.getAttribute(name), x, y, z);
+            GL33.glVertexAttribI3i(GL.currentProgram.getAttribute(name), x, y, z);
         }
         
         /**
@@ -311,9 +302,9 @@ public class GLProgram
          */
         public static void uvec3(@NotNull String name, long x, long y, long z)
         {
-            GLProgram.LOGGER.finest("%s: Setting uvec3 Attribute: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting uvec3 Attribute: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glVertexAttribI3ui(GLProgram.current.getAttribute(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL));
+            GL33.glVertexAttribI3ui(GL.currentProgram.getAttribute(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL));
         }
         
         /**
@@ -326,9 +317,9 @@ public class GLProgram
          */
         public static void vec3(@NotNull String name, double x, double y, double z)
         {
-            GLProgram.LOGGER.finest("%s: Setting vec3 Attribute: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting vec3 Attribute: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glVertexAttrib3f(GLProgram.current.getAttribute(name), (float) x, (float) y, (float) z);
+            GL33.glVertexAttrib3f(GL.currentProgram.getAttribute(name), (float) x, (float) y, (float) z);
         }
         
         /**
@@ -386,9 +377,9 @@ public class GLProgram
          */
         public static void ubvec4(@NotNull String name, int x, int y, int z, int w)
         {
-            GLProgram.LOGGER.finest("%s: Setting ubvec4 Attribute: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting ubvec4 Attribute: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glVertexAttrib4Nub(GLProgram.current.getAttribute(name), (byte) (x & 0xFF), (byte) (y & 0xFF), (byte) (z & 0xFF), (byte) (w & 0xFF));
+            GL33.glVertexAttrib4Nub(GL.currentProgram.getAttribute(name), (byte) (x & 0xFF), (byte) (y & 0xFF), (byte) (z & 0xFF), (byte) (w & 0xFF));
         }
         
         /**
@@ -402,9 +393,9 @@ public class GLProgram
          */
         public static void svec4(@NotNull String name, short x, short y, short z, short w)
         {
-            GLProgram.LOGGER.finest("%s: Setting svec4 Attribute: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting svec4 Attribute: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glVertexAttrib4s(GLProgram.current.getAttribute(name), x, y, z, w);
+            GL33.glVertexAttrib4s(GL.currentProgram.getAttribute(name), x, y, z, w);
         }
         
         /**
@@ -418,9 +409,9 @@ public class GLProgram
          */
         public static void ivec4(@NotNull String name, int x, int y, int z, int w)
         {
-            GLProgram.LOGGER.finest("%s: Setting ivec4 Attribute: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting ivec4 Attribute: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glVertexAttribI4i(GLProgram.current.getAttribute(name), x, y, z, w);
+            GL33.glVertexAttribI4i(GL.currentProgram.getAttribute(name), x, y, z, w);
         }
         
         /**
@@ -434,9 +425,9 @@ public class GLProgram
          */
         public static void uvec4(@NotNull String name, long x, long y, long z, long w)
         {
-            GLProgram.LOGGER.finest("%s: Setting uvec4 Attribute: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting uvec4 Attribute: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glVertexAttribI4ui(GLProgram.current.getAttribute(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL), (int) (w & 0xFFFFFFFFL));
+            GL33.glVertexAttribI4ui(GL.currentProgram.getAttribute(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL), (int) (w & 0xFFFFFFFFL));
         }
         
         /**
@@ -450,9 +441,9 @@ public class GLProgram
          */
         public static void vec4(@NotNull String name, double x, double y, double z, double w)
         {
-            GLProgram.LOGGER.finest("%s: Setting vec4 Attribute: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting vec4 Attribute: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glVertexAttrib4f(GLProgram.current.getAttribute(name), (float) x, (float) y, (float) z, (float) w);
+            GL33.glVertexAttrib4f(GL.currentProgram.getAttribute(name), (float) x, (float) y, (float) z, (float) w);
         }
         
         /**
@@ -500,6 +491,7 @@ public class GLProgram
         }
     }
     
+    @SuppressWarnings("unused")
     public static final class Uniform
     {
         /**
@@ -510,9 +502,9 @@ public class GLProgram
          */
         public static void bool1(@NotNull String name, boolean value)
         {
-            GLProgram.LOGGER.finest("%s: Setting bool Uniform: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting bool Uniform: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glUniform1i(GLProgram.current.getUniform(name), value ? 1 : 0);
+            GL33.glUniform1i(GL.currentProgram.getUniform(name), value ? 1 : 0);
         }
         
         /**
@@ -523,9 +515,9 @@ public class GLProgram
          */
         public static void uint1(@NotNull String name, long value)
         {
-            GLProgram.LOGGER.finest("%s: Setting uint Uniform: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting uint Uniform: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glUniform1ui(GLProgram.current.getUniform(name), (int) (value & 0xFFFFFFFFL));
+            GL33.glUniform1ui(GL.currentProgram.getUniform(name), (int) (value & 0xFFFFFFFFL));
         }
         
         /**
@@ -536,9 +528,9 @@ public class GLProgram
          */
         public static void int1(@NotNull String name, int value)
         {
-            GLProgram.LOGGER.finest("%s: Setting int Uniform: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting int Uniform: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glUniform1i(GLProgram.current.getUniform(name), value);
+            GL33.glUniform1i(GL.currentProgram.getUniform(name), value);
         }
         
         /**
@@ -549,9 +541,9 @@ public class GLProgram
          */
         public static void float1(@NotNull String name, double value)
         {
-            GLProgram.LOGGER.finest("%s: Setting float Uniform: %s=%s", GLProgram.current, name, value);
+            GLProgram.LOGGER.finest("%s: Setting float Uniform: %s=%s", GL.currentProgram, name, value);
             
-            GL33.glUniform1f(GLProgram.current.getUniform(name), (float) value);
+            GL33.glUniform1f(GL.currentProgram.getUniform(name), (float) value);
         }
         
         /**
@@ -563,9 +555,9 @@ public class GLProgram
          */
         public static void bvec2(@NotNull String name, boolean x, boolean y)
         {
-            GLProgram.LOGGER.finest("%s: Setting bvec2 Uniform: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting bvec2 Uniform: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glUniform2i(GLProgram.current.getUniform(name), x ? 1 : 0, y ? 1 : 0);
+            GL33.glUniform2i(GL.currentProgram.getUniform(name), x ? 1 : 0, y ? 1 : 0);
         }
         
         /**
@@ -577,9 +569,9 @@ public class GLProgram
          */
         public static void ivec2(@NotNull String name, int x, int y)
         {
-            GLProgram.LOGGER.finest("%s: Setting ivec2 Uniform: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting ivec2 Uniform: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glUniform2i(GLProgram.current.getUniform(name), x, y);
+            GL33.glUniform2i(GL.currentProgram.getUniform(name), x, y);
         }
         
         /**
@@ -591,9 +583,9 @@ public class GLProgram
          */
         public static void uvec2(@NotNull String name, long x, long y)
         {
-            GLProgram.LOGGER.finest("%s: Setting uvec2 Uniform: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting uvec2 Uniform: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glUniform2ui(GLProgram.current.getUniform(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL));
+            GL33.glUniform2ui(GL.currentProgram.getUniform(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL));
         }
         
         /**
@@ -605,9 +597,9 @@ public class GLProgram
          */
         public static void vec2(@NotNull String name, double x, double y)
         {
-            GLProgram.LOGGER.finest("%s: Setting vec2 Uniform: %s=(%s, %s)", GLProgram.current, name, x, y);
+            GLProgram.LOGGER.finest("%s: Setting vec2 Uniform: %s=(%s, %s)", GL.currentProgram, name, x, y);
             
-            GL33.glUniform2f(GLProgram.current.getUniform(name), (float) x, (float) y);
+            GL33.glUniform2f(GL.currentProgram.getUniform(name), (float) x, (float) y);
         }
         
         /**
@@ -664,9 +656,9 @@ public class GLProgram
          */
         public static void bvec3(@NotNull String name, boolean x, boolean y, boolean z)
         {
-            GLProgram.LOGGER.finest("%s: Setting bvec3 Uniform: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting bvec3 Uniform: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glUniform3i(GLProgram.current.getUniform(name), x ? 1 : 0, y ? 1 : 0, z ? 1 : 0);
+            GL33.glUniform3i(GL.currentProgram.getUniform(name), x ? 1 : 0, y ? 1 : 0, z ? 1 : 0);
         }
         
         /**
@@ -679,9 +671,9 @@ public class GLProgram
          */
         public static void ivec3(@NotNull String name, int x, int y, int z)
         {
-            GLProgram.LOGGER.finest("%s: Setting ivec3 Uniform: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting ivec3 Uniform: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glUniform3i(GLProgram.current.getUniform(name), x, y, z);
+            GL33.glUniform3i(GL.currentProgram.getUniform(name), x, y, z);
         }
         
         /**
@@ -694,9 +686,9 @@ public class GLProgram
          */
         public static void uvec3(@NotNull String name, long x, long y, long z)
         {
-            GLProgram.LOGGER.finest("%s: Setting uvec3 Uniform: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting uvec3 Uniform: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glUniform3ui(GLProgram.current.getUniform(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL));
+            GL33.glUniform3ui(GL.currentProgram.getUniform(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL));
         }
         
         /**
@@ -709,9 +701,9 @@ public class GLProgram
          */
         public static void vec3(@NotNull String name, double x, double y, double z)
         {
-            GLProgram.LOGGER.finest("%s: Setting vec3 Uniform: %s=(%s, %s, %s)", GLProgram.current, name, x, y, z);
+            GLProgram.LOGGER.finest("%s: Setting vec3 Uniform: %s=(%s, %s, %s)", GL.currentProgram, name, x, y, z);
             
-            GL33.glUniform3f(GLProgram.current.getUniform(name), (float) x, (float) y, (float) z);
+            GL33.glUniform3f(GL.currentProgram.getUniform(name), (float) x, (float) y, (float) z);
         }
         
         /**
@@ -769,9 +761,9 @@ public class GLProgram
          */
         public static void bvec4(@NotNull String name, boolean x, boolean y, boolean z, boolean w)
         {
-            GLProgram.LOGGER.finest("%s: Setting bvec4 Uniform: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting bvec4 Uniform: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glUniform4i(GLProgram.current.getUniform(name), x ? 1 : 0, y ? 1 : 0, z ? 1 : 0, w ? 1 : 0);
+            GL33.glUniform4i(GL.currentProgram.getUniform(name), x ? 1 : 0, y ? 1 : 0, z ? 1 : 0, w ? 1 : 0);
         }
         
         /**
@@ -785,9 +777,9 @@ public class GLProgram
          */
         public static void ivec4(@NotNull String name, int x, int y, int z, int w)
         {
-            GLProgram.LOGGER.finest("%s: Setting ivec4 Uniform: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting ivec4 Uniform: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glUniform4i(GLProgram.current.getUniform(name), x, y, z, w);
+            GL33.glUniform4i(GL.currentProgram.getUniform(name), x, y, z, w);
         }
         
         /**
@@ -801,9 +793,9 @@ public class GLProgram
          */
         public static void uvec4(@NotNull String name, long x, long y, long z, long w)
         {
-            GLProgram.LOGGER.finest("%s: Setting uvec4 Uniform: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting uvec4 Uniform: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glUniform4ui(GLProgram.current.getUniform(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL), (int) (w & 0xFFFFFFFFL));
+            GL33.glUniform4ui(GL.currentProgram.getUniform(name), (int) (x & 0xFFFFFFFFL), (int) (y & 0xFFFFFFFFL), (int) (z & 0xFFFFFFFFL), (int) (w & 0xFFFFFFFFL));
         }
         
         /**
@@ -817,9 +809,9 @@ public class GLProgram
          */
         public static void vec4(@NotNull String name, double x, double y, double z, double w)
         {
-            GLProgram.LOGGER.finest("%s: Setting vec3 Uniform: %s=(%s, %s, %s, %s)", GLProgram.current, name, x, y, z, w);
+            GLProgram.LOGGER.finest("%s: Setting vec3 Uniform: %s=(%s, %s, %s, %s)", GL.currentProgram, name, x, y, z, w);
             
-            GL33.glUniform4f(GLProgram.current.getUniform(name), (float) x, (float) y, (float) z, (float) w);
+            GL33.glUniform4f(GL.currentProgram.getUniform(name), (float) x, (float) y, (float) z, (float) w);
         }
         
         /**
@@ -875,11 +867,11 @@ public class GLProgram
          */
         public static void mat2(@NotNull String name, boolean transpose, @NotNull Matrix2fc mat)
         {
-            GLProgram.LOGGER.finest("%s: Setting mat2 Uniform: %s=%n%s", GLProgram.current, name, mat);
+            GLProgram.LOGGER.finest("%s: Setting mat2 Uniform: %s=%n%s", GL.currentProgram, name, mat);
             
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                GL33.glUniformMatrix2fv(GLProgram.current.getUniform(name), transpose, mat.get(stack.mallocFloat(4)));
+                GL33.glUniformMatrix2fv(GL.currentProgram.getUniform(name), transpose, mat.get(stack.mallocFloat(4)));
             }
         }
         
@@ -903,11 +895,11 @@ public class GLProgram
          */
         public static void mat2(@NotNull String name, boolean transpose, @NotNull Matrix2dc mat)
         {
-            GLProgram.LOGGER.finest("%s: Setting mat2 Uniform: %s=%n%s", GLProgram.current, name, mat);
+            GLProgram.LOGGER.finest("%s: Setting mat2 Uniform: %s=%n%s", GL.currentProgram, name, mat);
             
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                GL33.glUniformMatrix2fv(GLProgram.current.getUniform(name), transpose, stack.floats((float) mat.m00(), (float) mat.m01(), (float) mat.m10(), (float) mat.m11()));
+                GL33.glUniformMatrix2fv(GL.currentProgram.getUniform(name), transpose, stack.floats((float) mat.m00(), (float) mat.m01(), (float) mat.m10(), (float) mat.m11()));
             }
         }
         
@@ -931,11 +923,11 @@ public class GLProgram
          */
         public static void mat3(@NotNull String name, boolean transpose, @NotNull Matrix3fc mat)
         {
-            GLProgram.LOGGER.finest("%s: Setting mat3 Uniform: %s=%n%s", GLProgram.current, name, mat);
+            GLProgram.LOGGER.finest("%s: Setting mat3 Uniform: %s=%n%s", GL.currentProgram, name, mat);
             
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                GL33.glUniformMatrix3fv(GLProgram.current.getUniform(name), transpose, mat.get(stack.mallocFloat(9)));
+                GL33.glUniformMatrix3fv(GL.currentProgram.getUniform(name), transpose, mat.get(stack.mallocFloat(9)));
             }
         }
         
@@ -959,11 +951,11 @@ public class GLProgram
          */
         public static void mat3(@NotNull String name, boolean transpose, @NotNull Matrix3dc mat)
         {
-            GLProgram.LOGGER.finest("%s: Setting mat3 Uniform: %s=%n%s", GLProgram.current, name, mat);
+            GLProgram.LOGGER.finest("%s: Setting mat3 Uniform: %s=%n%s", GL.currentProgram, name, mat);
             
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                GL33.glUniformMatrix3fv(GLProgram.current.getUniform(name), transpose, mat.get(stack.mallocFloat(9)));
+                GL33.glUniformMatrix3fv(GL.currentProgram.getUniform(name), transpose, mat.get(stack.mallocFloat(9)));
             }
         }
         
@@ -987,11 +979,11 @@ public class GLProgram
          */
         public static void mat4(@NotNull String name, boolean transpose, @NotNull Matrix4fc mat)
         {
-            GLProgram.LOGGER.finest("%s: Setting mat4 Uniform: %s=%n%s", GLProgram.current, name, mat);
+            GLProgram.LOGGER.finest("%s: Setting mat4 Uniform: %s=%n%s", GL.currentProgram, name, mat);
             
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                GL33.glUniformMatrix4fv(GLProgram.current.getUniform(name), transpose, mat.get(stack.mallocFloat(16)));
+                GL33.glUniformMatrix4fv(GL.currentProgram.getUniform(name), transpose, mat.get(stack.mallocFloat(16)));
             }
         }
         
@@ -1015,11 +1007,11 @@ public class GLProgram
          */
         public static void mat4(@NotNull String name, boolean transpose, @NotNull Matrix4dc mat)
         {
-            GLProgram.LOGGER.finest("%s: Setting mat4 Uniform: %s=%n%s", GLProgram.current, name, mat);
+            GLProgram.LOGGER.finest("%s: Setting mat4 Uniform: %s=%n%s", GL.currentProgram, name, mat);
             
             try (MemoryStack stack = MemoryStack.stackPush())
             {
-                GL33.glUniformMatrix4fv(GLProgram.current.getUniform(name), transpose, mat.get(stack.mallocFloat(16)));
+                GL33.glUniformMatrix4fv(GL.currentProgram.getUniform(name), transpose, mat.get(stack.mallocFloat(16)));
             }
         }
         
@@ -1042,9 +1034,9 @@ public class GLProgram
          */
         public static void color(@NotNull String name, @NotNull Colorc color)
         {
-            GLProgram.LOGGER.finest("%s: Setting Color (vec4) Uniform: %s=%s", GLProgram.current, name, color);
+            GLProgram.LOGGER.finest("%s: Setting Color (vec4) Uniform: %s=%s", GL.currentProgram, name, color);
             
-            GL33.glUniform4f(GLProgram.current.getUniform(name), color.rf(), color.gf(), color.bf(), color.af());
+            GL33.glUniform4f(GL.currentProgram.getUniform(name), color.rf(), color.gf(), color.bf(), color.af());
         }
     }
     
@@ -1063,12 +1055,12 @@ public class GLProgram
      */
     public static @NotNull GLProgram load(@Nullable GLShader vert, @Nullable GLShader geom, @Nullable GLShader frag)
     {
-        if (vert == null) vert = GLShader.getDefaultVert();
-        if (frag == null) frag = GLShader.getDefaultFrag();
+        if (vert == null) vert = GL.defaultVertShader;
+        if (frag == null) frag = GL.defaultFragShader;
         
-        if (vert == GLShader.getDefaultVert() && frag == GLShader.getDefaultFrag())
+        if (vert == GL.defaultVertShader && frag == GL.defaultFragShader)
         {
-            return GLProgram.defaultProgram;
+            return GL.defaultProgram;
         }
         
         return new GLProgram(vert, geom, frag);
@@ -1219,7 +1211,7 @@ public class GLProgram
      */
     public void delete()
     {
-        if (!equals(GLProgram.defaultProgram) && this.id > 0)
+        if (!equals(GL.defaultProgram) && this.id > 0)
         {
             GLProgram.LOGGER.fine("Deleting", this);
             

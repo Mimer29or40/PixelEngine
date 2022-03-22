@@ -288,7 +288,7 @@ public class Window
         Window.LOGGER.fine("Making Window Context Current in Thread=%s", thread);
         
         glfwMakeContextCurrent(Window.handle);
-        org.lwjgl.opengl.GL.createCapabilities();
+        org.lwjgl.opengl.GL.createCapabilities(); // TODO - This should be in GL
     }
     
     static void unbindContext()
@@ -297,7 +297,7 @@ public class Window
         
         Window.LOGGER.fine("Removing Window Context in Thread=%s", thread);
         
-        org.lwjgl.opengl.GL.setCapabilities(null);
+        org.lwjgl.opengl.GL.setCapabilities(null); // TODO - This should be in GL
         glfwMakeContextCurrent(MemoryUtil.NULL);
     }
     

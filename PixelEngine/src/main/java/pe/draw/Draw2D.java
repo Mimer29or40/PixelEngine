@@ -2,6 +2,7 @@ package pe.draw;
 
 import org.jetbrains.annotations.Nullable;
 import pe.render.DrawMode;
+import pe.render.GL;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
 import rutils.Logger;
@@ -42,7 +43,7 @@ public abstract class Draw2D
     
     protected static void drawPoint(double x, double y, double thickness, int r, int g, int b, int a)
     {
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         if (thickness <= 1.0)
         {
@@ -71,7 +72,7 @@ public abstract class Draw2D
         
         if (thickness <= 1.0)
         {
-            GLBatch batch = GLBatch.get();
+            GLBatch batch = GL.currentBatch();
             
             batch.checkBuffer(2);
             
@@ -94,7 +95,7 @@ public abstract class Draw2D
             double nx = -dy * s;
             double ny = dx * s;
             
-            GLBatch batch = GLBatch.get();
+            GLBatch batch = GL.currentBatch();
             
             batch.checkBuffer(6);
             
@@ -126,7 +127,7 @@ public abstract class Draw2D
             return;
         }
         
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         int _r0 = r0;
         int _g0 = g0;
@@ -376,7 +377,7 @@ public abstract class Draw2D
     
     protected static void fillTriangle(double x0, double y0, double x1, double y1, double x2, double y2, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2)
     {
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         batch.checkBuffer(3);
         
@@ -401,7 +402,7 @@ public abstract class Draw2D
     
     protected static void fillQuad(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2, int r3, int g3, int b3, int a3)
     {
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         batch.checkBuffer(4);
         
@@ -533,7 +534,7 @@ public abstract class Draw2D
         p0x += x;
         p0y += y;
         
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         batch.checkBuffer(segments * 3);
         
@@ -627,7 +628,7 @@ public abstract class Draw2D
         x0o += x;
         y0o += y;
         
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         batch.checkBuffer(segments * 4);
         
@@ -685,7 +686,7 @@ public abstract class Draw2D
     
     protected static void drawTexture(GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
     {
-        GLBatch batch = GLBatch.get();
+        GLBatch batch = GL.currentBatch();
         
         batch.checkBuffer(4); // Make sure there is enough free space on the batch buffer
         

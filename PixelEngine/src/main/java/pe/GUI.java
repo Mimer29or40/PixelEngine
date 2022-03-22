@@ -9,6 +9,7 @@ import org.lwjgl.stb.STBTTPackedchar;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.event.*;
+import pe.render.GL;
 import pe.render.GLTexture;
 import rutils.IOUtil;
 
@@ -125,7 +126,7 @@ public final class GUI
         nk_style_set_font(GUI.ctx, GUI.font);
         
         GUI.texture = NkDrawNullTexture.create();
-        GUI.texture.texture().id(GLTexture.getDefault().id());
+        GUI.texture.texture().id(GL.defaultTexture().id());
         GUI.texture.uv().set(0.5F, 0.5F);
         
         // This is here because sometimes the mouse started grabbed.

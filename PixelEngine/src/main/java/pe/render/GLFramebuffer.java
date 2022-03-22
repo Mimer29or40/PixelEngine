@@ -19,35 +19,34 @@ public class GLFramebuffer
     // ----- Static -----
     // ------------------
     
-    static GLFramebuffer defaultFramebuffer;
-    static GLFramebuffer current;
-    
     static void setup()
     {
         GLFramebuffer.LOGGER.fine("Setup");
         
-        GLFramebuffer.defaultFramebuffer = new DefaultFramebuffer();
+        GL.defaultFramebuffer = new DefaultFramebuffer();
     }
     
     static void destroy()
     {
         GLFramebuffer.LOGGER.fine("Destroy");
         
+        GL.currentFramebuffer = null;
+        
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
     }
     
     public static void bind(@Nullable GLFramebuffer framebuffer)
     {
-        if (framebuffer == null) framebuffer = GLFramebuffer.defaultFramebuffer;
+        if (framebuffer == null) framebuffer = GL.defaultFramebuffer;
         
         GLFramebuffer.LOGGER.finest("Binding Framebuffer:", framebuffer);
         
-        if (GLFramebuffer.current != framebuffer || GLFramebuffer.defaultFramebuffer == framebuffer)
+        if (GL.currentFramebuffer != framebuffer || GL.defaultFramebuffer == framebuffer)
         {
-            GLFramebuffer.current = framebuffer;
+            GL.currentFramebuffer = framebuffer;
             
             GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, framebuffer.id());
-            GLState.viewport(0, 0, framebuffer.width(), framebuffer.height());
+            GL.viewport(0, 0, framebuffer.width(), framebuffer.height());
         }
     }
     
@@ -61,7 +60,7 @@ public class GLFramebuffer
      */
     public static int currentWidth()
     {
-        return GLFramebuffer.current.width();
+        return GL.currentFramebuffer.width();
     }
     
     /**
@@ -69,7 +68,7 @@ public class GLFramebuffer
      */
     public static int currentHeight()
     {
-        return GLFramebuffer.current.height();
+        return GL.currentFramebuffer.height();
     }
     
     // TODO

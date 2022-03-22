@@ -25,39 +25,31 @@ public class GLBatch
     // ----- Static -----
     // ------------------
     
-    static GLBatch defaultBatch;
-    static GLBatch current;
-    
     static void setup()
     {
         GLBatch.LOGGER.fine("Setup");
         
-        GLBatch.defaultBatch = new GLBatch();
+        GL.defaultBatch = new GLBatch();
     }
     
     static void destroy()
     {
         GLBatch.LOGGER.fine("Destroy");
         
-        GLBatch.current = null;
+        GL.currentBatch = null;
         
-        GLBatch batch = GLBatch.defaultBatch;
-        GLBatch.defaultBatch = null;
+        GLBatch batch = GL.defaultBatch;
+        GL.defaultBatch = null;
         batch.delete();
-    }
-    
-    public static @NotNull GLBatch get()
-    {
-        return GLBatch.current;
     }
     
     public static void bind(@Nullable GLBatch batch)
     {
-        if (batch == null) batch = GLBatch.defaultBatch;
+        if (batch == null) batch = GL.defaultBatch;
         
         GLBatch.LOGGER.finest("Binding Batch:", batch);
         
-        GLBatch.current = batch;
+        GL.currentBatch = batch;
     }
     
     // --------------------
@@ -115,7 +107,7 @@ public class GLBatch
     {
         this.id = ++GLBatch.index;
         
-        this.elementsCount = GLState.DEFAULT_BATCH_BUFFER_ELEMENTS;
+        this.elementsCount = GL.DEFAULT_BATCH_BUFFER_ELEMENTS;
         
         int capacity = this.elementsCount * 4;
         
@@ -149,7 +141,7 @@ public class GLBatch
         MemoryUtil.memFree(indices);
         
         this.currentDraw = 0;
-        this.drawCalls   = new DrawCall[GLState.DEFAULT_BATCH_DRAWCALLS];
+        this.drawCalls   = new DrawCall[GL.DEFAULT_BATCH_DRAWCALLS];
         for (int i = 0; i < this.drawCalls.length; i++) this.drawCalls[i] = new DrawCall();
         
         this.currentDepth = 0.99995;
@@ -157,15 +149,15 @@ public class GLBatch
         this.hasBegun = false;
         
         this.matrixIndex = 0;
-        this.matrixStack = new Matrix4d[GLState.MAX_MATRIX_STACK_SIZE];
+        this.matrixStack = new Matrix4d[GL.MAX_MATRIX_STACK_SIZE];
         for (int i = 0; i < this.matrixStack.length; i++) this.matrixStack[i] = new Matrix4d();
         
         this.colorIndex = 0;
-        this.colorStack = Color_RGBA.create(GLState.MAX_COLOR_STACK_SIZE);
+        this.colorStack = Color_RGBA.create(GL.MAX_COLOR_STACK_SIZE);
         
         this.textureIndex  = 0;
-        this.textureNames  = new String[GLState.MAX_ACTIVE_TEXTURES];
-        this.textureActive = new GLTexture[GLState.MAX_ACTIVE_TEXTURES];
+        this.textureNames  = new String[GL.MAX_ACTIVE_TEXTURES];
+        this.textureActive = new GLTexture[GL.MAX_ACTIVE_TEXTURES];
         
         this.stats = new BatchStats();
         
@@ -195,7 +187,7 @@ public class GLBatch
     
     public void delete()
     {
-        if (!equals(GLBatch.defaultBatch) && this.id > 0)
+        if (!equals(GL.defaultBatch) && this.id > 0)
         {
             GLBatch.LOGGER.fine("Deleting", this);
             

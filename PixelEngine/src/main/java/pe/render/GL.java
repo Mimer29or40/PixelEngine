@@ -13,7 +13,7 @@ import rutils.Logger;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-public class GLState
+public class GL // TODO - Instance GL for multiple contexts
 {
     // TODO - Move these to another class
     
@@ -34,33 +34,47 @@ public class GLState
     
     private static final Logger LOGGER = new Logger();
     
-    private static boolean depthClamp;
-    private static boolean lineSmooth;
-    private static boolean textureCubeMapSeamless;
+    static boolean depthClamp;
+    static boolean lineSmooth;
+    static boolean textureCubeMapSeamless;
     
-    private static boolean wireframe;
+    static boolean wireframe;
     
-    private static BlendMode   blendMode;
-    private static DepthMode   depthMode;
-    private static StencilMode stencilMode;
-    private static ScissorMode scissorMode;
+    static BlendMode   blendMode;
+    static DepthMode   depthMode;
+    static StencilMode stencilMode;
+    static ScissorMode scissorMode;
     
-    private static int colorMask;
-    private static int depthMask;
-    private static int stencilMask;
+    static int colorMask;
+    static int depthMask;
+    static int stencilMask;
     
-    private static int clearColor;
-    private static int clearDepth;
-    private static int clearStencil;
+    static int clearColor;
+    static int clearDepth;
+    static int clearStencil;
     
-    private static CullFace cullFace;
-    private static Winding  winding;
+    static CullFace cullFace;
+    static Winding  winding;
     
-    private static final ScissorMode scissorModeCustom = new ScissorMode(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    static final ScissorMode scissorModeCustom = new ScissorMode(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    
+    static GLShader defaultVertShader;
+    static GLShader defaultFragShader;
+    
+    static GLProgram defaultProgram;
+    static GLProgram currentProgram;
+    
+    static GLTexture defaultTexture;
+    
+    static GLFramebuffer defaultFramebuffer;
+    static GLFramebuffer currentFramebuffer;
+    
+    static GLBatch defaultBatch;
+    static GLBatch currentBatch;
     
     public static void setup()
     {
-        GLState.LOGGER.fine("Setup");
+        GL.LOGGER.fine("Setup");
         
         clearScreenBuffers(ScreenBuffer.COLOR, ScreenBuffer.DEPTH, ScreenBuffer.STENCIL);
         
@@ -88,25 +102,25 @@ public class GLState
         // TODO - Setup Uniform Buffer for default things
         // TODO - Setup Default Uniform values
         
-        GLState.defaultState();
+        GL.defaultState();
     }
     
     public static void destroy()
     {
-        GLState.LOGGER.fine("Destroy");
+        GL.LOGGER.fine("Destroy");
         
-        GLProgram.destroy();
-        GLShader.destroy();
-        
-        GLTexture.destroy();
-        
-        GLBuffer.destroy();
-        
-        GLVertexArray.destroy();
+        GLBatch.destroy();
         
         GLFramebuffer.destroy();
         
-        GLBatch.destroy();
+        GLVertexArray.destroy();
+        
+        GLBuffer.destroy();
+        
+        GLTexture.destroy();
+        
+        GLProgram.destroy();
+        GLShader.destroy();
     }
     
     public static void defaultState()
@@ -137,6 +151,31 @@ public class GLState
         winding(Winding.DEFAULT);
     }
     
+    public static @NotNull GLShader defaultVertShader()
+    {
+        return GL.defaultVertShader;
+    }
+    
+    public static @NotNull GLShader defaultFragShader()
+    {
+        return GL.defaultFragShader;
+    }
+    
+    public static @NotNull GLProgram defaultProgram()
+    {
+        return GL.defaultProgram;
+    }
+    
+    public static @NotNull GLTexture defaultTexture()
+    {
+        return GL.defaultTexture;
+    }
+    
+    public static @NotNull GLBatch currentBatch()
+    {
+        return GL.currentBatch;
+    }
+    
     /**
      * Specifies the viewport transformation parameters for all viewports.
      *
@@ -147,7 +186,7 @@ public class GLState
      */
     public static void viewport(int x, int y, int w, int h)
     {
-        GLState.LOGGER.finest("Setting Viewport: [%s, %s, %s, %s]", x, y, w, h);
+        GL.LOGGER.finest("Setting Viewport: [%s, %s, %s, %s]", x, y, w, h);
         
         GL33.glViewport(x, y, w, h);
     }
@@ -160,11 +199,11 @@ public class GLState
      */
     public static void depthClamp(boolean depthClamp)
     {
-        GLState.LOGGER.finest("Setting Depth Clamp Flag:", depthClamp);
+        GL.LOGGER.finest("Setting Depth Clamp Flag:", depthClamp);
         
-        if (GLState.depthClamp != depthClamp)
+        if (GL.depthClamp != depthClamp)
         {
-            GLState.depthClamp = depthClamp;
+            GL.depthClamp = depthClamp;
             
             if (depthClamp)
             {
@@ -185,11 +224,11 @@ public class GLState
      */
     public static void lineSmooth(boolean lineSmooth)
     {
-        GLState.LOGGER.finest("Setting Line Smooth Flag:", lineSmooth);
+        GL.LOGGER.finest("Setting Line Smooth Flag:", lineSmooth);
         
-        if (GLState.lineSmooth != lineSmooth)
+        if (GL.lineSmooth != lineSmooth)
         {
-            GLState.lineSmooth = lineSmooth;
+            GL.lineSmooth = lineSmooth;
             
             if (lineSmooth)
             {
@@ -212,11 +251,11 @@ public class GLState
      */
     public static void textureCubeMapSeamless(boolean textureCubeMapSeamless)
     {
-        GLState.LOGGER.finest("Setting Texture Cube Map Seamless Flag:", textureCubeMapSeamless);
+        GL.LOGGER.finest("Setting Texture Cube Map Seamless Flag:", textureCubeMapSeamless);
         
-        if (GLState.textureCubeMapSeamless != textureCubeMapSeamless)
+        if (GL.textureCubeMapSeamless != textureCubeMapSeamless)
         {
-            GLState.textureCubeMapSeamless = textureCubeMapSeamless;
+            GL.textureCubeMapSeamless = textureCubeMapSeamless;
             
             if (textureCubeMapSeamless)
             {
@@ -236,11 +275,11 @@ public class GLState
      */
     public static void wireframe(boolean wireframe)
     {
-        GLState.LOGGER.finest("Setting Wireframe Flag:", wireframe);
+        GL.LOGGER.finest("Setting Wireframe Flag:", wireframe);
         
-        if (GLState.wireframe != wireframe)
+        if (GL.wireframe != wireframe)
         {
-            GLState.wireframe = wireframe;
+            GL.wireframe = wireframe;
             
             GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, wireframe ? GL33.GL_LINE : GL33.GL_FILL);
         }
@@ -257,11 +296,11 @@ public class GLState
     {
         if (mode == null) mode = BlendMode.DEFAULT;
         
-        GLState.LOGGER.finest("Setting Blend Mode:", mode);
+        GL.LOGGER.finest("Setting Blend Mode:", mode);
         
-        if (!Objects.equals(GLState.blendMode, mode))
+        if (!Objects.equals(GL.blendMode, mode))
         {
-            GLState.blendMode = mode;
+            GL.blendMode = mode;
             
             if (mode == BlendMode.NONE)
             {
@@ -285,11 +324,11 @@ public class GLState
     {
         if (mode == null) mode = DepthMode.DEFAULT;
         
-        GLState.LOGGER.finest("Setting Depth Mode:", mode);
+        GL.LOGGER.finest("Setting Depth Mode:", mode);
         
-        if (!Objects.equals(GLState.depthMode, mode))
+        if (!Objects.equals(GL.depthMode, mode))
         {
-            GLState.depthMode = mode;
+            GL.depthMode = mode;
             
             if (mode == DepthMode.NONE)
             {
@@ -321,11 +360,11 @@ public class GLState
     {
         if (mode == null) mode = StencilMode.DEFAULT;
         
-        GLState.LOGGER.finest("Setting Stencil Mode:", mode);
+        GL.LOGGER.finest("Setting Stencil Mode:", mode);
         
-        if (!Objects.equals(GLState.stencilMode, mode))
+        if (!Objects.equals(GL.stencilMode, mode))
         {
-            GLState.stencilMode = mode;
+            GL.stencilMode = mode;
             
             if (mode == StencilMode.NONE)
             {
@@ -355,11 +394,11 @@ public class GLState
     {
         if (mode == null) mode = ScissorMode.DEFAULT;
         
-        GLState.LOGGER.finest("Setting ScissorMode:", mode);
+        GL.LOGGER.finest("Setting ScissorMode:", mode);
         
-        if (!Objects.equals(GLState.scissorMode, mode))
+        if (!Objects.equals(GL.scissorMode, mode))
         {
-            GLState.scissorMode = mode;
+            GL.scissorMode = mode;
             
             if (mode == ScissorMode.NONE)
             {
@@ -387,9 +426,9 @@ public class GLState
      */
     public static void scissor(int x, int y, int width, int height)
     {
-        GLState.LOGGER.finest("Setting Custom Scissor: [%s, %s, %s, %s]", x, y, width, height);
+        GL.LOGGER.finest("Setting Custom Scissor: [%s, %s, %s, %s]", x, y, width, height);
         
-        GLState.scissorMode = GLState.scissorModeCustom;
+        GL.scissorMode = GL.scissorModeCustom;
         
         GL33.glEnable(GL33.GL_SCISSOR_TEST);
         GL33.glScissor(x, y, width, height);
@@ -407,13 +446,13 @@ public class GLState
      */
     public static void colorMask(boolean r, boolean g, boolean b, boolean a)
     {
-        GLState.LOGGER.finest("Setting Color Mask: r=%s g=%s b=%s a=%s", r, g, b, a);
+        GL.LOGGER.finest("Setting Color Mask: r=%s g=%s b=%s a=%s", r, g, b, a);
         
         int mask = (r ? 8 : 0) | (g ? 4 : 0) | (b ? 2 : 0) | (a ? 1 : 0);
         
-        if (GLState.colorMask != mask)
+        if (GL.colorMask != mask)
         {
-            GLState.colorMask = mask;
+            GL.colorMask = mask;
             
             GL33.glColorMask(r, g, b, a);
         }
@@ -427,13 +466,13 @@ public class GLState
      */
     public static void depthMask(boolean flag)
     {
-        GLState.LOGGER.finest("Setting Depth Mask:", flag);
+        GL.LOGGER.finest("Setting Depth Mask:", flag);
         
         int mask = flag ? 1 : 0;
         
-        if (GLState.depthMask != mask)
+        if (GL.depthMask != mask)
         {
-            GLState.depthMask = mask;
+            GL.depthMask = mask;
             
             GL33.glDepthMask(flag);
         }
@@ -451,11 +490,11 @@ public class GLState
      */
     public static void stencilMask(int mask)
     {
-        GLState.LOGGER.finest("Setting Stencil Mask: 0x%02X", mask);
+        GL.LOGGER.finest("Setting Stencil Mask: 0x%02X", mask);
         
-        if (GLState.stencilMask != mask)
+        if (GL.stencilMask != mask)
         {
-            GLState.stencilMask = mask;
+            GL.stencilMask = mask;
             
             GL33.glStencilMask(mask);
         }
@@ -472,13 +511,13 @@ public class GLState
      */
     public static void clearColor(double r, double g, double b, double a)
     {
-        GLState.LOGGER.finest("Setting Clear Color: (%.3f, %.3f, %.3f, %.3f)", r, g, b, a);
+        GL.LOGGER.finest("Setting Clear Color: (%.3f, %.3f, %.3f, %.3f)", r, g, b, a);
         
         int hash = Objects.hash(r, g, b, a);
         
-        if (GLState.clearColor != hash)
+        if (GL.clearColor != hash)
         {
-            GLState.clearColor = hash;
+            GL.clearColor = hash;
             
             GL33.glClearColor((float) r, (float) g, (float) b, (float) a);
         }
@@ -494,13 +533,13 @@ public class GLState
      */
     public static void clearDepth(double depth)
     {
-        GLState.LOGGER.finest("Setting Clear Depth: %.3f", depth);
+        GL.LOGGER.finest("Setting Clear Depth: %.3f", depth);
         
         int hash = Double.hashCode(depth);
         
-        if (GLState.clearDepth != hash)
+        if (GL.clearDepth != hash)
         {
-            GLState.clearDepth = hash;
+            GL.clearDepth = hash;
             
             GL33.glClearDepth(depth);
         }
@@ -514,11 +553,11 @@ public class GLState
      */
     public static void clearStencil(int stencil)
     {
-        GLState.LOGGER.finest("Setting Clear Stencil: 0x%02X", stencil);
+        GL.LOGGER.finest("Setting Clear Stencil: 0x%02X", stencil);
         
-        if (GLState.clearStencil != stencil)
+        if (GL.clearStencil != stencil)
         {
-            GLState.clearStencil = stencil;
+            GL.clearStencil = stencil;
             
             GL33.glClearStencil(stencil);
         }
@@ -531,7 +570,7 @@ public class GLState
      */
     public static void clearScreenBuffers()
     {
-        GLState.LOGGER.finest("Clearing All Buffers");
+        GL.LOGGER.finest("Clearing All Buffers");
         
         GL33.glClear(GL33.GL_COLOR_BUFFER_BIT | GL33.GL_DEPTH_BUFFER_BIT | GL33.GL_STENCIL_BUFFER_BIT);
     }
@@ -549,7 +588,7 @@ public class GLState
      */
     public static void clearScreenBuffers(@NotNull ScreenBuffer... buffers)
     {
-        GLState.LOGGER.finest("Clearing Buffers:", buffers);
+        GL.LOGGER.finest("Clearing Buffers:", buffers);
         
         int mask = 0;
         for (ScreenBuffer buffer : buffers) mask |= buffer.ref;
@@ -574,11 +613,11 @@ public class GLState
     {
         if (cullFace == null) cullFace = CullFace.DEFAULT;
         
-        GLState.LOGGER.finest("Setting Cull Face:", cullFace);
+        GL.LOGGER.finest("Setting Cull Face:", cullFace);
         
-        if (!Objects.equals(GLState.cullFace, cullFace))
+        if (!Objects.equals(GL.cullFace, cullFace))
         {
-            GLState.cullFace = cullFace;
+            GL.cullFace = cullFace;
             
             if (cullFace == CullFace.NONE)
             {
@@ -609,11 +648,11 @@ public class GLState
     {
         if (winding == null) winding = Winding.DEFAULT;
         
-        GLState.LOGGER.finest("Setting Winding:", winding);
+        GL.LOGGER.finest("Setting Winding:", winding);
         
-        if (!Objects.equals(GLState.winding, winding))
+        if (!Objects.equals(GL.winding, winding))
         {
-            GLState.winding = winding;
+            GL.winding = winding;
             
             GL33.glFrontFace(winding.ref);
         }

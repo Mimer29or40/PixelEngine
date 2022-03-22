@@ -592,7 +592,7 @@ public final class Debug
             GLProgram.bind(Debug.program);
             GLProgram.Uniform.mat4("pv", Debug.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
             
-            GLState.winding(Winding.CW);
+            GL.winding(Winding.CW);
             
             int quads = 0;
             // int draws = 0; // TODO - Track Draws

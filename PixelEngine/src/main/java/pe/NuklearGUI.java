@@ -125,7 +125,7 @@ public class NuklearGUI
                                .flip();
         
         NuklearGUI.nullTexture = NkDrawNullTexture.calloc();
-        NuklearGUI.nullTexture.texture().id(GLTexture.getDefault().id());
+        NuklearGUI.nullTexture.texture().id(GL.defaultTexture().id());
         NuklearGUI.nullTexture.uv().set(0.5f, 0.5f);
         
         NuklearGUI.config = NkConvertConfig.calloc();
@@ -404,16 +404,16 @@ public class NuklearGUI
     static void draw()
     {
         // setup global state
-        GLState.blendMode(BlendMode.ALPHA);
-        GLState.depthMode(DepthMode.NONE);
+        GL.blendMode(BlendMode.ALPHA);
+        GL.depthMode(DepthMode.NONE);
         
-        GLState.cullFace(CullFace.NONE);
+        GL.cullFace(CullFace.NONE);
         
         int width  = Window.width();
         int height = Window.height();
         
         GLFramebuffer.bind(null);
-    
+        
         int fbWidth  = GLFramebuffer.currentWidth();
         int fbHeight = GLFramebuffer.currentHeight();
         
@@ -453,7 +453,7 @@ public class NuklearGUI
             int w = (int) (cmd.clip_rect().w() * fb_scale_x);
             int h = (int) (cmd.clip_rect().h() * fb_scale_y);
             
-            GLState.scissor(x, y, w, h);
+            GL.scissor(x, y, w, h);
             NuklearGUI.vertexArray.drawElements(DrawMode.TRIANGLES, offset, cmd.elem_count());
             
             offset += cmd.elem_count();

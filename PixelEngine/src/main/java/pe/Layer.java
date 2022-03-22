@@ -163,10 +163,10 @@ public final class Layer extends GLFramebuffer
         
         GLProgram.Uniform.vec2("framebuffer", fbWidth, fbHeight);
         
-        GLState.defaultState();
-        GLState.depthMode(DepthMode.NONE);
+        GL.defaultState();
+        GL.depthMode(DepthMode.NONE);
         
-        GLState.clearScreenBuffers(ScreenBuffer.COLOR);
+        GL.clearScreenBuffers(ScreenBuffer.COLOR);
         
         for (Layer layer : Layer.layers.values())
         {

@@ -117,7 +117,7 @@ public abstract class Engine
             Keyboard.setup();
             Joystick.setup();
             
-            GLState.setup();
+            GL.setup();
             
             Layer.setup(width, height);
             
@@ -126,28 +126,28 @@ public abstract class Engine
             int b = Layer.primary().height() >> 1;
             int t = -b;
             
-            GLBatch.get().matrixMode(MatrixMode.PROJECTION);
-            GLBatch.get().loadIdentity();
-            GLBatch.get().ortho(l, r, b, t, 1.0, -1.0);
+            GL.currentBatch().matrixMode(MatrixMode.PROJECTION);
+            GL.currentBatch().loadIdentity();
+            GL.currentBatch().ortho(l, r, b, t, 1.0, -1.0);
             
-            GLBatch.get().matrixMode(MatrixMode.VIEW);
-            GLBatch.get().loadIdentity();
-            GLBatch.get().translate(l, t, 0.0);
+            GL.currentBatch().matrixMode(MatrixMode.VIEW);
+            GL.currentBatch().loadIdentity();
+            GL.currentBatch().translate(l, t, 0.0);
             
-            GLBatch.get().matrixMode(MatrixMode.MODEL);
-            GLBatch.get().loadIdentity();
+            GL.currentBatch().matrixMode(MatrixMode.MODEL);
+            GL.currentBatch().loadIdentity();
             
-            GLBatch.get().matrixMode(MatrixMode.NORMAL);
-            GLBatch.get().loadIdentity();
+            GL.currentBatch().matrixMode(MatrixMode.NORMAL);
+            GL.currentBatch().loadIdentity();
             
-            GLBatch.get().colorMode(ColorMode.DIFFUSE);
-            GLBatch.get().loadWhite();
+            GL.currentBatch().colorMode(ColorMode.DIFFUSE);
+            GL.currentBatch().loadWhite();
             
-            GLBatch.get().colorMode(ColorMode.SPECULAR);
-            GLBatch.get().loadWhite();
+            GL.currentBatch().colorMode(ColorMode.SPECULAR);
+            GL.currentBatch().loadWhite();
             
-            GLBatch.get().colorMode(ColorMode.AMBIENT);
-            GLBatch.get().loadWhite();
+            GL.currentBatch().colorMode(ColorMode.AMBIENT);
+            GL.currentBatch().loadWhite();
         }
         
         private static void events()
@@ -166,7 +166,7 @@ public abstract class Engine
         {
             Layer.destroy();
             
-            GLState.destroy();
+            GL.destroy();
             
             Joystick.destroy();
             Keyboard.destroy();
@@ -310,8 +310,8 @@ public abstract class Engine
         
         public static void clearBackground(@NotNull Colorc color)
         {
-            GLState.clearColor(color.rf(), color.gf(), color.bf(), color.af());
-            GLState.clearScreenBuffers();
+            GL.clearColor(color.rf(), color.gf(), color.bf(), color.af());
+            GL.clearScreenBuffers();
         }
         
         public static DrawPoint2D point2D()
@@ -463,11 +463,11 @@ public abstract class Engine
                                     GLFramebuffer.bind(Layer.primary);
                                     GLProgram.bind(null);
                                     
-                                    GLState.defaultState();
-                                    GLState.wireframe(Engine.wireframe);
+                                    GL.defaultState();
+                                    GL.wireframe(Engine.wireframe);
                                     
                                     GLBatch.bind(null);
-                                    GLBatch defaultBatch = GLBatch.get();
+                                    GLBatch defaultBatch = GL.currentBatch();
                                     defaultBatch.start();
                                     
                                     int r = Layer.primary().width() >> 1;
@@ -535,7 +535,7 @@ public abstract class Engine
                                     int w = Window.framebufferWidth();
                                     int h = Window.framebufferHeight();
                                     
-                                    Color.Buffer data = GLState.readFrontBuffer(0, 0, w, h);
+                                    Color.Buffer data = GL.readFrontBuffer(0, 0, w, h);
                                     
                                     Image image = Image.load(data, w, h, 1, data.format());
                                     image.export(fileName);

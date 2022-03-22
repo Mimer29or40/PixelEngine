@@ -18,9 +18,6 @@ public class GLShader
     // ----- Static -----
     // ------------------
     
-    static GLShader defaultVert;
-    static GLShader defaultFrag;
-    
     static void setup()
     {
         GLShader.LOGGER.fine("Setup");
@@ -57,31 +54,21 @@ public class GLShader
                 }
                 """;
         
-        GLShader.defaultVert = new GLShader(ShaderType.VERTEX, vertCode);
-        GLShader.defaultFrag = new GLShader(ShaderType.FRAGMENT, fragCode);
+        GL.defaultVertShader = new GLShader(ShaderType.VERTEX, vertCode);
+        GL.defaultFragShader = new GLShader(ShaderType.FRAGMENT, fragCode);
     }
     
     static void destroy()
     {
         GLShader.LOGGER.fine("Destroy");
         
-        GLShader vert = GLShader.defaultVert;
-        GLShader.defaultVert = null;
+        GLShader vert = GL.defaultVertShader;
+        GL.defaultVertShader = null;
         vert.delete();
         
-        GLShader frag = GLShader.defaultFrag;
-        GLShader.defaultFrag = null;
+        GLShader frag = GL.defaultFragShader;
+        GL.defaultFragShader = null;
         frag.delete();
-    }
-    
-    public static @NotNull GLShader getDefaultVert()
-    {
-        return GLShader.defaultVert;
-    }
-    
-    public static @NotNull GLShader getDefaultFrag()
-    {
-        return GLShader.defaultFrag;
     }
     
     /**
@@ -137,7 +124,7 @@ public class GLShader
      * @param code The code of the shader
      * @throws IllegalStateException Program could not be Compiled.
      */
-    private GLShader(@NotNull ShaderType type, @NotNull String code)
+    GLShader(@NotNull ShaderType type, @NotNull String code)
     {
         this.id   = GL33.glCreateShader(type.ref);
         this.type = type;
@@ -200,7 +187,7 @@ public class GLShader
      */
     public void delete()
     {
-        if (!(equals(GLShader.defaultVert) || equals(GLShader.defaultFrag)) && this.id > 0)
+        if (!(equals(GL.defaultVertShader) || equals(GL.defaultFragShader)) && this.id > 0)
         {
             GLShader.LOGGER.fine("Deleting", this);
             

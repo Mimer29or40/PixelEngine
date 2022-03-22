@@ -19,8 +19,6 @@ public class GLTexture
     // ----- Static -----
     // ------------------
     
-    protected static GLTexture defaultTexture;
-    
     static void setup()
     {
         GLTexture.LOGGER.fine("Setup");
@@ -28,7 +26,7 @@ public class GLTexture
         try (MemoryStack stack = MemoryStack.stackPush())
         {
             ByteBuffer pixels = stack.bytes((byte) 255, (byte) 255, (byte) 255, (byte) 255);
-            GLTexture.defaultTexture = Texture.load(pixels, 1, 1, 1, ColorFormat.RGBA);
+            GL.defaultTexture = Texture.load(pixels, 1, 1, 1, ColorFormat.RGBA);
         }
     }
     
@@ -38,14 +36,9 @@ public class GLTexture
         
         GL33.glBindTexture(GL33.GL_TEXTURE_2D, 0);
         
-        GLTexture texture = GLTexture.defaultTexture;
-        GLTexture.defaultTexture = null;
+        GLTexture texture = GL.defaultTexture;
+        GL.defaultTexture = null;
         texture.delete();
-    }
-    
-    public static @NotNull GLTexture getDefault()
-    {
-        return GLTexture.defaultTexture;
     }
     
     public static void bindRaw(int textureType, int textureID, int index)
@@ -58,7 +51,7 @@ public class GLTexture
     
     public static void bind(@Nullable GLTexture texture, int index)
     {
-        if (texture == null) texture = GLTexture.defaultTexture;
+        if (texture == null) texture = GL.defaultTexture;
         
         GLTexture.LOGGER.finest("Binding %s to index=%s", texture, index);
         
@@ -73,7 +66,7 @@ public class GLTexture
     
     public static void unbind(@Nullable GLTexture texture, int index)
     {
-        if (texture == null) texture = GLTexture.defaultTexture;
+        if (texture == null) texture = GL.defaultTexture;
         
         GLTexture.LOGGER.finest("Unbinding %s from index=%s", texture, index);
         
@@ -158,7 +151,7 @@ public class GLTexture
      */
     public void delete()
     {
-        if (!equals(GLTexture.defaultTexture) && this.id > 0)
+        if (!equals(GL.defaultTexture) && this.id > 0)
         {
             GLTexture.LOGGER.fine("Deleting", this);
             
