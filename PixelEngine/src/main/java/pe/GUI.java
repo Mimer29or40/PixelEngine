@@ -1,560 +1,122 @@
 package pe;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.nuklear.*;
-import org.lwjgl.stb.STBTTAlignedQuad;
-import org.lwjgl.stb.STBTTFontinfo;
-import org.lwjgl.stb.STBTTPackContext;
-import org.lwjgl.stb.STBTTPackedchar;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.MemoryUtil;
-import pe.event.*;
-import pe.render.GL;
-import pe.render.GLTexture;
-import rutils.IOUtil;
+import org.jetbrains.annotations.NotNull;
+import org.joml.Vector2d;
+import pe.color.Color;
+import pe.gui.GuiStyle;
+import pe.gui.GuiWindow;
+import pe.render.*;
+import rutils.Logger;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
-import static org.lwjgl.nuklear.Nuklear.*;
-import static org.lwjgl.opengl.GL11C.*;
-import static org.lwjgl.opengl.GL12C.GL_UNSIGNED_INT_8_8_8_8_REV;
-import static org.lwjgl.opengl.GL13C.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13C.glActiveTexture;
-import static org.lwjgl.opengl.GL14C.GL_FUNC_ADD;
-import static org.lwjgl.opengl.GL14C.glBlendEquation;
-import static org.lwjgl.stb.STBTruetype.*;
-import static org.lwjgl.system.MemoryStack.stackPush;
-import static org.lwjgl.system.MemoryUtil.*;
-
-public final class GUI
+public class GUI
 {
-    static NkAllocator                      allocator;
-    static NkDrawVertexLayoutElement.Buffer vertex;
+    private static final Logger LOGGER = new Logger();
     
-    static ByteBuffer vertexBuffer;
-    static ByteBuffer elementBuffer;
+    static GuiStyle style;
     
-    static NkContext         ctx;
-    static NkBuffer          cmds;
-    static NkUserFont        font;
-    static NkDrawNullTexture texture;
+    static final List<GuiWindow> Windows           = new LinkedList<>(); // Windows, sorted in display order, back to front
+    static final List<GuiWindow> WindowsFocusOrder = new LinkedList<>(); // Root windows, sorted in focus order, back to front.
     
-    static ByteBuffer ttf;
-    
-    static int BITMAP_W = 1024;
-    static int BITMAP_H = 1024;
-    
-    static int FONT_HEIGHT = 18;
-    static int fontTexID   = glGenTextures();
-    
-    static STBTTFontinfo          fontInfo = STBTTFontinfo.create();
-    static STBTTPackedchar.Buffer cdata    = STBTTPackedchar.create(95);
-    
-    static float scale;
-    static float descent;
+    static Vector2d  WindowsHoverPadding;            // Padding around resizable windows for which hovering on counts as hovering the window == ImMax(style.TouchExtraPadding, WINDOWS_HOVER_PADDING)
+    static GuiWindow CurrentWindow;                  // Window being drawn into
+    static GuiWindow HoveredWindow;                  // Window the mouse is hovering. Will typically catch mouse inputs.
+    static GuiWindow HoveredWindowUnderMovingWindow; // Hovered window ignoring MovingWindow. Only set if MovingWindow is set.
+    static GuiWindow MovingWindow;                   // Track the window we clicked on (in order to preserve focus). The actual window that is moved is generally MovingWindow->RootWindow.
+    static GuiWindow WheelingWindow;                 // Track the window we started mouse-wheeling on. Until a timer elapse or mouse has moved, generally keep scrolling the same window even if during the course of scrolling the mouse ends up hovering a child window.
+    static Vector2d  WheelingWindowRefMousePos;
+    static float     WheelingWindowTimer;
     
     static void setup()
     {
-        GUI.allocator = NkAllocator.create();
-        GUI.allocator.alloc(GUI::alloc);
-        GUI.allocator.mfree(GUI::memFree);
+        GUI.LOGGER.fine("Setup");
         
-        GUI.vertex = NkDrawVertexLayoutElement.create(4);
-        GUI.vertex.position(0).attribute(NK_VERTEX_POSITION).format(NK_FORMAT_FLOAT).offset(0);
-        GUI.vertex.position(1).attribute(NK_VERTEX_TEXCOORD).format(NK_FORMAT_FLOAT).offset(8);
-        GUI.vertex.position(2).attribute(NK_VERTEX_COLOR).format(NK_FORMAT_R8G8B8A8).offset(16);
-        GUI.vertex.position(3).attribute(NK_VERTEX_ATTRIBUTE_COUNT).format(NK_FORMAT_COUNT).offset(0);
-        GUI.vertex.flip();
+        GUI.style = new GuiStyle();
         
-        GUI.vertexBuffer  = MemoryUtil.memCalloc(512 * 1024);
-        GUI.elementBuffer = MemoryUtil.memCalloc(128 * 1024);
+        // windows.remove(1)
+        // windows.add();
         
-        GUI.ctx = NkContext.create();
+        GuiWindow window;
         
-        nk_init(GUI.ctx, GUI.allocator, null);
+        window = new GuiWindow();
+        window.bounds.pos.set(10, 10);
+        window.bounds.size.set(100, 100);
+        Windows.add(window);
         
-        GUI.ctx.clip().copy(GUI::copy).paste(GUI::paste);
-        
-        GUI.cmds = NkBuffer.create();
-        
-        nk_buffer_init(GUI.cmds, GUI.allocator, 4 * 1024);
-        
-        ttf = IOUtil.readFromFile("demo/FiraSans-Regular.ttf");
-        
-        try (MemoryStack stack = stackPush())
-        {
-            stbtt_InitFont(fontInfo, ttf);
-            scale = stbtt_ScaleForPixelHeight(fontInfo, FONT_HEIGHT);
-            
-            IntBuffer d = stack.mallocInt(1);
-            stbtt_GetFontVMetrics(fontInfo, null, d, null);
-            descent = d.get(0) * scale;
-            
-            ByteBuffer bitmap = memAlloc(BITMAP_W * BITMAP_H);
-            
-            STBTTPackContext pc = STBTTPackContext.malloc(stack);
-            stbtt_PackBegin(pc, bitmap, BITMAP_W, BITMAP_H, 0, 1, NULL);
-            stbtt_PackSetOversampling(pc, 4, 4);
-            stbtt_PackFontRange(pc, ttf, 0, FONT_HEIGHT, 32, cdata);
-            stbtt_PackEnd(pc);
-            
-            // Convert R8 to RGBA8
-            ByteBuffer texture = memAlloc(BITMAP_W * BITMAP_H * 4);
-            for (int i = 0; i < bitmap.capacity(); i++)
-            {
-                texture.putInt((bitmap.get(i) << 24) | 0x00FFFFFF);
-            }
-            texture.flip();
-            
-            glBindTexture(GL_TEXTURE_2D, fontTexID);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, BITMAP_W, BITMAP_H, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            
-            MemoryUtil.memFree(texture);
-            MemoryUtil.memFree(bitmap);
-        }
-        
-        GUI.font = NkUserFont.create();
-        GUI.font.width(GUI::width);
-        GUI.font.height(FONT_HEIGHT);
-        GUI.font.query(GUI::query);
-        GUI.font.texture(GUI::texture);
-        
-        nk_style_set_font(GUI.ctx, GUI.font);
-        
-        GUI.texture = NkDrawNullTexture.create();
-        GUI.texture.texture().id(GL.defaultTexture().id());
-        GUI.texture.uv().set(0.5F, 0.5F);
-        
-        // This is here because sometimes the mouse started grabbed.
-        nk_input_begin(GUI.ctx);
-        nk_input_end(GUI.ctx);
-    }
-    
-    private static long alloc(long handle, long old, long size)
-    {
-        return MemoryUtil.nmemAllocChecked(size);
-    }
-    
-    private static void memFree(long handle, long ptr)
-    {
-        MemoryUtil.nmemFree(ptr);
-    }
-    
-    private static void copy(long handle, long text, int len)
-    {
-        if (len == 0) return;
-        
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            ByteBuffer str = stack.malloc(len + 1);
-            MemoryUtil.memCopy(text, MemoryUtil.memAddress(str), len);
-            str.put(len, (byte) 0);
-            
-            Window.setClipboard(str);
-        }
-    }
-    
-    private static void paste(long handle, long edit)
-    {
-        long text = Window.getClipboardRaw();
-        if (text != MemoryUtil.NULL) nnk_textedit_paste(edit, text, nnk_strlen(text));
-    }
-    
-    private static float width(long handle, float h, long text, int len)
-    {
-        float text_width = 0;
-        try (MemoryStack stack = stackPush())
-        {
-            IntBuffer unicode = stack.mallocInt(1);
-            
-            int glyph_len = nnk_utf_decode(text, memAddress(unicode), len);
-            int text_len  = glyph_len;
-            
-            if (glyph_len == 0)
-            {
-                return 0;
-            }
-            
-            IntBuffer advance = stack.mallocInt(1);
-            while (text_len <= len && glyph_len != 0)
-            {
-                if (unicode.get(0) == NK_UTF_INVALID)
-                {
-                    break;
-                }
-                
-                /* query currently drawn glyph information */
-                stbtt_GetCodepointHMetrics(fontInfo, unicode.get(0), advance, null);
-                text_width += advance.get(0) * scale;
-                
-                /* offset next glyph */
-                glyph_len = nnk_utf_decode(text + text_len, memAddress(unicode), len - text_len);
-                text_len += glyph_len;
-            }
-        }
-        return text_width;
-    }
-    
-    private static void query(long handle, float h, long glyph, int codePoint, int nextCodePoint)
-    {
-        try (MemoryStack stack = stackPush())
-        {
-            FloatBuffer x = stack.floats(0.0f);
-            FloatBuffer y = stack.floats(0.0f);
-            
-            STBTTAlignedQuad q       = STBTTAlignedQuad.malloc(stack);
-            IntBuffer        advance = stack.mallocInt(1);
-            
-            stbtt_GetPackedQuad(cdata, BITMAP_W, BITMAP_H, codePoint - 32, x, y, q, false);
-            stbtt_GetCodepointHMetrics(fontInfo, codePoint, advance, null);
-            
-            NkUserFontGlyph ufg = NkUserFontGlyph.create(glyph);
-            
-            ufg.width(q.x1() - q.x0());
-            ufg.height(q.y1() - q.y0());
-            ufg.offset().set(q.x0(), q.y0() + (FONT_HEIGHT + descent));
-            ufg.xadvance(advance.get(0) * scale);
-            ufg.uv(0).set(q.s0(), q.t0());
-            ufg.uv(1).set(q.s1(), q.t1());
-        }
-    }
-    
-    private static void texture(NkHandle handle)
-    {
-        handle.id(fontTexID);
+        window = new GuiWindow();
+        window.bounds.pos.set(200, 200);
+        window.bounds.size.set(100, 100);
+        Windows.add(window);
     }
     
     static void destroy()
     {
-        GUI.texture.free();
-        GUI.font.free();
-        GUI.cmds.free();
-        GUI.ctx.free();
-        
-        GUI.allocator.free();
-        GUI.vertex.free();
+        GUI.LOGGER.fine("Destroy");
     }
     
     static void handleEvents()
     {
-        nk_input_begin(GUI.ctx);
-        
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            for (Event event : Engine.Events.get())
-            {
-                if (event instanceof EventMouseMoved mMoved)
-                {
-                    nk_input_motion(GUI.ctx, (int) mMoved.x(), (int) mMoved.y());
-                }
-                else if (event instanceof EventMouseScrolled mScrolled)
-                {
-                    NkVec2 scroll = NkVec2.malloc(stack).x((float) mScrolled.dx()).y((float) mScrolled.dx());
-                    nk_input_scroll(GUI.ctx, scroll);
-                }
-                else if (event instanceof EventMouseButtonDown mbDown)
-                {
-                    mouseButtonInput(mbDown.button(), mbDown.x(), mbDown.y(), true);
-                    if (mbDown.downCount() > 1)
-                    {
-                        nk_input_button(GUI.ctx, NK_BUTTON_DOUBLE, (int) mbDown.x(), (int) mbDown.y(), true);
-                    }
-                }
-                else if (event instanceof EventMouseButtonUp mbUp)
-                {
-                    mouseButtonInput(mbUp.button(), mbUp.x(), mbUp.y(), false);
-                    nk_input_button(GUI.ctx, NK_BUTTON_DOUBLE, (int) mbUp.x(), (int) mbUp.y(), false);
-                }
-                else if (event instanceof EventKeyboardKeyDown kkDown)
-                {
-                    keyboardKeyInput(kkDown.key(), true);
-                }
-                else if (event instanceof EventKeyboardKeyUp kkUp)
-                {
-                    keyboardKeyInput(kkUp.key(), false);
-                }
-                else if (event instanceof EventKeyboardTyped kTyped)
-                {
-                    nk_input_unicode(GUI.ctx, kTyped.codePoint());
-                }
-            }
-        }
-        
-        NkMouse mouse = GUI.ctx.input().mouse();
-        if (mouse.grab())
-        {
-            Mouse.hide();
-        }
-        else if (mouse.grabbed())
-        {
-            float prevX = mouse.prev().x();
-            float prevY = mouse.prev().y();
-            Mouse.pos(prevX, prevY);
-            mouse.pos().x(prevX);
-            mouse.pos().y(prevY);
-        }
-        else if (mouse.ungrab())
-        {
-            Mouse.show();
-        }
-        
-        nk_input_end(GUI.ctx);
-    }
     
-    private static void mouseButtonInput(Mouse.Button button, double x, double y, boolean down)
-    {
-        switch (button)
-        {
-            case LEFT -> nk_input_button(GUI.ctx, NK_BUTTON_LEFT, (int) x, (int) y, down);
-            case RIGHT -> nk_input_button(GUI.ctx, NK_BUTTON_RIGHT, (int) x, (int) y, down);
-            case MIDDLE -> nk_input_button(GUI.ctx, NK_BUTTON_MIDDLE, (int) x, (int) y, down);
-        }
-    }
-    
-    private static void keyboardKeyInput(Keyboard.Key key, boolean down)
-    {
-        // NK_KEY_TEXT_INSERT_MODE
-        // NK_KEY_TEXT_REPLACE_MODE
-        // NK_KEY_TEXT_RESET_MODE
-        
-        switch (key)
-        {
-            case L_SHIFT, R_SHIFT -> nk_input_key(GUI.ctx, NK_KEY_SHIFT, down);
-            case L_CONTROL, R_CONTROL -> nk_input_key(GUI.ctx, NK_KEY_CTRL, down);
-            case DELETE -> nk_input_key(GUI.ctx, NK_KEY_DEL, down);
-            case ENTER, KP_ENTER -> nk_input_key(GUI.ctx, NK_KEY_ENTER, down);
-            case TAB -> nk_input_key(GUI.ctx, NK_KEY_TAB, down);
-            case BACKSPACE -> nk_input_key(GUI.ctx, NK_KEY_BACKSPACE, down);
-            case UP -> nk_input_key(GUI.ctx, NK_KEY_UP, down);
-            case DOWN -> nk_input_key(GUI.ctx, NK_KEY_DOWN, down);
-            case LEFT -> nk_input_key(ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_LEFT : NK_KEY_LEFT, down);
-            case RIGHT -> nk_input_key(GUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_WORD_RIGHT : NK_KEY_RIGHT, down);
-            case HOME -> {
-                nk_input_key(GUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_START : NK_KEY_TEXT_LINE_START, down);
-                nk_input_key(GUI.ctx, NK_KEY_SCROLL_START, down);
-            }
-            case END -> {
-                nk_input_key(GUI.ctx, Modifier.only(Modifier.CONTROL) ? NK_KEY_TEXT_END : NK_KEY_TEXT_LINE_END, down);
-                nk_input_key(GUI.ctx, NK_KEY_SCROLL_END, down);
-            }
-            case PAGE_UP -> nk_input_key(GUI.ctx, NK_KEY_SCROLL_UP, down);
-            case PAGE_DOWN -> nk_input_key(GUI.ctx, NK_KEY_SCROLL_DOWN, down);
-            case C -> nk_input_key(GUI.ctx, NK_KEY_COPY, Modifier.only(Modifier.CONTROL) && down);
-            case X -> nk_input_key(GUI.ctx, NK_KEY_CUT, Modifier.only(Modifier.CONTROL) && down);
-            case V -> nk_input_key(GUI.ctx, NK_KEY_PASTE, Modifier.only(Modifier.CONTROL) && down);
-            case Z -> nk_input_key(GUI.ctx, NK_KEY_TEXT_UNDO, Modifier.only(Modifier.CONTROL) && down);
-            case Y -> nk_input_key(GUI.ctx, NK_KEY_TEXT_REDO, Modifier.only(Modifier.CONTROL) && down);
-            case A -> nk_input_key(GUI.ctx, NK_KEY_TEXT_SELECT_ALL, Modifier.only(Modifier.CONTROL) && down);
-        }
-    }
-    
-    static int EASY = 0;
-    static int HARD = 1;
-    
-    static NkColorf background = NkColorf.create().r(0.10f).g(0.18f).b(0.24f).a(1.0f);
-    
-    static int op = EASY;
-    
-    static IntBuffer compression = BufferUtils.createIntBuffer(1).put(0, 20);
-    
-    private static void testDraw()
-    {
-        int x = 50;
-        int y = 50;
-        
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            NkRect rect = nk_rect(x, y, 230, 250, NkRect.malloc(stack));
-            
-            int flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
-            if (nk_begin(ctx, "Demo", rect, flags))
-            {
-                nk_layout_row_static(ctx, 30, 80, 1);
-                if (nk_button_label(ctx, "button")) System.out.println("button pressed");
-                
-                nk_layout_row_dynamic(ctx, 30, 2);
-                if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-                if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
-                
-                nk_layout_row_dynamic(ctx, 25, 1);
-                nk_property_int(ctx, "Compression:", 0, compression, 100, 10, 1);
-                
-                nk_layout_row_dynamic(ctx, 20, 1);
-                nk_label(ctx, "background:", NK_TEXT_LEFT);
-                nk_layout_row_dynamic(ctx, 25, 1);
-                if (nk_combo_begin_color(ctx, nk_rgb_cf(background, NkColor.malloc(stack)), NkVec2.malloc(stack).set(nk_widget_width(ctx), 400)))
-                {
-                    nk_layout_row_dynamic(ctx, 120, 1);
-                    nk_color_picker(ctx, background, NK_RGBA);
-                    nk_layout_row_dynamic(ctx, 25, 1);
-                    background.r(nk_propertyf(ctx, "#R:", 0, background.r(), 1.0f, 0.01f, 0.005f))
-                              .g(nk_propertyf(ctx, "#G:", 0, background.g(), 1.0f, 0.01f, 0.005f))
-                              .b(nk_propertyf(ctx, "#B:", 0, background.b(), 1.0f, 0.01f, 0.005f))
-                              .a(nk_propertyf(ctx, "#A:", 0, background.a(), 1.0f, 0.01f, 0.005f));
-                    nk_combo_end(ctx);
-                }
-            }
-            nk_end(ctx);
-        }
     }
     
     static void draw()
     {
-        testDraw();
+        GLFramebuffer.bind(null);
+        GLProgram.bind(null);
         
-        // vertexBuffer();
-        // drawCommands();
-        // Engine.stop();
+        GL.defaultState();
+        GL.depthMode(DepthMode.NONE);
+        
+        GLBatch.bind(null);
+        
+        int r = Window.framebufferWidth() >> 1;
+        int l = -r;
+        int b = Window.framebufferHeight() >> 1;
+        int t = -b;
+        
+        GLBatch.matrixMode(MatrixMode.PROJECTION);
+        GLBatch.loadIdentity();
+        GLBatch.ortho(l, r, b, t, 1.0, -1.0);
+        
+        GLBatch.matrixMode(MatrixMode.VIEW);
+        GLBatch.loadIdentity();
+        GLBatch.translate(l, t, 0.0);
+        
+        GLBatch.matrixMode(MatrixMode.MODEL);
+        GLBatch.loadIdentity();
+        
+        GLBatch.matrixMode(MatrixMode.NORMAL);
+        GLBatch.loadIdentity();
+        
+        GLBatch.colorMode(ColorMode.DIFFUSE);
+        GLBatch.loadWhite();
+        
+        GLBatch.colorMode(ColorMode.SPECULAR);
+        GLBatch.loadWhite();
+        
+        GLBatch.colorMode(ColorMode.AMBIENT);
+        GLBatch.loadWhite();
+        
+        for (GuiWindow window : Windows)
+        {
+            int x0 = window.bounds.pos.x;
+            int y0 = window.bounds.pos.y;
+            int x1 = x0 + window.bounds.size.x;
+            int y1 = y0 + window.bounds.size.y;
+            
+            Engine.Draw.fillRect2D().corners(x0, y0, x1, y1).color(Color.WHITE).draw();
+            // Engine.Draw.fillRect2D().point(window.pos).size(window.size).color(Color.WHITE).draw();
+        }
+        
+        GLBatch.stats();
     }
     
-    private static void vertexBuffer()
-    {
-        glEnable(GL_BLEND);
-        glBlendEquation(GL_FUNC_ADD);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDisable(GL_CULL_FACE);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_SCISSOR_TEST);
-        glActiveTexture(GL_TEXTURE0);
-        
-        vertexBuffer.clear();
-        elementBuffer.clear();
-        // convert from command queue into draw list and draw to screen
-        try (MemoryStack stack = MemoryStack.stackPush())
-        {
-            // fill convert configuration
-            NkConvertConfig config = NkConvertConfig.calloc(stack)
-                                                    .vertex_layout(GUI.vertex)
-                                                    .vertex_size(20)
-                                                    .vertex_alignment(4)
-                                                    .null_texture(GUI.texture)
-                                                    .circle_segment_count(22)
-                                                    .curve_segment_count(22)
-                                                    .arc_segment_count(22)
-                                                    .global_alpha(1.0f)
-                                                    .shape_AA(NK_ANTI_ALIASING_ON)
-                                                    .line_AA(NK_ANTI_ALIASING_ON);
-            
-            // setup buffers to load vertices and elements
-            NkBuffer vbuf = NkBuffer.malloc(stack);
-            NkBuffer ebuf = NkBuffer.malloc(stack);
-            
-            nk_buffer_init_fixed(vbuf, GUI.vertexBuffer);
-            nk_buffer_init_fixed(ebuf, GUI.elementBuffer);
-            nk_convert(ctx, cmds, vbuf, ebuf, config);
-        }
-        
-        // GLBatch batch = GLBatch.get();
-        
-        float fb_scale_x = (float) Window.framebufferWidth() / (float) Window.width();
-        float fb_scale_y = (float) Window.framebufferHeight() / (float) Window.height();
-        
-        // iterate over and execute each draw command
-        long offset = MemoryUtil.NULL;
-        for (NkDrawCommand cmd = nk__draw_begin(GUI.ctx, GUI.cmds);
-             cmd != null;
-             cmd = nk__draw_next(cmd, GUI.cmds, GUI.ctx))
-        {
-            if (cmd.elem_count() == 0) continue;
-            
-            // batch.checkBuffer(cmd.elem_count() * 3);
-            //
-            // batch.begin(DrawMode.TRIANGLES);
-            // batch.setTexture(cmd.texture().id());
-            //
-            // // System.out.printf("elem_count=%s, rect=[x=%s, y=%s, w=%s, h=%s]%n",
-            // //                   cmd.elem_count(),
-            // //                   cmd.clip_rect().x(),
-            // //                   cmd.clip_rect().y(),
-            // //                   cmd.clip_rect().w(),
-            // //                   cmd.clip_rect().h()
-            // //                  );
-            // elementBuffer.position((int) offset);
-            // for (int i = 0, n = cmd.elem_count(); i < n; i++)
-            // {
-            //     int element = elementBuffer.getShort() & 0xFFFF;
-            //
-            //     vertexBuffer.position(element * 20);
-            //     float x = vertexBuffer.getFloat();
-            //     float y = vertexBuffer.getFloat();
-            //     float u = vertexBuffer.getFloat();
-            //     float v = vertexBuffer.getFloat();
-            //     int   r = vertexBuffer.get() & 0xFF;
-            //     int   g = vertexBuffer.get() & 0xFF;
-            //     int   b = vertexBuffer.get() & 0xFF;
-            //     int   a = vertexBuffer.get() & 0xFF;
-            //
-            //     // System.out.printf("element=%s Vertex[pos=(%.3f,%.3f), uv=(%.3f,%.3f), color=(%s,%s,%s,%s)]%n",
-            //     //                   element,
-            //     //                   x, y,
-            //     //                   u, v,
-            //     //                   r, g, b, a);
-            //
-            //     batch.pos(x, y);
-            //     batch.texCoord(u, v);
-            //     batch.color(r, g, b, a);
-            // }
-            // vertexBuffer.clear();
-            // elementBuffer.clear();
-            //
-            // batch.end();
-            glBindTexture(GL_TEXTURE_2D, cmd.texture().id());
-            glScissor(
-                    (int) (cmd.clip_rect().x() * fb_scale_x),
-                    (int) ((Window.height() - (int) (cmd.clip_rect().y() + cmd.clip_rect().h())) * fb_scale_y),
-                    (int) (cmd.clip_rect().w() * fb_scale_x),
-                    (int) (cmd.clip_rect().h() * fb_scale_y)
-                     );
-            glDrawElements(GL_TRIANGLES, cmd.elem_count(), GL_UNSIGNED_SHORT, offset);
-            
-            offset += Integer.toUnsignedLong(cmd.elem_count() * Short.BYTES);
-        }
-        
-        nk_clear(GUI.ctx);
-        nk_buffer_clear(GUI.cmds);
-        
-        glDisable(GL_SCISSOR_TEST);
-    }
+    private GUI() {}
     
-    private static void drawCommands()
+    public static @NotNull GuiStyle GetStyle()
     {
-        for (NkCommand cmd = nk__begin(ctx); cmd != null; cmd = nk__next(ctx, cmd))
-        {
-            switch (cmd.type())
-            {
-                case NK_COMMAND_NOP -> System.out.println("NK_COMMAND_NOP");
-                case NK_COMMAND_SCISSOR -> System.out.println("NK_COMMAND_SCISSOR");
-                case NK_COMMAND_LINE -> System.out.println("NK_COMMAND_LINE");
-                case NK_COMMAND_CURVE -> System.out.println("NK_COMMAND_CURVE");
-                case NK_COMMAND_RECT -> System.out.println("NK_COMMAND_RECT");
-                case NK_COMMAND_RECT_FILLED -> System.out.println("NK_COMMAND_RECT_FILLED");
-                case NK_COMMAND_RECT_MULTI_COLOR -> System.out.println("NK_COMMAND_RECT_MULTI_COLOR");
-                case NK_COMMAND_CIRCLE -> System.out.println("NK_COMMAND_CIRCLE");
-                case NK_COMMAND_CIRCLE_FILLED -> System.out.println("NK_COMMAND_CIRCLE_FILLED");
-                case NK_COMMAND_ARC -> System.out.println("NK_COMMAND_ARC");
-                case NK_COMMAND_ARC_FILLED -> System.out.println("NK_COMMAND_ARC_FILLED");
-                case NK_COMMAND_TRIANGLE -> System.out.println("NK_COMMAND_TRIANGLE");
-                case NK_COMMAND_TRIANGLE_FILLED -> System.out.println("NK_COMMAND_TRIANGLE_FILLED");
-                case NK_COMMAND_POLYGON -> System.out.println("NK_COMMAND_POLYGON");
-                case NK_COMMAND_POLYGON_FILLED -> System.out.println("NK_COMMAND_POLYGON_FILLED");
-                case NK_COMMAND_POLYLINE -> System.out.println("NK_COMMAND_POLYLINE");
-                case NK_COMMAND_TEXT -> System.out.println("NK_COMMAND_TEXT");
-                case NK_COMMAND_IMAGE -> System.out.println("NK_COMMAND_IMAGE");
-                case NK_COMMAND_CUSTOM -> System.out.println("NK_COMMAND_CUSTOM");
-                // case NK_COMMAND_LINE:
-                //     your_draw_line_function(...)
-                //     break;
-                // case NK_COMMAND_RECT
-                //         your_draw_rect_function(...)
-                //     break;
-                // case ...:
-                //     // [...]
-            }
-        }
-        nk_clear(ctx);
+        return GUI.style;
     }
 }

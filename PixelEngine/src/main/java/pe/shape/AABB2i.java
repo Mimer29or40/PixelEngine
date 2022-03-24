@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.joml.Vector2i;
 import org.joml.Vector2ic;
 
-public class AABBi implements AABBic
+public class AABB2i implements AABB2ic
 {
     public Vector2i pos;
     public Vector2i size;
@@ -12,74 +12,50 @@ public class AABBi implements AABBic
     protected final Vector2i min = new Vector2i();
     protected final Vector2i max = new Vector2i();
     
-    public AABBi()
+    public AABB2i()
     {
         this.pos  = new Vector2i();
         this.size = new Vector2i();
     }
     
-    public AABBi(int x, int y, int width, int height)
+    public AABB2i(int x, int y, int width, int height)
     {
         this.pos  = new Vector2i(x, y);
         this.size = new Vector2i(width, height);
     }
     
-    public AABBi(@NotNull Vector2ic pos, @NotNull Vector2ic size)
+    public AABB2i(@NotNull Vector2ic pos, @NotNull Vector2ic size)
     {
         this.pos  = new Vector2i(pos);
         this.size = new Vector2i(size);
     }
     
-    public AABBi(@NotNull Vector2i pos, @NotNull Vector2i size)
+    public AABB2i(@NotNull Vector2i pos, @NotNull Vector2i size)
     {
         this.pos  = pos;
         this.size = size;
     }
     
-    public AABBi(@NotNull AABBic other)
+    public AABB2i(@NotNull AABB2ic other)
     {
         this.pos  = new Vector2i(other.pos());
         this.size = new Vector2i(other.size());
     }
     
     @Override
-    public Vector2ic pos()
+    public @NotNull Vector2ic pos()
     {
         return this.pos;
     }
     
     @Override
-    public int x()
-    {
-        return this.pos.x;
-    }
-    
-    @Override
-    public int y()
-    {
-        return this.pos.y;
-    }
-    
-    @Override
-    public Vector2ic size()
+    public @NotNull Vector2ic size()
     {
         return this.size;
     }
     
     @Override
-    public int width()
-    {
-        return this.size.x;
-    }
-    
-    @Override
-    public int height()
-    {
-        return this.size.y;
-    }
-    
-    @Override
-    public Vector2ic min()
+    public @NotNull Vector2ic min()
     {
         return this.min.set(minX(), minY());
     }
@@ -97,7 +73,7 @@ public class AABBi implements AABBic
     }
     
     @Override
-    public Vector2ic max()
+    public @NotNull Vector2ic max()
     {
         return this.max.set(maxX(), maxY());
     }
@@ -115,36 +91,66 @@ public class AABBi implements AABBic
     }
     
     @Override
-    public AABBic aabb()
+    public @NotNull AABB2ic aabb()
     {
         return this;
     }
     
-    public AABBi set(int x, int y, int width, int height)
+    public AABB2i set(int x, int y, int width, int height)
     {
         this.pos  = new Vector2i(x, y);
         this.size = new Vector2i(width, height);
         return this;
     }
     
-    public AABBi set(@NotNull Vector2ic pos, @NotNull Vector2ic size)
+    public AABB2i set(@NotNull Vector2ic pos, @NotNull Vector2ic size)
     {
         this.pos  = new Vector2i(pos);
         this.size = new Vector2i(size);
         return this;
     }
     
-    public AABBi set(@NotNull Vector2i pos, @NotNull Vector2i size)
+    public AABB2i set(@NotNull Vector2i pos, @NotNull Vector2i size)
     {
         this.pos  = pos;
         this.size = size;
         return this;
     }
     
-    public AABBi set(@NotNull AABBic other)
+    public AABB2i set(@NotNull AABB2ic other)
     {
         this.pos  = new Vector2i(other.pos());
         this.size = new Vector2i(other.size());
         return this;
+    }
+    
+    @Override
+    public boolean intersects(int x, int y)
+    {
+        return minX() <= x && x <= maxX() && minY() <= y && y <= maxY();
+    }
+    
+    @Override
+    public boolean intersects(@NotNull AABB2ic aabb)
+    {
+        return !(maxX() < aabb.minX() ||
+                 minX() > aabb.maxX() ||
+                 maxY() < aabb.minY() ||
+                 minY() > aabb.maxY());
+    }
+    
+    @Override
+    public boolean contains(int x, int y)
+    {
+        return minX() <= x && x <= maxX() && minY() <= y && y <= maxY();
+    }
+    
+    @Override
+    public boolean contains(@NotNull AABB2ic aabb)
+    {
+        return minX() <= aabb.minX() &&
+               aabb.maxX() <= maxX() &&
+               minY() <= aabb.minY() &&
+               aabb.maxY() <= maxY();
     }
 }
