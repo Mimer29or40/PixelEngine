@@ -467,36 +467,34 @@ public abstract class Engine
                                     GL.wireframe(Engine.wireframe);
                                     
                                     GLBatch.bind(null);
-                                    GLBatch defaultBatch = GL.currentBatch();
-                                    defaultBatch.start();
                                     
                                     int r = Layer.primary().width() >> 1;
                                     int l = -r;
                                     int b = Layer.primary().height() >> 1;
                                     int t = -b;
                                     
-                                    defaultBatch.matrixMode(MatrixMode.PROJECTION);
-                                    defaultBatch.loadIdentity();
-                                    defaultBatch.ortho(l, r, b, t, 1.0, -1.0);
+                                    GLBatch.matrixMode(MatrixMode.PROJECTION);
+                                    GLBatch.loadIdentity();
+                                    GLBatch.ortho(l, r, b, t, 1.0, -1.0);
                                     
-                                    defaultBatch.matrixMode(MatrixMode.VIEW);
-                                    defaultBatch.loadIdentity();
-                                    defaultBatch.translate(l, t, 0.0);
+                                    GLBatch.matrixMode(MatrixMode.VIEW);
+                                    GLBatch.loadIdentity();
+                                    GLBatch.translate(l, t, 0.0);
                                     
-                                    defaultBatch.matrixMode(MatrixMode.MODEL);
-                                    defaultBatch.loadIdentity();
+                                    GLBatch.matrixMode(MatrixMode.MODEL);
+                                    GLBatch.loadIdentity();
                                     
-                                    defaultBatch.matrixMode(MatrixMode.NORMAL);
-                                    defaultBatch.loadIdentity();
+                                    GLBatch.matrixMode(MatrixMode.NORMAL);
+                                    GLBatch.loadIdentity();
                                     
-                                    defaultBatch.colorMode(ColorMode.DIFFUSE);
-                                    defaultBatch.loadWhite();
+                                    GLBatch.colorMode(ColorMode.DIFFUSE);
+                                    GLBatch.loadWhite();
                                     
-                                    defaultBatch.colorMode(ColorMode.SPECULAR);
-                                    defaultBatch.loadWhite();
+                                    GLBatch.colorMode(ColorMode.SPECULAR);
+                                    GLBatch.loadWhite();
                                     
-                                    defaultBatch.colorMode(ColorMode.AMBIENT);
-                                    defaultBatch.loadWhite();
+                                    GLBatch.colorMode(ColorMode.AMBIENT);
+                                    GLBatch.loadWhite();
                                     
                                     // Engine.renderer.start(); // TODO
                                     
@@ -512,7 +510,7 @@ public abstract class Engine
                                     Extension.stage(Extension.Stage.POST_DRAW);
                                     // Engine.renderer.pop(); // TODO
                                     
-                                    GLBatch.BatchStats stats = defaultBatch.stop();
+                                    GLBatch.BatchStats stats = GLBatch.stats();
                                     
                                     // Engine.renderer.finish(); // TODO
                                     

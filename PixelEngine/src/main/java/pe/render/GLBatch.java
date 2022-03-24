@@ -74,7 +74,6 @@ public class GLBatch
     
     private double currentDepth;
     
-    private boolean hasStart;
     private boolean hasBegun;
     
     private       Matrix4d currentMatrix;
@@ -101,6 +100,7 @@ public class GLBatch
     private final String[]    textureNames;
     private final GLTexture[] textureActive;
     
+    private final BatchStats internalStats;
     private final BatchStats stats;
     
     public GLBatch()
@@ -159,7 +159,8 @@ public class GLBatch
         this.textureNames  = new String[GL.MAX_ACTIVE_TEXTURES];
         this.textureActive = new GLTexture[GL.MAX_ACTIVE_TEXTURES];
         
-        this.stats = new BatchStats();
+        this.internalStats = new BatchStats();
+        this.stats         = new BatchStats();
         
         GLBatch.LOGGER.fine("Created", this);
     }
@@ -209,177 +210,12 @@ public class GLBatch
         }
     }
     
-    public void setTexture(@NotNull GLTexture texture)
-    {
-        GLBatch.LOGGER.finest("Setting Texture (%s) %s", texture, this);
-        
-        if (this.drawCalls[this.currentDraw].texture != texture)
-        {
-            incDrawCall();
-            
-            this.drawCalls[this.currentDraw].texture = texture;
-        }
-    }
-    
-    public void start()
-    {
-        if (this.hasStart) throw new IllegalStateException("Batch was not stopped: " + this);
-        
-        GLBatch.LOGGER.finest("Starting", this);
-        
-        this.hasStart = true;
-        
-        this.stats.reset();
-    }
-    
-    public BatchStats stop()
-    {
-        if (!this.hasStart) throw new IllegalStateException("Batch was not stopped: " + this);
-        
-        GLBatch.LOGGER.finest("Stopping", this);
-        
-        this.hasStart = false;
-        
-        draw();
-        
-        return this.stats;
-    }
-    
-    public void begin(@NotNull DrawMode mode)
-    {
-        if (this.hasBegun) throw new IllegalStateException("Batch was not ended: " + this);
-        
-        this.hasBegun = true;
-        
-        GLBatch.LOGGER.finest("Beginning Mode (%s): %s", mode, this);
-        
-        if (this.drawCalls[this.currentDraw].mode != mode)
-        {
-            incDrawCall();
-            
-            this.drawCalls[this.currentDraw].mode = mode;
-        }
-    }
-    
-    public void end()
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not begun: " + this);
-        
-        this.hasBegun = false;
-        
-        GLBatch.LOGGER.finest("Ending", this);
-        
-        // Make sure tex1 count match vertex count
-        for (int i = 0, n = this.pos.position() - this.tex1.position(); i < n; i++) this.tex1.put(0.0, 0.0, 1.0);
-        
-        // Make sure norm count match vertex count
-        for (int i = 0, n = this.pos.position() - this.norm.position(); i < n; i++) this.norm.put(0.0, 0.0, 1.0);
-        
-        // Make sure tan count match vertex count
-        for (int i = 0, n = this.pos.position() - this.tan.position(); i < n; i++) this.tan.put(1.0, 0.0, 0.0);
-        
-        // Make sure col count match vertex count
-        for (int i = 0, n = this.pos.position() - this.col.position(); i < n; i++) this.col.put(this.col.get(this.col.position() - 1));
-        
-        // Make sure tex2 count match vertex count
-        for (int i = 0, n = this.pos.position() - this.tex2.position(); i < n; i++) this.tex2.put(0.0, 0.0, 1.0);
-        
-        // NOTE: Depth increment is dependant on rlOrtho(): z-near and z-far values,
-        // as well as depth buffer bit-depth (16bit or 24bit or 32bit)
-        // Correct increment formula would be: depthInc = (zFar - zNear)/pow(2, bits)
-        this.currentDepth -= 0.00005;
-    }
-    
-    public void pos(double x, double y, double z)
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
-        
-        // Verify that current vertex buffer elements limit has not been reached
-        if (this.pos.position() < this.elementsCount * 4)
-        {
-            GLBatch.LOGGER.finest("Setting Vertex Position: [%s, %s, %s]", x, y, z);
-            
-            this.pos.put(x, y, z);
-            
-            this.drawCalls[this.currentDraw].vertexCount++;
-        }
-        else
-        {
-            GLBatch.LOGGER.severe("Vertex Element Overflow");
-        }
-    }
-    
-    public void pos(double x, double y)
-    {
-        pos(x, y, this.currentDepth);
-    }
-    
-    public void texCoord(double u, double v, double q)
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
-        
-        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate: [%s, %s, %s]", u, v, q);
-        
-        this.tex1.put(u, v, q);
-    }
-    
-    public void texCoord(double u, double v)
-    {
-        texCoord(u, v, 1.0);
-    }
-    
-    public void normal(double x, double y, double z)
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
-        
-        GLBatch.LOGGER.finest("Setting Vertex Normal: [%s, %s, %s]", x, y, z);
-        
-        this.norm.put(x, y, z);
-    }
-    
-    public void tangent(double x, double y, double z)
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
-        
-        GLBatch.LOGGER.finest("Setting Vertex Tangent: [%s, %s, %s]", x, y, z);
-        
-        this.tan.put(x, y, z);
-    }
-    
-    public void color(int r, int g, int b, int a)
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
-        
-        GLBatch.LOGGER.finest("Setting Vertex Color: [%s, %s, %s, %s]", r, g, b, a);
-        
-        this.col.put(r, g, b, a);
-    }
-    
-    public void texCoord2(double u, double v, double q)
-    {
-        if (!this.hasBegun) throw new IllegalStateException("Batch was not started: " + this);
-        
-        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate 2: [%s, %s, %s]", u, v, q);
-        
-        this.tex2.put(u, v, q);
-    }
-    
-    public void texCoord2(double u, double v)
-    {
-        texCoord2(u, v, 1.0);
-    }
-    
-    public void checkBuffer(int vertexCount)
-    {
-        if (this.pos.position() + vertexCount >= this.elementsCount * 4) draw();
-    }
-    
     private void draw()
     {
         // Check to see if the vertex array was updated.
         if (this.pos.position() > 0)
         {
-            this.stats.vertices += this.pos.position();
+            this.internalStats.vertices += this.pos.position();
             
             GLVertexArray.bind(this.vertexArray);
             
@@ -423,7 +259,7 @@ public class GLBatch
             
             for (int i = 0, offset = 0; i <= this.currentDraw; i++)
             {
-                this.stats.draws++;
+                this.internalStats.draws++;
                 
                 DrawCall drawCall = this.drawCalls[i];
                 
@@ -496,6 +332,195 @@ public class GLBatch
         }
     }
     
+    private void activate()
+    {
+        GLBatch.LOGGER.finest("Activating Textures");
+        
+        for (int i = 0; i < this.textureIndex; i++)
+        {
+            GLTexture.bind(this.textureActive[i], i + 1);
+            GLProgram.Uniform.int1(this.textureNames[i], i + 1);
+        }
+    }
+    
+    private void deactivate()
+    {
+        GLBatch.LOGGER.finest("Deactivating Textures");
+        
+        for (int i = 0; i < this.textureIndex; i++)
+        {
+            GLTexture.unbind(this.textureActive[i], i + 1);
+            
+            this.textureNames[i]  = null;
+            this.textureActive[i] = null;
+        }
+        this.textureIndex = 0;
+    }
+    
+    // -------------------- Public Interface -------------------- //
+    
+    public static BatchStats stats()
+    {
+        GL.currentBatch.draw();
+        
+        GL.currentBatch.stats.set(GL.currentBatch.internalStats);
+        GL.currentBatch.internalStats.reset();
+        return GL.currentBatch.stats;
+    }
+    
+    public static void begin(@NotNull DrawMode mode)
+    {
+        if (GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not ended: " + GL.currentBatch);
+        
+        GL.currentBatch.hasBegun = true;
+        
+        GLBatch.LOGGER.finest("Beginning Mode (%s): %s", mode, GL.currentBatch);
+        
+        if (GL.currentBatch.drawCalls[GL.currentBatch.currentDraw].mode != mode)
+        {
+            GL.currentBatch.incDrawCall();
+            
+            GL.currentBatch.drawCalls[GL.currentBatch.currentDraw].mode = mode;
+        }
+    }
+    
+    public static void end()
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not begun: " + GL.currentBatch);
+        
+        GL.currentBatch.hasBegun = false;
+        
+        GLBatch.LOGGER.finest("Ending", GL.currentBatch);
+        
+        // Make sure tex1 count match vertex count
+        for (int i = 0, n = GL.currentBatch.pos.position() - GL.currentBatch.tex1.position(); i < n; i++) GL.currentBatch.tex1.put(0.0, 0.0, 1.0);
+        
+        // Make sure norm count match vertex count
+        for (int i = 0, n = GL.currentBatch.pos.position() - GL.currentBatch.norm.position(); i < n; i++) GL.currentBatch.norm.put(0.0, 0.0, 1.0);
+        
+        // Make sure tan count match vertex count
+        for (int i = 0, n = GL.currentBatch.pos.position() - GL.currentBatch.tan.position(); i < n; i++) GL.currentBatch.tan.put(1.0, 0.0, 0.0);
+        
+        // Make sure col count match vertex count
+        for (int i = 0, n = GL.currentBatch.pos.position() - GL.currentBatch.col.position(); i < n; i++) GL.currentBatch.col.put(GL.currentBatch.col.get(GL.currentBatch.col.position() - 1));
+        
+        // Make sure tex2 count match vertex count
+        for (int i = 0, n = GL.currentBatch.pos.position() - GL.currentBatch.tex2.position(); i < n; i++) GL.currentBatch.tex2.put(0.0, 0.0, 1.0);
+        
+        // NOTE: Depth increment is dependant on rlOrtho(): z-near and z-far values,
+        // as well as depth buffer bit-depth (16bit or 24bit or 32bit)
+        // Correct increment formula would be: depthInc = (zFar - zNear)/pow(2, bits)
+        GL.currentBatch.currentDepth -= 0.00005;
+    }
+    
+    public static void setTexture(@NotNull GLTexture texture)
+    {
+        GLBatch.LOGGER.finest("Setting Texture (%s) %s", texture, GL.currentBatch);
+        
+        if (GL.currentBatch.drawCalls[GL.currentBatch.currentDraw].texture != texture)
+        {
+            GL.currentBatch.incDrawCall();
+            
+            GL.currentBatch.drawCalls[GL.currentBatch.currentDraw].texture = texture;
+        }
+    }
+    
+    public static void addTexture(@NotNull String name, @NotNull GLTexture texture)
+    {
+        GLBatch.LOGGER.finest("Adding Texture to Batch: %s=%s", name, texture);
+        
+        if (GL.currentBatch.textureIndex + 1 > GL.currentBatch.textureNames.length) throw new IllegalStateException("Active Texture Limit Exceeded: " + GL.currentBatch.textureNames.length);
+        
+        GL.currentBatch.textureNames[GL.currentBatch.textureIndex]  = name;
+        GL.currentBatch.textureActive[GL.currentBatch.textureIndex] = texture;
+        
+        GL.currentBatch.textureIndex++;
+    }
+    
+    public static void pos(double x, double y, double z)
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not started: " + GL.currentBatch);
+        
+        // Verify that current vertex buffer elements limit has not been reached
+        if (GL.currentBatch.pos.position() < GL.currentBatch.elementsCount * 4)
+        {
+            GLBatch.LOGGER.finest("Setting Vertex Position: [%s, %s, %s]", x, y, z);
+            
+            GL.currentBatch.pos.put(x, y, z);
+            
+            GL.currentBatch.drawCalls[GL.currentBatch.currentDraw].vertexCount++;
+        }
+        else
+        {
+            GLBatch.LOGGER.severe("Vertex Element Overflow");
+        }
+    }
+    
+    public static void pos(double x, double y)
+    {
+        pos(x, y, GL.currentBatch.currentDepth);
+    }
+    
+    public static void texCoord(double u, double v, double q)
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not started: " + GL.currentBatch);
+        
+        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate: [%s, %s, %s]", u, v, q);
+        
+        GL.currentBatch.tex1.put(u, v, q);
+    }
+    
+    public static void texCoord(double u, double v)
+    {
+        texCoord(u, v, 1.0);
+    }
+    
+    public static void normal(double x, double y, double z)
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not started: " + GL.currentBatch);
+        
+        GLBatch.LOGGER.finest("Setting Vertex Normal: [%s, %s, %s]", x, y, z);
+        
+        GL.currentBatch.norm.put(x, y, z);
+    }
+    
+    public static void tangent(double x, double y, double z)
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not started: " + GL.currentBatch);
+        
+        GLBatch.LOGGER.finest("Setting Vertex Tangent: [%s, %s, %s]", x, y, z);
+        
+        GL.currentBatch.tan.put(x, y, z);
+    }
+    
+    public static void color(int r, int g, int b, int a)
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not started: " + GL.currentBatch);
+        
+        GLBatch.LOGGER.finest("Setting Vertex Color: [%s, %s, %s, %s]", r, g, b, a);
+        
+        GL.currentBatch.col.put(r, g, b, a);
+    }
+    
+    public static void texCoord2(double u, double v, double q)
+    {
+        if (!GL.currentBatch.hasBegun) throw new IllegalStateException("Batch was not started: " + GL.currentBatch);
+        
+        GLBatch.LOGGER.finest("Setting Vertex Texture Coordinate 2: [%s, %s, %s]", u, v, q);
+        
+        GL.currentBatch.tex2.put(u, v, q);
+    }
+    
+    public static void texCoord2(double u, double v)
+    {
+        texCoord2(u, v, 1.0);
+    }
+    
+    public static void checkBuffer(int vertexCount)
+    {
+        if (GL.currentBatch.pos.position() + vertexCount >= GL.currentBatch.elementsCount * 4) GL.currentBatch.draw();
+    }
+    
     /**
      * Set the current matrix mode.
      *
@@ -506,25 +531,25 @@ public class GLBatch
      *             <li>{@link MatrixMode#NORMAL NORMAL}</li>
      *             </ul>
      */
-    public void matrixMode(@NotNull MatrixMode mode)
+    public static void matrixMode(@NotNull MatrixMode mode)
     {
         GLBatch.LOGGER.finest("Setting Matrix Mode:", mode);
         
-        this.currentMatrix = switch (mode)
+        GL.currentBatch.currentMatrix = switch (mode)
                 {
-                    case PROJECTION -> this.projection;
-                    case VIEW -> this.view;
-                    case MODEL -> this.model;
-                    case NORMAL -> this.normal;
+                    case PROJECTION -> GL.currentBatch.projection;
+                    case VIEW -> GL.currentBatch.view;
+                    case MODEL -> GL.currentBatch.model;
+                    case NORMAL -> GL.currentBatch.normal;
                 };
     }
     
     /**
      * @return A read-only view of the currently selected matrix
      */
-    public @NotNull Matrix4dc getMatrix()
+    public static @NotNull Matrix4dc getMatrix()
     {
-        return this.currentMatrix;
+        return GL.currentBatch.currentMatrix;
     }
     
     /**
@@ -545,11 +570,11 @@ public class GLBatch
      *
      * @param mat matrix data
      */
-    public void setMatrix(@NotNull Matrix4fc mat)
+    public static void setMatrix(@NotNull Matrix4fc mat)
     {
         GLBatch.LOGGER.finest("Setting Matrix:", mat);
         
-        this.currentMatrix.set(mat);
+        GL.currentBatch.currentMatrix.set(mat);
     }
     
     /**
@@ -570,11 +595,11 @@ public class GLBatch
      *
      * @param mat matrix data
      */
-    public void setMatrix(@NotNull Matrix4dc mat)
+    public static void setMatrix(@NotNull Matrix4dc mat)
     {
         GLBatch.LOGGER.finest("Setting Matrix:", mat);
         
-        this.currentMatrix.set(mat);
+        GL.currentBatch.currentMatrix.set(mat);
     }
     
     /**
@@ -588,11 +613,11 @@ public class GLBatch
      * <tr><td>0</td><td>0</td><td>0</td><td>1</td></tr>
      * </table>
      */
-    public void loadIdentity()
+    public static void loadIdentity()
     {
         GLBatch.LOGGER.finest("Setting Identity");
         
-        this.currentMatrix.identity();
+        GL.currentBatch.currentMatrix.identity();
     }
     
     /**
@@ -601,11 +626,11 @@ public class GLBatch
      *
      * @param mat the matrix data
      */
-    public void mulMatrix(@NotNull Matrix4fc mat)
+    public static void mulMatrix(@NotNull Matrix4fc mat)
     {
         GLBatch.LOGGER.finest("Multiplying:", mat);
         
-        this.currentMatrix.mul((Matrix4f) mat);
+        GL.currentBatch.currentMatrix.mul((Matrix4f) mat);
     }
     
     /**
@@ -614,11 +639,11 @@ public class GLBatch
      *
      * @param mat the matrix data
      */
-    public void mulMatrix(@NotNull Matrix4dc mat)
+    public static void mulMatrix(@NotNull Matrix4dc mat)
     {
         GLBatch.LOGGER.finest("Multiplying:", mat);
         
-        this.currentMatrix.mul(mat);
+        GL.currentBatch.currentMatrix.mul(mat);
     }
     
     /**
@@ -638,11 +663,11 @@ public class GLBatch
      * @param y the y-axis translation
      * @param z the z-axis translation
      */
-    public void translate(double x, double y, double z)
+    public static void translate(double x, double y, double z)
     {
         GLBatch.LOGGER.finest("Translating: (%s, %s, %s)", x, y, z);
         
-        this.currentMatrix.translate(x, y, z);
+        GL.currentBatch.currentMatrix.translate(x, y, z);
     }
     
     /**
@@ -675,18 +700,18 @@ public class GLBatch
      * @param y     the y coordinate of the rotation vector
      * @param z     the z coordinate of the rotation vector
      */
-    public void rotate(double angle, double x, double y, double z)
+    public static void rotate(double angle, double x, double y, double z)
     {
         GLBatch.LOGGER.finest("Rotating: Angle=%s (%s, %s, %s)", angle, x, y, z);
         
-        this.currentMatrix.rotate(angle, x, y, z);
+        GL.currentBatch.currentMatrix.rotate(angle, x, y, z);
     }
     
     /**
      * Manipulates the current matrix with a general scaling matrix along the
      * x-, y- and z- axes.
      * <p>
-     * Calling this function is equivalent to calling
+     * Calling batch function is equivalent to calling
      * {@link #mulMatrix} with the following matrix:
      * <table class=striped>
      * <tr><td>x</td><td>0</td><td>0</td><td>0</td></tr>
@@ -699,11 +724,11 @@ public class GLBatch
      * @param y the y-axis scaling factor
      * @param z the z-axis scaling factor
      */
-    public void scale(double x, double y, double z)
+    public static void scale(double x, double y, double z)
     {
         GLBatch.LOGGER.finest("Scaling: (%s, %s, %s)", x, y, z);
         
-        this.currentMatrix.scale(x, y, z);
+        GL.currentBatch.currentMatrix.scale(x, y, z);
     }
     
     /**
@@ -732,11 +757,11 @@ public class GLBatch
      * @param n the near frustum plane
      * @param f the far frustum plane
      */
-    public void ortho(double l, double r, double b, double t, double n, double f)
+    public static void ortho(double l, double r, double b, double t, double n, double f)
     {
         GLBatch.LOGGER.finest("Ortho: l=%s, r=%s, b=%s, t=%s, n=%s, f=%s", l, r, b, t, n, f);
         
-        this.currentMatrix.ortho(l, r, b, t, n, f);
+        GL.currentBatch.currentMatrix.ortho(l, r, b, t, n, f);
     }
     
     /**
@@ -765,33 +790,33 @@ public class GLBatch
      * @param n the near frustum plane
      * @param f the far frustum plane
      */
-    public void frustum(double l, double r, double b, double t, double n, double f)
+    public static void frustum(double l, double r, double b, double t, double n, double f)
     {
         GLBatch.LOGGER.finest("Frustum: l=%s, r=%s, b=%s, t=%s, n=%s, f=%s", l, r, b, t, n, f);
         
-        this.currentMatrix.frustum(l, r, b, t, n, f);
+        GL.currentBatch.currentMatrix.frustum(l, r, b, t, n, f);
     }
     
     /**
      * Pushes the current matrix stack down by one, duplicating the current
      * matrix in both the y of the stack and the entry below it.
      */
-    public void pushMatrix()
+    public static void pushMatrix()
     {
         GLBatch.LOGGER.finest("Pushing Matrix Stack");
         
-        this.matrixStack[this.matrixIndex++].set(this.currentMatrix);
+        GL.currentBatch.matrixStack[GL.currentBatch.matrixIndex++].set(GL.currentBatch.currentMatrix);
     }
     
     /**
      * Pops the y entry off the current matrix stack, replacing the current
      * matrix with the matrix that was the second entry in the stack.
      */
-    public void popMatrix()
+    public static void popMatrix()
     {
         GLBatch.LOGGER.finest("Popping Matrix Stack");
         
-        this.currentMatrix.set(this.matrixStack[--this.matrixIndex]);
+        GL.currentBatch.currentMatrix.set(GL.currentBatch.matrixStack[--GL.currentBatch.matrixIndex]);
     }
     
     /**
@@ -803,24 +828,24 @@ public class GLBatch
      *             <li>{@link ColorMode#AMBIENT AMBIENT}</li>
      *             </ul>
      */
-    public void colorMode(@NotNull ColorMode mode)
+    public static void colorMode(@NotNull ColorMode mode)
     {
         GLBatch.LOGGER.finest("Setting Color Mode:", mode);
         
-        this.currentColor = switch (mode)
+        GL.currentBatch.currentColor = switch (mode)
                 {
-                    case DIFFUSE -> this.diffuse;
-                    case SPECULAR -> this.specular;
-                    case AMBIENT -> this.ambient;
+                    case DIFFUSE -> GL.currentBatch.diffuse;
+                    case SPECULAR -> GL.currentBatch.specular;
+                    case AMBIENT -> GL.currentBatch.ambient;
                 };
     }
     
     /**
      * @return A read-only view of the currently selected color
      */
-    public @NotNull Colorc getColor()
+    public static @NotNull Colorc getColor()
     {
-        return this.currentColor;
+        return GL.currentBatch.currentColor;
     }
     
     /**
@@ -828,11 +853,11 @@ public class GLBatch
      *
      * @param color color data
      */
-    public void setColor(@NotNull Colorc color)
+    public static void setColor(@NotNull Colorc color)
     {
         GLBatch.LOGGER.finest("Setting Color:", color);
         
-        this.currentColor.set(color);
+        GL.currentBatch.currentColor.set(color);
     }
     
     /**
@@ -843,11 +868,11 @@ public class GLBatch
      * <tr><td>0</td><td>0</td><td>0</td><td>255</td></tr>
      * </table>
      */
-    public void loadBlack()
+    public static void loadBlack()
     {
         GLBatch.LOGGER.finest("Setting Color to Black");
         
-        this.currentColor.set(0, 0, 0, 255);
+        GL.currentBatch.currentColor.set(0, 0, 0, 255);
     }
     
     /**
@@ -858,70 +883,33 @@ public class GLBatch
      * <tr><td>255</td><td>255</td><td>255</td><td>255</td></tr>
      * </table>
      */
-    public void loadWhite()
+    public static void loadWhite()
     {
         GLBatch.LOGGER.finest("Setting Color to Black");
         
-        this.currentColor.set(255, 255, 255, 255);
+        GL.currentBatch.currentColor.set(255, 255, 255, 255);
     }
     
     /**
      * Pushes the current color stack down by one, duplicating the current
      * color in both the y of the stack and the entry below it.
      */
-    public void pushColor()
+    public static void pushColor()
     {
         GLBatch.LOGGER.finest("Pushing Color Stack");
         
-        this.colorStack.put(this.colorIndex++, this.currentColor);
+        GL.currentBatch.colorStack.put(GL.currentBatch.colorIndex++, GL.currentBatch.currentColor);
     }
     
     /**
      * Pops the y entry off the current color stack, replacing the current
      * color with the color that was the second entry in the stack.
      */
-    public void popColor()
+    public static void popColor()
     {
         GLBatch.LOGGER.finest("Popping Color Stack");
         
-        this.currentColor.set(this.colorStack.get(--this.colorIndex));
-    }
-    
-    public void addTexture(@NotNull String name, @NotNull GLTexture texture)
-    {
-        GLBatch.LOGGER.finest("Adding Texture to Batch: %s=%s", name, texture);
-        
-        if (this.textureIndex + 1 > this.textureNames.length) throw new IllegalStateException("Active Texture Limit Exceeded: " + this.textureNames.length);
-        
-        this.textureNames[this.textureIndex]  = name;
-        this.textureActive[this.textureIndex] = texture;
-        
-        this.textureIndex++;
-    }
-    
-    private void activate()
-    {
-        GLBatch.LOGGER.finest("Activating Textures");
-        
-        for (int i = 0; i < this.textureIndex; i++)
-        {
-            GLTexture.bind(this.textureActive[i], i + 1);
-            GLProgram.Uniform.int1(this.textureNames[i], i + 1);
-        }
-    }
-    
-    private void deactivate()
-    {
-        GLBatch.LOGGER.finest("Deactivating Textures");
-        
-        for (int i = 0; i < this.textureIndex; i++)
-        {
-            GLTexture.unbind(this.textureActive[i], i + 1);
-            
-            this.textureNames[i]  = null;
-            this.textureActive[i] = null;
-        }
-        this.textureIndex = 0;
+        GL.currentBatch.currentColor.set(GL.currentBatch.colorStack.get(--GL.currentBatch.colorIndex));
     }
     
     private static final class DrawCall
@@ -958,6 +946,12 @@ public class GLBatch
         {
             this.vertices = 0;
             this.draws    = 0;
+        }
+        
+        private void set(@NotNull BatchStats other)
+        {
+            this.vertices = other.vertices;
+            this.draws    = other.draws;
         }
         
         public int vertices()

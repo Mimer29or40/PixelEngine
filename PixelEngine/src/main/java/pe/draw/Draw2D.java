@@ -2,7 +2,6 @@ package pe.draw;
 
 import org.jetbrains.annotations.Nullable;
 import pe.render.DrawMode;
-import pe.render.GL;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
 import rutils.Logger;
@@ -43,21 +42,19 @@ public abstract class Draw2D
     
     protected static void drawPoint(double x, double y, double thickness, int r, int g, int b, int a)
     {
-        GLBatch batch = GL.currentBatch();
-        
         if (thickness <= 1.0)
         {
-            batch.checkBuffer(2);
+            GLBatch.checkBuffer(2);
             
-            batch.begin(DrawMode.LINES);
+            GLBatch.begin(DrawMode.LINES);
             
-            batch.pos(x, y);
-            batch.color(r, g, b, a);
+            GLBatch.pos(x, y);
+            GLBatch.color(r, g, b, a);
             
-            batch.pos(x + 1, y + 1);
-            batch.color(r, g, b, a);
+            GLBatch.pos(x + 1, y + 1);
+            GLBatch.color(r, g, b, a);
             
-            batch.end();
+            GLBatch.end();
         }
         else
         {
@@ -72,21 +69,19 @@ public abstract class Draw2D
         
         if (thickness <= 1.0)
         {
-            GLBatch batch = GL.currentBatch();
+            GLBatch.checkBuffer(2);
             
-            batch.checkBuffer(2);
-            
-            batch.begin(DrawMode.LINES);
+            GLBatch.begin(DrawMode.LINES);
             
             Draw2D.VERTEX0.pos(x0, y0);
             Draw2D.VERTEX0.color(r0, g0, b0, a0);
             Draw2D.VERTEX1.pos(x1, y1);
             Draw2D.VERTEX1.color(r1, g1, b1, a1);
             
-            Draw2D.VERTEX0.apply(batch);
-            Draw2D.VERTEX1.apply(batch);
+            Draw2D.VERTEX0.apply();
+            Draw2D.VERTEX1.apply();
             
-            batch.end();
+            GLBatch.end();
         }
         else if (dx != 0.0 || dy != 0.0)
         {
@@ -95,11 +90,9 @@ public abstract class Draw2D
             double nx = -dy * s;
             double ny = dx * s;
             
-            GLBatch batch = GL.currentBatch();
+            GLBatch.checkBuffer(6);
             
-            batch.checkBuffer(6);
-            
-            batch.begin(DrawMode.TRIANGLES);
+            GLBatch.begin(DrawMode.TRIANGLES);
             
             Draw2D.VERTEX0.pos(x1 + nx, y1 + ny);
             Draw2D.VERTEX0.color(r1, g1, b1, a1);
@@ -110,10 +103,10 @@ public abstract class Draw2D
             Draw2D.VERTEX3.pos(x1 - nx, y1 - ny);
             Draw2D.VERTEX3.color(r1, g1, b1, a1);
             
-            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
-            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
             
-            batch.end();
+            GLBatch.end();
         }
     }
     
@@ -127,8 +120,6 @@ public abstract class Draw2D
             return;
         }
         
-        GLBatch batch = GL.currentBatch();
-        
         int _r0 = r0;
         int _g0 = g0;
         int _b0 = b0;
@@ -137,9 +128,9 @@ public abstract class Draw2D
         
         if (thickness <= 1)
         {
-            batch.checkBuffer((pointsCount - 2) * 2);
+            GLBatch.checkBuffer((pointsCount - 2) * 2);
             
-            batch.begin(DrawMode.LINES);
+            GLBatch.begin(DrawMode.LINES);
             for (int i = 1; i < pointsCount - 2; i++)
             {
                 int p0 = i << 1;
@@ -157,8 +148,8 @@ public abstract class Draw2D
                 Draw2D.VERTEX1.pos(points[p1], points[p1 + 1]);
                 Draw2D.VERTEX1.color(_r1, _g1, _b1, _a1);
                 
-                Draw2D.VERTEX0.apply(batch);
-                Draw2D.VERTEX1.apply(batch);
+                Draw2D.VERTEX0.apply();
+                Draw2D.VERTEX1.apply();
                 
                 _r0 = _r1;
                 _g0 = _g1;
@@ -170,11 +161,11 @@ public abstract class Draw2D
         {
             thickness *= 0.5;
             
-            batch.checkBuffer((pointsCount - 2) * 9);
+            GLBatch.checkBuffer((pointsCount - 2) * 9);
             
-            batch.setTexture(Draw2D.texture);
+            GLBatch.setTexture(Draw2D.texture);
             
-            batch.begin(DrawMode.TRIANGLES);
+            GLBatch.begin(DrawMode.TRIANGLES);
             
             int     p0, p1, p2, p3;
             double  p1x, p1y, p2x, p2y;
@@ -346,7 +337,7 @@ public abstract class Draw2D
                     Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
                     Draw2D.VERTEX2.color(_r0, _g0, _b0, _a0);
                     
-                    windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+                    windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
                 }
                 
                 // Generates Line Strip
@@ -363,8 +354,8 @@ public abstract class Draw2D
                 Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v1);
                 Draw2D.VERTEX3.color(_r1, _g1, _b1, _a1);
                 
-                windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
-                windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
+                windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+                windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
                 
                 _r0 = _r1;
                 _g0 = _g1;
@@ -372,18 +363,16 @@ public abstract class Draw2D
                 _a0 = _a1;
             }
         }
-        batch.end();
+        GLBatch.end();
     }
     
     protected static void fillTriangle(double x0, double y0, double x1, double y1, double x2, double y2, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2)
     {
-        GLBatch batch = GL.currentBatch();
+        GLBatch.checkBuffer(3);
         
-        batch.checkBuffer(3);
+        GLBatch.setTexture(Draw2D.texture);
         
-        batch.setTexture(Draw2D.texture);
-        
-        batch.begin(DrawMode.TRIANGLES);
+        GLBatch.begin(DrawMode.TRIANGLES);
         
         Draw2D.VERTEX0.pos(x0, y0);
         Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
@@ -395,18 +384,16 @@ public abstract class Draw2D
         Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
         Draw2D.VERTEX2.color(r2, g2, b2, a2);
         
-        windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+        windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
         
-        batch.end();
+        GLBatch.end();
     }
     
     protected static void fillQuad(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1, int r2, int g2, int b2, int a2, int r3, int g3, int b3, int a3)
     {
-        GLBatch batch = GL.currentBatch();
+        GLBatch.checkBuffer(4);
         
-        batch.checkBuffer(4);
-        
-        batch.begin(DrawMode.TRIANGLES);
+        GLBatch.begin(DrawMode.TRIANGLES);
         
         Draw2D.VERTEX0.pos(x0, y0);
         Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
@@ -421,9 +408,9 @@ public abstract class Draw2D
         Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v0);
         Draw2D.VERTEX3.color(r3, g3, b3, a3);
         
-        windQuad(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2, Draw2D.VERTEX3);
+        windQuad();
         
-        batch.end();
+        GLBatch.end();
     }
     
     protected static void drawEllipse(double x, double y, double rx, double ry, double thickness, double start, double stop, double originX, double originY, double angle, int segments, int r, int g, int b, int a)
@@ -534,13 +521,11 @@ public abstract class Draw2D
         p0x += x;
         p0y += y;
         
-        GLBatch batch = GL.currentBatch();
+        GLBatch.checkBuffer(segments * 3);
         
-        batch.checkBuffer(segments * 3);
+        GLBatch.setTexture(Draw2D.texture);
         
-        batch.setTexture(Draw2D.texture);
-        
-        batch.begin(DrawMode.TRIANGLES);
+        GLBatch.begin(DrawMode.TRIANGLES);
         
         Draw2D.VERTEX0.pos(cx, cy);
         Draw2D.VERTEX0.texCoord(Draw2D.u1, Draw2D.v1);
@@ -568,12 +553,12 @@ public abstract class Draw2D
             Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v0);
             Draw2D.VERTEX2.color(ro, go, bo, ao);
             
-            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
             
             p0x = p1x;
             p0y = p1y;
         }
-        batch.end();
+        GLBatch.end();
     }
     
     protected static void fillRing(double x, double y, double rxi, double ryi, double rxo, double ryo, double start, double stop, double originX, double originY, double angle, int segments, int ri, int gi, int bi, int ai, int ro, int go, int bo, int ao)
@@ -628,13 +613,11 @@ public abstract class Draw2D
         x0o += x;
         y0o += y;
         
-        GLBatch batch = GL.currentBatch();
+        GLBatch.checkBuffer(segments * 4);
         
-        batch.checkBuffer(segments * 4);
+        GLBatch.setTexture(Draw2D.texture);
         
-        batch.setTexture(Draw2D.texture);
-        
-        batch.begin(DrawMode.TRIANGLES);
+        GLBatch.begin(DrawMode.TRIANGLES);
         for (int i = 0; i < segments; i++)
         {
             theta = start + (i + 1) * inc;
@@ -673,26 +656,24 @@ public abstract class Draw2D
             Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v0);
             Draw2D.VERTEX3.color(ro, go, bo, ao);
             
-            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
-            windTriangle(batch, Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
             
             x0i = x1i;
             y0i = y1i;
             x0o = x1o;
             y0o = y1o;
         }
-        batch.end();
+        GLBatch.end();
     }
     
     protected static void drawTexture(GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
     {
-        GLBatch batch = GL.currentBatch();
+        GLBatch.checkBuffer(4); // Make sure there is enough free space on the GLBatch buffer
         
-        batch.checkBuffer(4); // Make sure there is enough free space on the batch buffer
+        GLBatch.setTexture(texture);
         
-        batch.setTexture(texture);
-        
-        batch.begin(DrawMode.TRIANGLES);
+        GLBatch.begin(DrawMode.TRIANGLES);
         
         Draw2D.VERTEX0.pos(x0, y0);
         Draw2D.VERTEX0.texCoord(u0, v0);
@@ -707,9 +688,9 @@ public abstract class Draw2D
         Draw2D.VERTEX3.texCoord(u3, v3);
         Draw2D.VERTEX3.color(r, g, b, a);
         
-        windQuad(batch, Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2, Draw2D.VERTEX3);
+        windQuad();
         
-        batch.end();
+        GLBatch.end();
     }
     
     protected static void drawTexture(GLTexture texture, double srcX, double srcY, double srcW, double srcH, double dstX, double dstY, double dstW, double dstH, double originX, double originY, double angle, int r, int g, int b, int a)
@@ -784,26 +765,27 @@ public abstract class Draw2D
         return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * (stop - start) / Math.PI2), 8, 48);
     }
     
-    private static void windTriangle(GLBatch batch, Vertex v0, Vertex v1, Vertex v2)
+    private static void windTriangle(Vertex v0, Vertex v1, Vertex v2)
     {
-        v0.apply(batch);
+        v0.apply();
         
         double cross = (v1.x - v0.x) * (v2.y - v1.y) - (v1.y - v0.y) * (v2.x - v1.x);
         if (cross > 0.0)
         {
-            v2.apply(batch);
-            v1.apply(batch);
+            v2.apply();
+            v1.apply();
         }
         else
         {
-            v1.apply(batch);
-            v2.apply(batch);
+            v1.apply();
+            v2.apply();
         }
     }
     
-    private static void windQuad(GLBatch batch, Vertex v0, Vertex v1, Vertex v2, Vertex v3)
+    private static void windQuad()
     {
-        double rd = (v2.x - v0.x) * (v3.y - v1.y) - (v3.x - v1.x) * (v2.y - v0.y);
+        double rd = (Draw2D.VERTEX2.x - Draw2D.VERTEX0.x) * (Draw2D.VERTEX3.y - Draw2D.VERTEX1.y) -
+                    (Draw2D.VERTEX3.x - Draw2D.VERTEX1.x) * (Draw2D.VERTEX2.y - Draw2D.VERTEX0.y);
         
         if (rd == 0.0) return;
         
@@ -811,37 +793,45 @@ public abstract class Draw2D
         
         double cx = 0.0, cy = 0.0;
         
-        double rn = ((v3.x - v1.x) * (v0.y - v1.y) - (v3.y - v1.y) * (v0.x - v1.x)) * rd;
-        double sn = ((v2.x - v0.x) * (v0.y - v1.y) - (v2.y - v0.y) * (v0.x - v1.x)) * rd;
+        double rn = ((Draw2D.VERTEX3.x - Draw2D.VERTEX1.x) * (Draw2D.VERTEX0.y - Draw2D.VERTEX1.y) -
+                     (Draw2D.VERTEX3.y - Draw2D.VERTEX1.y) * (Draw2D.VERTEX0.x - Draw2D.VERTEX1.x)) * rd;
+        double sn = ((Draw2D.VERTEX2.x - Draw2D.VERTEX0.x) * (Draw2D.VERTEX0.y - Draw2D.VERTEX1.y) -
+                     (Draw2D.VERTEX2.y - Draw2D.VERTEX0.y) * (Draw2D.VERTEX0.x - Draw2D.VERTEX1.x)) * rd;
         
         if (!(rn < 0.0 || rn > 1.0 || sn < 0.0 || sn > 1.0))
         {
-            cx = v0.x + rn * (v2.x - v0.x);
-            cy = v0.y + rn * (v2.y - v0.y);
+            cx = Draw2D.VERTEX0.x + rn * (Draw2D.VERTEX2.x - Draw2D.VERTEX0.x);
+            cy = Draw2D.VERTEX0.y + rn * (Draw2D.VERTEX2.y - Draw2D.VERTEX0.y);
         }
         
-        double d0 = Math.sqrt((v0.x - cx) * (v0.x - cx) + (v0.y - cy) * (v0.y - cy));
-        double d1 = Math.sqrt((v1.x - cx) * (v1.x - cx) + (v1.y - cy) * (v1.y - cy));
-        double d2 = Math.sqrt((v2.x - cx) * (v2.x - cx) + (v2.y - cy) * (v2.y - cy));
-        double d3 = Math.sqrt((v3.x - cx) * (v3.x - cx) + (v3.y - cy) * (v3.y - cy));
+        double d0 = Math.sqrt((Draw2D.VERTEX0.x - cx) * (Draw2D.VERTEX0.x - cx) +
+                              (Draw2D.VERTEX0.y - cy) * (Draw2D.VERTEX0.y - cy));
+        double d1 = Math.sqrt((Draw2D.VERTEX1.x - cx) * (Draw2D.VERTEX1.x - cx) +
+                              (Draw2D.VERTEX1.y - cy) * (Draw2D.VERTEX1.y - cy));
+        double d2 = Math.sqrt((Draw2D.VERTEX2.x - cx) * (Draw2D.VERTEX2.x - cx) +
+                              (Draw2D.VERTEX2.y - cy) * (Draw2D.VERTEX2.y - cy));
+        double d3 = Math.sqrt((Draw2D.VERTEX3.x - cx) * (Draw2D.VERTEX3.x - cx) +
+                              (Draw2D.VERTEX3.y - cy) * (Draw2D.VERTEX3.y - cy));
         
-        v0.q = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
-        v1.q = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
-        v2.q = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
-        v3.q = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
+        Draw2D.VERTEX0.q = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
+        Draw2D.VERTEX1.q = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
+        Draw2D.VERTEX2.q = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
+        Draw2D.VERTEX3.q = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
         
-        double cross012 = (v1.x - v0.x) * (v2.y - v1.y) - (v1.y - v0.y) * (v2.x - v1.x);
-        double cross032 = (v3.x - v0.x) * (v2.y - v3.y) - (v3.y - v0.y) * (v2.x - v3.x);
+        double cross012 = (Draw2D.VERTEX1.x - Draw2D.VERTEX0.x) * (Draw2D.VERTEX2.y - Draw2D.VERTEX1.y) -
+                          (Draw2D.VERTEX1.y - Draw2D.VERTEX0.y) * (Draw2D.VERTEX2.x - Draw2D.VERTEX1.x);
+        double cross032 = (Draw2D.VERTEX3.x - Draw2D.VERTEX0.x) * (Draw2D.VERTEX2.y - Draw2D.VERTEX3.y) -
+                          (Draw2D.VERTEX3.y - Draw2D.VERTEX0.y) * (Draw2D.VERTEX2.x - Draw2D.VERTEX3.x);
         
         if (cross012 < 0.0 && cross032 > 0.0)
         {
-            windTriangle(batch, v0, v1, v2);
-            windTriangle(batch, v0, v2, v3);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
         }
         else
         {
-            windTriangle(batch, v3, v2, v1);
-            windTriangle(batch, v3, v1, v0);
+            windTriangle(Draw2D.VERTEX3, Draw2D.VERTEX2, Draw2D.VERTEX1);
+            windTriangle(Draw2D.VERTEX3, Draw2D.VERTEX1, Draw2D.VERTEX0);
         }
     }
     
@@ -892,11 +882,11 @@ public abstract class Draw2D
             this.a = a;
         }
         
-        private void apply(GLBatch batch)
+        private void apply()
         {
-            batch.pos(this.x, this.y);
-            batch.texCoord(this.u * this.q, this.v * this.q, this.q);
-            batch.color(this.r, this.g, this.b, this.a);
+            GLBatch.pos(this.x, this.y);
+            GLBatch.texCoord(this.u * this.q, this.v * this.q, this.q);
+            GLBatch.color(this.r, this.g, this.b, this.a);
         }
     }
 }
