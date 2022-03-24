@@ -195,8 +195,8 @@ public class DrawRect2D extends Draw2D
     {
         this.width  = bottomRightX - topLeftX;
         this.height = bottomRightY - topLeftY;
-        this.x      = topLeftX;
-        this.y      = topLeftY;
+        this.x      = topLeftX + (this.width * 0.5);
+        this.y      = topLeftY + (this.height * 0.5);
         
         this.hasPoint = true;
         this.hasSize  = true;
