@@ -1085,6 +1085,30 @@ public abstract class Color extends Struct implements NativeResource, Colorc
             return this;
         }
         
+        public @NotNull Color.Buffer put(int index, double gray)
+        {
+            get(index).set(gray);
+            return this;
+        }
+        
+        public @NotNull Color.Buffer put(int index, double gray, double alpha)
+        {
+            get(index).set(gray, alpha);
+            return this;
+        }
+        
+        public @NotNull Color.Buffer put(int index, double r, double g, double b)
+        {
+            get(index).set(r, g, b);
+            return this;
+        }
+        
+        public @NotNull Color.Buffer put(int index, double r, double g, double b, double a)
+        {
+            get(index).set(r, g, b, a);
+            return this;
+        }
+        
         public @NotNull Color.Buffer put(int index, Colorc color)
         {
             get(index).set(color);

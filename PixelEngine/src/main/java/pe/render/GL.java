@@ -13,7 +13,7 @@ import rutils.Logger;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-public class GL // TODO - Instance GL for multiple contexts
+public final class GL // TODO - Instance GL for multiple contexts
 {
     // TODO - Move these to another class
     

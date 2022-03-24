@@ -2,6 +2,8 @@ package pe.render;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector2i;
+import org.joml.Vector2ic;
 import org.lwjgl.opengl.GL33;
 import pe.Window;
 import pe.color.ColorFormat;
@@ -83,14 +85,14 @@ public class GLFramebuffer
     
     protected int id;
     
-    protected int width;
-    protected int height;
+    protected final Vector2i size;
     
     protected final Texture color0;
     protected final Texture depthStencil;
     
     private GLFramebuffer()
     {
+        this.size         = new Vector2i();
         this.color0       = null;
         this.depthStencil = null;
     }
@@ -99,8 +101,7 @@ public class GLFramebuffer
     {
         this.id = GL33.glGenFramebuffers();
         
-        this.width  = width;
-        this.height = height;
+        this.size = new Vector2i(width, height);
         
         GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, this.id);
         
@@ -158,7 +159,7 @@ public class GLFramebuffer
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + "{" + "id=" + this.id + ", width=" + this.width + ", height=" + this.height + '}';
+        return getClass().getSimpleName() + "{" + "id=" + this.id + ", width=" + width() + ", height=" + height() + '}';
     }
     
     public int id()
@@ -166,14 +167,19 @@ public class GLFramebuffer
         return this.id;
     }
     
+    public Vector2ic size()
+    {
+        return this.size;
+    }
+    
     public int width()
     {
-        return this.width;
+        return this.size.x;
     }
     
     public int height()
     {
-        return this.height;
+        return this.size.y;
     }
     
     public @Nullable Texture color()

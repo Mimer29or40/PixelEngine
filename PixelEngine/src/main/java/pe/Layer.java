@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector2d;
 import org.joml.Vector2dc;
-import org.joml.Vector2i;
 import org.joml.Vector2ic;
 import org.lwjgl.system.MemoryStack;
 import pe.render.*;
@@ -233,7 +232,6 @@ public final class Layer extends GLFramebuffer
     
     // -------------------- Instance -------------------- //
     
-    final Vector2i size;
     final AABBi    bounds;
     final Vector2d pixelSize;
     
@@ -241,27 +239,8 @@ public final class Layer extends GLFramebuffer
     {
         super(width, height);
         
-        this.size      = new Vector2i(width, height);
         this.bounds    = new AABBi();
         this.pixelSize = new Vector2d(1.0);
-    }
-    
-    @NotNull
-    public Vector2ic size()
-    {
-        return this.size;
-    }
-    
-    @Override
-    public int width()
-    {
-        return this.size.x;
-    }
-    
-    @Override
-    public int height()
-    {
-        return this.size.y;
     }
     
     @NotNull
