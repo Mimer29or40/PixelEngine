@@ -7,8 +7,8 @@ import org.joml.Vector2dc;
 import org.joml.Vector2ic;
 import org.lwjgl.system.MemoryStack;
 import pe.render.*;
-import pe.shape.AABBi;
-import pe.shape.AABBic;
+import pe.shape.AABB2i;
+import pe.shape.AABB2ic;
 import rutils.Logger;
 import rutils.Math;
 
@@ -139,7 +139,7 @@ public final class Layer extends GLFramebuffer
         {
             if (layer == null) continue;
             
-            AABBi bounds = layer.bounds;
+            AABB2i bounds = layer.bounds;
             
             double aspect = layer.aspectRatio();
             
@@ -232,19 +232,19 @@ public final class Layer extends GLFramebuffer
     
     // -------------------- Instance -------------------- //
     
-    final AABBi    bounds;
+    final AABB2i   bounds;
     final Vector2d pixelSize;
     
     private Layer(int width, int height)
     {
         super(width, height);
         
-        this.bounds    = new AABBi();
+        this.bounds    = new AABB2i();
         this.pixelSize = new Vector2d(1.0);
     }
     
     @NotNull
-    public AABBic bounds()
+    public AABB2ic bounds()
     {
         return this.bounds;
     }

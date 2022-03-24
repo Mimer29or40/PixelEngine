@@ -9,8 +9,8 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
 import pe.event.*;
-import pe.shape.AABBi;
-import pe.shape.AABBic;
+import pe.shape.AABB2i;
+import pe.shape.AABB2ic;
 import pe.texture.Image;
 import rutils.Logger;
 import rutils.group.Pair;
@@ -408,7 +408,7 @@ public class Window
     static final Vector2i minSize = new Vector2i();
     static final Vector2i maxSize = new Vector2i();
     
-    static final AABBi bounds = new AABBi();
+    static final AABB2i bounds = new AABB2i();
     
     static final Matrix4d viewMatrix = new Matrix4d();
     
@@ -890,7 +890,7 @@ public class Window
     /**
      * @return An axis-aligned bounding box of the window's content-area.
      */
-    public static AABBic bounds()
+    public static AABB2ic bounds()
     {
         return Window.bounds;
     }

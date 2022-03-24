@@ -453,7 +453,7 @@ public abstract class Engine
                                 
                                 Extension.stage(Extension.Stage.POST_EVENTS);
                                 
-                                // GUI.handleEvents();
+                                GUI.handleEvents();
                                 // Debug.handleEvents();
                                 // NuklearGUI.handleEvents();
                                 // ImGUI.handleEvents();
@@ -519,7 +519,7 @@ public abstract class Engine
                                 }
                                 
                                 Layer.draw();
-                                // GUI.draw();
+                                GUI.draw();
                                 // Debug.draw();
                                 // NuklearGUI.draw();
                                 // ImGUI.draw();
@@ -568,7 +568,7 @@ public abstract class Engine
                     {
                         Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
                         
-                        // GUI.destroy();
+                        GUI.destroy();
                         // Debug.destroy();
                         // NuklearGUI.destroy();
                         // ImGUI.destroy();
@@ -623,7 +623,7 @@ public abstract class Engine
     {
         IO.setup(width, height, pixelWidth, pixelHeight);
         
-        // GUI.setup();
+        GUI.setup();
         // Debug.setup();
         // NuklearGUI.setup();
         // ImGUI.setup();

@@ -1,8 +1,9 @@
 package pe;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2d;
 import pe.color.Color;
+import pe.color.Colorc;
+import pe.event.*;
 import pe.gui.GuiStyle;
 import pe.gui.GuiWindow;
 import pe.render.*;
@@ -17,17 +18,10 @@ public class GUI
     
     static GuiStyle style;
     
-    static final List<GuiWindow> Windows           = new LinkedList<>(); // Windows, sorted in display order, back to front
-    static final List<GuiWindow> WindowsFocusOrder = new LinkedList<>(); // Root windows, sorted in focus order, back to front.
+    static final List<GuiWindow> Windows = new LinkedList<>(); // Windows, sorted in display order, back to front
     
-    static Vector2d  WindowsHoverPadding;            // Padding around resizable windows for which hovering on counts as hovering the window == ImMax(style.TouchExtraPadding, WINDOWS_HOVER_PADDING)
-    static GuiWindow CurrentWindow;                  // Window being drawn into
-    static GuiWindow HoveredWindow;                  // Window the mouse is hovering. Will typically catch mouse inputs.
-    static GuiWindow HoveredWindowUnderMovingWindow; // Hovered window ignoring MovingWindow. Only set if MovingWindow is set.
-    static GuiWindow MovingWindow;                   // Track the window we clicked on (in order to preserve focus). The actual window that is moved is generally MovingWindow->RootWindow.
-    static GuiWindow WheelingWindow;                 // Track the window we started mouse-wheeling on. Until a timer elapse or mouse has moved, generally keep scrolling the same window even if during the course of scrolling the mouse ends up hovering a child window.
-    static Vector2d  WheelingWindowRefMousePos;
-    static float     WheelingWindowTimer;
+    static GuiWindow hoveredWindow = null;
+    static GuiWindow focusedWindow = null;
     
     static void setup()
     {
@@ -56,9 +50,93 @@ public class GUI
         GUI.LOGGER.fine("Destroy");
     }
     
+    @SuppressWarnings("StatementWithEmptyBody")
     static void handleEvents()
     {
+        for (Event event : Engine.Events.get())
+        {
+            if (event instanceof EventMouseMoved mMoved)
+            {
+                int x = (int) mMoved.x();
+                int y = (int) mMoved.y();
     
+                int hoveredIndex = -1;
+                for (int i = 0; i < Windows.size(); i++)
+                {
+                    GuiWindow window = Windows.get(i);
+                    if (hoveredIndex < 0 && window.bounds.contains(x, y)) hoveredIndex = i;
+                    window.hovered = false;
+                }
+                if (hoveredIndex >= 0)
+                {
+                    hoveredWindow = Windows.get(hoveredIndex);
+                    hoveredWindow.hovered = true;
+                    mMoved.consume();
+                }
+                else
+                {
+                    hoveredWindow = null;
+                }
+            }
+            else if (event instanceof EventMouseScrolled)
+            {
+                // NO-OP
+            }
+            else if (event instanceof EventMouseButtonDown mbDown)
+            {
+                int x = (int) mbDown.x();
+                int y = (int) mbDown.y();
+    
+                int focusedIndex = -1;
+                for (int i = 0; i < Windows.size(); i++)
+                {
+                    GuiWindow window = Windows.get(i);
+                    if (focusedIndex < 0 && window.bounds.contains(x, y)) focusedIndex = i;
+                    window.focused = false;
+                }
+                if (focusedIndex >= 0)
+                {
+                    focusedWindow = Windows.remove(focusedIndex);
+                    focusedWindow.focused = true;
+                    Windows.add(0, focusedWindow);
+                    mbDown.consume();
+                }
+                else
+                {
+                    focusedWindow = null;
+                }
+            }
+            else if (event instanceof EventMouseButtonUp mbUp)
+            {
+                // NO-OP
+            }
+            else if (event instanceof EventMouseButtonDragged mbDragged)
+            {
+                if (hoveredWindow != null)
+                {
+                    int dx = (int) mbDragged.dx();
+                    int dy = (int) mbDragged.dy();
+                    hoveredWindow.bounds.pos.add(dx, dy);
+                    mbDragged.consume();
+                }
+            }
+            else if (event instanceof EventKeyboardKeyDown kkDown)
+            {
+                // NO-OP
+            }
+            else if (event instanceof EventKeyboardKeyUp kkUp)
+            {
+                // NO-OP
+            }
+            else if (event instanceof EventKeyboardKeyRepeated kkRepeated)
+            {
+                // NO-OP
+            }
+            else if (event instanceof EventKeyboardTyped kTyped)
+            {
+                // NO-OP
+            }
+        }
     }
     
     static void draw()
@@ -99,14 +177,17 @@ public class GUI
         GLBatch.colorMode(ColorMode.AMBIENT);
         GLBatch.loadWhite();
         
-        for (GuiWindow window : Windows)
+        for (int i = Windows.size() - 1; i >= 0; i--)
         {
+            GuiWindow window = Windows.get(i);
+            
             int x0 = window.bounds.pos.x;
             int y0 = window.bounds.pos.y;
             int x1 = x0 + window.bounds.size.x;
             int y1 = y0 + window.bounds.size.y;
             
-            Engine.Draw.fillRect2D().corners(x0, y0, x1, y1).color(Color.WHITE).draw();
+            Colorc color = window.focused ? Color.WHITE : window.hovered ? Color.DARK_GRAY : Color.GRAY;
+            Engine.Draw.fillRect2D().corners(x0, y0, x1, y1).color(color).draw();
             // Engine.Draw.fillRect2D().point(window.pos).size(window.size).color(Color.WHITE).draw();
         }
         
