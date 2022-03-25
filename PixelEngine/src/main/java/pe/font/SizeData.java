@@ -85,7 +85,7 @@ public final class SizeData
             {
                 stbtt_GetPackedQuad(charData, width, height, i, x.put(0, 0), y.put(0, 0), q, false);
                 
-                this.packedQuads[i] = new PackedQuad(q);
+                this.packedQuads[i] = new PackedQuad(q, this.ascent);
             }
         }
         charData.free();

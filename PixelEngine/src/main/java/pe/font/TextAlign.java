@@ -1,4 +1,4 @@
-package pe.draw;
+package pe.font;
 
 /**
  * Determines how the text is aligned to a point or in a rectangle.

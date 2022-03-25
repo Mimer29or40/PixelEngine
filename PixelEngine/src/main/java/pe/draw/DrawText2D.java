@@ -6,6 +6,7 @@ import org.joml.Vector2fc;
 import org.joml.Vector2ic;
 import pe.color.Colorc;
 import pe.font.Font;
+import pe.font.TextAlign;
 import pe.font.Weight;
 import rutils.Logger;
 import rutils.Math;

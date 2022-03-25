@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 import pe.font.CharData;
 import pe.font.Font;
 import pe.font.PackedQuad;
-import pe.font.SizeData;
 import pe.render.DrawMode;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
@@ -770,26 +769,21 @@ public abstract class Draw2D
         
         GLBatch.begin(DrawMode.TRIANGLES);
         
-        SizeData sizeData = font.getSizeData(size);
-        
         CharData prevChar = null, currChar;
-        
-        double x0, y0, x1, y1;
-        
         for (int i = 0; i < textLen; i++)
         {
             char character = text.charAt(i);
             
             currChar = font.getCharData(character);
             
-            x += font.getKernAdvance(prevChar, currChar) * sizeData.scale;
+            x += font.getKernAdvance(prevChar, currChar, size);
             
-            PackedQuad packedQuad = sizeData.getPackedQuad(character);
+            PackedQuad packedQuad = font.getPackedQuad(character, size);
             
-            x0 = Math.round(x + packedQuad.x0);
-            y0 = Math.round(y + packedQuad.y0 + sizeData.ascent);
-            x1 = Math.round(x + packedQuad.x1);
-            y1 = Math.round(y + packedQuad.y1 + sizeData.ascent);
+            double x0 = x + packedQuad.x0;
+            double y0 = y + packedQuad.y0;
+            double x1 = x + packedQuad.x1;
+            double y1 = y + packedQuad.y1;
             
             Draw2D.VERTEX0.pos(x0, y0);
             Draw2D.VERTEX0.texCoord(packedQuad.u0, packedQuad.v0);
@@ -806,7 +800,7 @@ public abstract class Draw2D
             
             windQuad();
             
-            x += currChar.advanceWidthUnscaled * sizeData.scale;
+            x += font.getAdvance(currChar, size);
             
             prevChar = currChar;
         }

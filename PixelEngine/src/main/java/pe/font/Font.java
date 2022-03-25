@@ -248,7 +248,7 @@ public class Font
             for (int i = 0, n = text.length(); i < n; i++)
             {
                 currChar = getCharData(text.charAt(i));
-                width += currChar.advanceWidthUnscaled + getKernAdvance(prevChar, currChar);
+                width += currChar.advanceWidthUnscaled + getKernAdvance(prevChar, currChar, size);
                 
                 prevChar = currChar;
             }
@@ -282,16 +282,28 @@ public class Font
     /**
      * Gets the kerning between two characters. If kerning is disabled then this offset is zero.
      *
-     * @param ch1 The first character.
-     * @param ch2 The second character.
+     * @param ch1  The first character.
+     * @param ch2  The second character.
+     * @param size The size of the font.
      * @return The number of pixels to offset ch2 when rendering.
      */
-    public int getKernAdvance(CharData ch1, CharData ch2)
+    public double getKernAdvance(CharData ch1, CharData ch2, int size)
     {
-        if (ch1 == null) return 0;
-        if (ch2 == null) return 0;
-        if (!this.kerning) return 0;
-        return stbtt_GetGlyphKernAdvance(this.info, ch1.index, ch2.index);
+        if (ch1 == null) return 0.0;
+        if (ch2 == null) return 0.0;
+        if (!this.kerning) return 0.0;
+        return stbtt_GetGlyphKernAdvance(this.info, ch1.index, ch2.index) * getSizeData(size).scale;
+    }
+    
+    public double getAdvance(CharData ch, int size)
+    {
+        if (ch == null) return 0.0;
+        return ch.advanceWidthUnscaled * getSizeData(size).scale;
+    }
+    
+    public PackedQuad getPackedQuad(char character, int size)
+    {
+        return getSizeData(size).getPackedQuad(character);
     }
     
     /**

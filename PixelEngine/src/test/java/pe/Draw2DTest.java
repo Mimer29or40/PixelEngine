@@ -6,6 +6,7 @@ import pe.color.Color;
 import pe.event.*;
 import pe.texture.Image;
 import pe.texture.Texture;
+import pe.util.Util;
 import rutils.Logger;
 import rutils.Math;
 
@@ -276,6 +277,7 @@ public class Draw2DTest extends Engine
     
     private int mouseDown(Vector2d[] draggable, Vector2dc pos)
     {
+        pos = Util.windowToLayer(Layer.Index.ZERO, pos);
         for (int i = 0; i < draggable.length; i++)
         {
             double x = pos.x() - draggable[i].x;
@@ -288,6 +290,7 @@ public class Draw2DTest extends Engine
     
     private void mouseMoved(Vector2d[] draggable, int dragging, Vector2dc pos)
     {
+        pos = Util.windowToLayer(Layer.Index.ZERO, pos);
         if (dragging != -1)
         {
             Debug.notification("Pos: " + pos);
@@ -626,7 +629,7 @@ public class Draw2DTest extends Engine
                 double w  = Math.max(draggableText[1].x - cx, 0);
                 double h  = Math.max(draggableText[1].y - cy, 0);
                 
-                int size = Math.max((int) draggableText[2].y, 0);
+                int size = Math.max((int) draggableText[2].y / 10, 1);
                 
                 Draw.drawRect2D()
                     .corners(draggableText[0], draggableText[1])
