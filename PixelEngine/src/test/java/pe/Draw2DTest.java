@@ -13,7 +13,7 @@ import java.util.logging.Level;
 
 public class Draw2DTest extends Engine
 {
-    private Keyboard.Key state = Keyboard.Key.F9;
+    private Keyboard.Key state = Keyboard.Key.F11;
     
     // DrawPoint2D
     private Vector2d[] draggablePoint;
@@ -57,6 +57,10 @@ public class Draw2DTest extends Engine
     
     // DrawTexture2D
     private Texture texture;
+    
+    // DrawText2D
+    private Vector2d[] draggableText;
+    private int        draggingText = -1;
     
     private boolean toggle;
     
@@ -143,6 +147,12 @@ public class Draw2DTest extends Engine
                 new Vector2d(layer.width() - 10, 10),
                 };
         
+        draggableText = new Vector2d[] {
+                new Vector2d(layer.width() >> 1, layer.height() >> 1),
+                new Vector2d(layer.width() - 10, layer.height() - 10),
+                new Vector2d(10, 10),
+                };
+        
         Image image = Image.genColorGradient(30, 30, Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE);
         texture = Texture.load(image);
         image.delete();
@@ -214,6 +224,7 @@ public class Draw2DTest extends Engine
                 draggingEllipse  = -1;
                 draggingRing     = -1;
                 draggingTexture  = -1;
+                draggingText     = -1;
                 switch (state)
                 {
                     case F1 -> draggingPoint = mouseDown(draggablePoint, buttonDown.pos());
@@ -226,6 +237,7 @@ public class Draw2DTest extends Engine
                     case F8 -> draggingEllipse = mouseDown(draggableEllipse, buttonDown.pos());
                     case F9 -> draggingRing = mouseDown(draggableRing, buttonDown.pos());
                     case F10 -> draggingTexture = mouseDown(draggableTexture, buttonDown.pos());
+                    case F11 -> draggingText = mouseDown(draggableText, buttonDown.pos());
                 }
             }
             else if (event instanceof EventMouseButtonUp)
@@ -240,6 +252,7 @@ public class Draw2DTest extends Engine
                 draggingEllipse  = -1;
                 draggingRing     = -1;
                 draggingTexture  = -1;
+                draggingText     = -1;
             }
             else if (event instanceof EventMouseMoved mouseMoved)
             {
@@ -255,6 +268,7 @@ public class Draw2DTest extends Engine
                     case F8 -> mouseMoved(draggableEllipse, draggingEllipse, mouseMoved.pos());
                     case F9 -> mouseMoved(draggableRing, draggingRing, mouseMoved.pos());
                     case F10 -> mouseMoved(draggableTexture, draggingTexture, mouseMoved.pos());
+                    case F11 -> mouseMoved(draggableText, draggingText, mouseMoved.pos());
                 }
             }
         }
@@ -604,6 +618,31 @@ public class Draw2DTest extends Engine
                     {
                         Draw.point2D().point(point).thickness(5).color(Color.WHITE).draw();
                     }
+                }
+            }
+            case F11 -> {
+                double cx = draggableText[0].x;
+                double cy = draggableText[0].y;
+                double w  = Math.max(draggableText[1].x - cx, 0);
+                double h  = Math.max(draggableText[1].y - cy, 0);
+                
+                int size = Math.max((int) draggableText[2].y, 0);
+                
+                Draw.drawRect2D()
+                    .corners(draggableText[0], draggableText[1])
+                    .thickness(1)
+                    .draw();
+                
+                Draw.drawText2D()
+                    .text("This is a very long string")
+                    .point(cx, cy)
+                    .bounds(w, h)
+                    .size(size)
+                    .draw();
+                
+                for (Vector2d point : draggableText)
+                {
+                    Draw.point2D().point(point).thickness(5).color(Color.WHITE).draw();
                 }
             }
         }

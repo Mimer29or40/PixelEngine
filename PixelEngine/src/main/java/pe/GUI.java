@@ -187,7 +187,7 @@ public class GUI
             int y1 = y0 + window.bounds.size.y;
             
             Colorc color = window.focused ? Color.WHITE : window.hovered ? Color.DARK_GRAY : Color.GRAY;
-            Engine.Draw.fillRect2D().corners(x0, y0, x1, y1).color(color).draw();
+            Draw.fillRect2D().corners(x0, y0, x1, y1).color(color).draw();
             // Engine.Draw.fillRect2D().point(window.pos).size(window.size).color(Color.WHITE).draw();
         }
         

@@ -1,6 +1,11 @@
 package pe.draw;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import pe.font.CharData;
+import pe.font.Font;
+import pe.font.PackedQuad;
+import pe.font.SizeData;
 import pe.render.DrawMode;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
@@ -667,7 +672,7 @@ public abstract class Draw2D
         GLBatch.end();
     }
     
-    protected static void drawTexture(GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
+    protected static void drawTexture(@NotNull GLTexture texture, double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3, int r, int g, int b, int a)
     {
         GLBatch.checkBuffer(4); // Make sure there is enough free space on the GLBatch buffer
         
@@ -693,7 +698,7 @@ public abstract class Draw2D
         GLBatch.end();
     }
     
-    protected static void drawTexture(GLTexture texture, double srcX, double srcY, double srcW, double srcH, double dstX, double dstY, double dstW, double dstH, double originX, double originY, double angle, int r, int g, int b, int a)
+    protected static void drawTexture(@NotNull GLTexture texture, double srcX, double srcY, double srcW, double srcH, double dstX, double dstY, double dstW, double dstH, double originX, double originY, double angle, int r, int g, int b, int a)
     {
         double width  = texture.width();
         double height = texture.height();
@@ -753,6 +758,60 @@ public abstract class Draw2D
         double v1 = (srcY + srcH) / height;
         
         drawTexture(texture, x0, y0, x1, y1, x2, y2, x3, y3, u0, v0, u0, v1, u1, v1, u1, v0, r, g, b, a);
+    }
+    
+    protected static void drawText(@NotNull Font font, int size, @NotNull String text, double x, double y, int r, int g, int b, int a)
+    {
+        int textLen = text.length();
+        
+        GLBatch.checkBuffer(4 * textLen);
+        
+        GLBatch.setTexture(font.texture(size));
+        
+        GLBatch.begin(DrawMode.TRIANGLES);
+        
+        SizeData sizeData = font.getSizeData(size);
+        
+        CharData prevChar = null, currChar;
+        
+        double x0, y0, x1, y1;
+        
+        for (int i = 0; i < textLen; i++)
+        {
+            char character = text.charAt(i);
+            
+            currChar = font.getCharData(character);
+            
+            x += font.getKernAdvance(prevChar, currChar) * sizeData.scale;
+            
+            PackedQuad packedQuad = sizeData.getPackedQuad(character);
+            
+            x0 = Math.round(x + packedQuad.x0);
+            y0 = Math.round(y + packedQuad.y0 + sizeData.ascent);
+            x1 = Math.round(x + packedQuad.x1);
+            y1 = Math.round(y + packedQuad.y1 + sizeData.ascent);
+            
+            Draw2D.VERTEX0.pos(x0, y0);
+            Draw2D.VERTEX0.texCoord(packedQuad.u0, packedQuad.v0);
+            Draw2D.VERTEX0.color(r, g, b, a);
+            Draw2D.VERTEX1.pos(x0, y1);
+            Draw2D.VERTEX1.texCoord(packedQuad.u0, packedQuad.v1);
+            Draw2D.VERTEX1.color(r, g, b, a);
+            Draw2D.VERTEX2.pos(x1, y1);
+            Draw2D.VERTEX2.texCoord(packedQuad.u1, packedQuad.v1);
+            Draw2D.VERTEX2.color(r, g, b, a);
+            Draw2D.VERTEX3.pos(x1, y0);
+            Draw2D.VERTEX3.texCoord(packedQuad.u1, packedQuad.v0);
+            Draw2D.VERTEX3.color(r, g, b, a);
+            
+            windQuad();
+            
+            x += currChar.advanceWidthUnscaled * sizeData.scale;
+            
+            prevChar = currChar;
+        }
+        
+        GLBatch.end();
     }
     
     protected static int segments(double rx, double ry)
