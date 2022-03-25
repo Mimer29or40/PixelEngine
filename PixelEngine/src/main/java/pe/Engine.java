@@ -7,9 +7,8 @@ import org.lwjgl.system.APIUtil;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
-import pe.color.Colorc;
-import pe.draw.*;
 import pe.event.Event;
+import pe.font.Font;
 import pe.render.*;
 import pe.texture.Image;
 import pe.util.Random;
@@ -121,33 +120,35 @@ public abstract class Engine
             
             Layer.setup(width, height);
             
+            Font.setup();
+            
             int r = Layer.primary().width() >> 1;
             int l = -r;
             int b = Layer.primary().height() >> 1;
             int t = -b;
             
-            GL.currentBatch().matrixMode(MatrixMode.PROJECTION);
-            GL.currentBatch().loadIdentity();
-            GL.currentBatch().ortho(l, r, b, t, 1.0, -1.0);
+            GLBatch.matrixMode(MatrixMode.PROJECTION);
+            GLBatch.loadIdentity();
+            GLBatch.ortho(l, r, b, t, 1.0, -1.0);
             
-            GL.currentBatch().matrixMode(MatrixMode.VIEW);
-            GL.currentBatch().loadIdentity();
-            GL.currentBatch().translate(l, t, 0.0);
+            GLBatch.matrixMode(MatrixMode.VIEW);
+            GLBatch.loadIdentity();
+            GLBatch.translate(l, t, 0.0);
             
-            GL.currentBatch().matrixMode(MatrixMode.MODEL);
-            GL.currentBatch().loadIdentity();
+            GLBatch.matrixMode(MatrixMode.MODEL);
+            GLBatch.loadIdentity();
             
-            GL.currentBatch().matrixMode(MatrixMode.NORMAL);
-            GL.currentBatch().loadIdentity();
+            GLBatch.matrixMode(MatrixMode.NORMAL);
+            GLBatch.loadIdentity();
             
-            GL.currentBatch().colorMode(ColorMode.DIFFUSE);
-            GL.currentBatch().loadWhite();
+            GLBatch.colorMode(ColorMode.DIFFUSE);
+            GLBatch.loadWhite();
             
-            GL.currentBatch().colorMode(ColorMode.SPECULAR);
-            GL.currentBatch().loadWhite();
+            GLBatch.colorMode(ColorMode.SPECULAR);
+            GLBatch.loadWhite();
             
-            GL.currentBatch().colorMode(ColorMode.AMBIENT);
-            GL.currentBatch().loadWhite();
+            GLBatch.colorMode(ColorMode.AMBIENT);
+            GLBatch.loadWhite();
         }
         
         private static void events()
@@ -164,6 +165,8 @@ public abstract class Engine
         
         private static void destroy()
         {
+            Font.destroy();
+            
             Layer.destroy();
             
             GL.destroy();

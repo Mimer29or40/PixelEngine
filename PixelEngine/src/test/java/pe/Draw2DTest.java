@@ -151,7 +151,7 @@ public class Draw2DTest extends Engine
         draggableText = new Vector2d[] {
                 new Vector2d(layer.width() >> 1, layer.height() >> 1),
                 new Vector2d(layer.width() - 10, layer.height() - 10),
-                new Vector2d(10, 10),
+                new Vector2d(10, layer.height() >> 1),
                 };
         
         Image image = Image.genColorGradient(30, 30, Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE);

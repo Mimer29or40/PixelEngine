@@ -2,9 +2,7 @@ package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import pe.font.CharData;
 import pe.font.Font;
-import pe.font.PackedQuad;
 import pe.render.DrawMode;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
@@ -761,51 +759,48 @@ public abstract class Draw2D
     
     protected static void drawText(@NotNull Font font, int size, @NotNull String text, double x, double y, int r, int g, int b, int a)
     {
-        int textLen = text.length();
+        double scale = font.scale(size);
         
-        GLBatch.checkBuffer(4 * textLen);
-        
-        GLBatch.setTexture(font.texture(size));
-        
-        GLBatch.begin(DrawMode.TRIANGLES);
-        
-        CharData prevChar = null, currChar;
-        for (int i = 0; i < textLen; i++)
+        Font.CharData prevChar = null, currChar;
+        for (int i = 0, n = text.length(); i < n; i++)
         {
-            char character = text.charAt(i);
+            currChar = font.getCharData(text.charAt(i));
             
-            currChar = font.getCharData(character);
+            x += font.getKernAdvanceUnscaled(prevChar, currChar) * scale;
             
-            x += font.getKernAdvance(prevChar, currChar, size);
+            double x0 = x + currChar.x0Unscaled * scale;
+            double y0 = y + currChar.y0Unscaled * scale;
+            double x1 = x + currChar.x1Unscaled * scale;
+            double y1 = y + currChar.y1Unscaled * scale;
             
-            PackedQuad packedQuad = font.getPackedQuad(character, size);
+            GLBatch.checkBuffer(6);
             
-            double x0 = x + packedQuad.x0;
-            double y0 = y + packedQuad.y0;
-            double x1 = x + packedQuad.x1;
-            double y1 = y + packedQuad.y1;
+            GLBatch.setTexture(font.texture());
+            
+            GLBatch.begin(DrawMode.TRIANGLES);
             
             Draw2D.VERTEX0.pos(x0, y0);
-            Draw2D.VERTEX0.texCoord(packedQuad.u0, packedQuad.v0);
+            Draw2D.VERTEX0.texCoord(currChar.u0, currChar.v0);
             Draw2D.VERTEX0.color(r, g, b, a);
             Draw2D.VERTEX1.pos(x0, y1);
-            Draw2D.VERTEX1.texCoord(packedQuad.u0, packedQuad.v1);
+            Draw2D.VERTEX1.texCoord(currChar.u0, currChar.v1);
             Draw2D.VERTEX1.color(r, g, b, a);
             Draw2D.VERTEX2.pos(x1, y1);
-            Draw2D.VERTEX2.texCoord(packedQuad.u1, packedQuad.v1);
+            Draw2D.VERTEX2.texCoord(currChar.u1, currChar.v1);
             Draw2D.VERTEX2.color(r, g, b, a);
             Draw2D.VERTEX3.pos(x1, y0);
-            Draw2D.VERTEX3.texCoord(packedQuad.u1, packedQuad.v0);
+            Draw2D.VERTEX3.texCoord(currChar.u1, currChar.v0);
             Draw2D.VERTEX3.color(r, g, b, a);
             
-            windQuad();
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
+            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
             
-            x += font.getAdvance(currChar, size);
+            GLBatch.end();
+            
+            x += currChar.advanceWidthUnscaled * scale;
             
             prevChar = currChar;
         }
-        
-        GLBatch.end();
     }
     
     protected static int segments(double rx, double ry)
@@ -866,10 +861,10 @@ public abstract class Draw2D
         double d3 = Math.sqrt((Draw2D.VERTEX3.x - cx) * (Draw2D.VERTEX3.x - cx) +
                               (Draw2D.VERTEX3.y - cy) * (Draw2D.VERTEX3.y - cy));
         
-        Draw2D.VERTEX0.q = d0 == 0.0 ? 1.0 : (d0 + d2) / d2;
-        Draw2D.VERTEX1.q = d0 == 0.0 ? 1.0 : (d1 + d3) / d3;
+        Draw2D.VERTEX0.q = d2 == 0.0 ? 1.0 : (d0 + d2) / d2;
+        Draw2D.VERTEX1.q = d3 == 0.0 ? 1.0 : (d1 + d3) / d3;
         Draw2D.VERTEX2.q = d0 == 0.0 ? 1.0 : (d2 + d0) / d0;
-        Draw2D.VERTEX3.q = d0 == 0.0 ? 1.0 : (d3 + d1) / d1;
+        Draw2D.VERTEX3.q = d1 == 0.0 ? 1.0 : (d3 + d1) / d1;
         
         double cross012 = (Draw2D.VERTEX1.x - Draw2D.VERTEX0.x) * (Draw2D.VERTEX2.y - Draw2D.VERTEX1.y) -
                           (Draw2D.VERTEX1.y - Draw2D.VERTEX0.y) * (Draw2D.VERTEX2.x - Draw2D.VERTEX1.x);
@@ -938,7 +933,14 @@ public abstract class Draw2D
         private void apply()
         {
             GLBatch.pos(this.x, this.y);
-            GLBatch.texCoord(this.u * this.q, this.v * this.q, this.q);
+            if (Double.compare(this.q, 1.0) == 0)
+            {
+                GLBatch.texCoord(this.u, this.v, this.q);
+            }
+            else
+            {
+                GLBatch.texCoord(this.u * this.q, this.v * this.q, this.q);
+            }
             GLBatch.color(this.r, this.g, this.b, this.a);
         }
     }

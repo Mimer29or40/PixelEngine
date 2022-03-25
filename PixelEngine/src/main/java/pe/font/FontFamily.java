@@ -50,7 +50,7 @@ public class FontFamily
                     Weight  fontWeight     = fileDetails.length > 1 ? Weight.get(fileDetails[1]) : Weight.REGULAR;
                     boolean fontItalicized = fileDetails.length > 2;
                     
-                    if (!Font.exists(fontName, fontWeight, fontItalicized)) Font.register(p.toString(), fontName, fontWeight, fontItalicized, true);
+                    // if (!Font.exists(fontName, fontWeight, fontItalicized)) Font.register(p.toString(), fontName, fontWeight, fontItalicized, true);
                 }
             });
         }
@@ -69,7 +69,7 @@ public class FontFamily
             for (boolean italicized : new boolean[] {false, true})
             {
                 fontID = Font.getID(this.name, weight, italicized);
-                if (Font.exists(this.name, weight, italicized)) this.cache.put(fontID, Font.get(this.name, weight, italicized));
+                // if (Font.exists(this.name, weight, italicized)) this.cache.put(fontID, Font.get(this.name, weight, italicized));
             }
         }
     }

@@ -1,25 +1,29 @@
 package pe.font;
 
 import org.jetbrains.annotations.NotNull;
+import org.lwjgl.stb.STBTTAlignedQuad;
 import org.lwjgl.stb.STBTTFontinfo;
+import org.lwjgl.stb.STBTTPackContext;
+import org.lwjgl.stb.STBTTPackedchar;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
+import pe.color.ColorFormat;
+import pe.texture.Image;
 import pe.texture.Texture;
+import rutils.IOUtil;
 import rutils.Logger;
 
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 import java.util.Objects;
 
 import static org.lwjgl.stb.STBTruetype.*;
-import static rutils.IOUtil.readFromFile;
 
-@SuppressWarnings("unused")
 public class Font
 {
     private static final Logger LOGGER = new Logger();
-    
-    private static final HashMap<String, Font> CACHE = new HashMap<>();
     
     public static final String  DEFAULT_NAME    = "PressStart2P";
     public static final Weight  DEFAULT_WEIGHT  = Weight.REGULAR;
@@ -27,43 +31,131 @@ public class Font
     
     public static final int DEFAULT_SIZE = 24;
     
-    static
+    private static final HashMap<String, Font> CACHE = new HashMap<>();
+    
+    private static Font DEFAULT;
+    
+    public static void setup()
     {
-        register("font/PressStart2P/PressStart2P.ttf", Font.DEFAULT_NAME, Font.DEFAULT_WEIGHT, Font.DEFAULT_ITALICS, true);
-        // register("fonts/Arial-Regular.ttf", "Arial", Font.DEFAULT_WEIGHT, Font.DEFAULT_ITALICS, true);
+        if (Font.DEFAULT != null)
+        {
+            Font.LOGGER.warning("Font already setup");
+            return;
+        }
+        
+        Font.LOGGER.fine("Setup");
+        
+        Font.DEFAULT = register("font/PressStart2P/PressStart2P.ttf",
+                                Font.DEFAULT_NAME,
+                                Font.DEFAULT_WEIGHT,
+                                Font.DEFAULT_ITALICS,
+                                true,
+                                false);
     }
     
-    public static final @NotNull Font DEFAULT = Font.get(Font.DEFAULT_NAME, Font.DEFAULT_WEIGHT, Font.DEFAULT_ITALICS);
+    public static void destroy()
+    {
+        Font.LOGGER.fine("Destroy");
+        
+        Font.DEFAULT = null;
+        Font.CACHE.values().forEach(Font::delete);
+        Font.CACHE.clear();
+    }
+    
+    /**
+     * Registers a font to be used. All fonts need to be registered before they can be used. Font instances are owned by this class.
+     * <p>
+     * There is no checking if the characteristics provided actually match the font.
+     *
+     * @param filePath   The path to the .ttf file
+     * @param name       The registry name of the font.
+     * @param weight     The weight of the font.
+     * @param italicized If the font is italicized
+     * @param kerning    If kerning should be used when rendering.
+     * @param alignToInt If each character should align to integer values.
+     */
+    public static Font register(@NotNull String filePath, @NotNull String name, @NotNull Weight weight, boolean italicized, boolean kerning, boolean alignToInt)
+    {
+        String fontID = getID(name, weight, italicized);
+        
+        if (Font.CACHE.containsKey(fontID))
+        {
+            Font.LOGGER.warning("Font already registered: " + fontID);
+            return Font.CACHE.get(fontID);
+        }
+        
+        Font.LOGGER.fine("Registering Font: " + fontID);
+        
+        Font font = new Font(filePath, name, weight, italicized, kerning, alignToInt);
+        Font.CACHE.put(fontID, font);
+        return font;
+    }
+    
+    /**
+     * Gets a font with the specified properties.
+     *
+     * @param name       The font name.
+     * @param weight     The weight of the font.
+     * @param italicized Whether the font is italic styled or not.
+     * @return The font object.
+     */
+    public static @NotNull Font get(@NotNull String name, @NotNull Weight weight, boolean italicized)
+    {
+        String fontID = getID(name, weight, italicized);
+        
+        if (Font.CACHE.containsKey(fontID)) return Font.CACHE.get(fontID);
+        
+        Font.LOGGER.warning("Font is not registered: " + fontID);
+        
+        return Font.DEFAULT;
+    }
+    
+    /**
+     * Builds a font tag with the provided properties.
+     *
+     * @param name       The font name
+     * @param weight     The weight of the font
+     * @param italicized If the font is italicized.
+     * @return The tag string.
+     */
+    public static @NotNull String getID(@NotNull String name, @NotNull Weight weight, boolean italicized)
+    {
+        return name + '_' + weight.tag() + (italicized ? "_italicized" : "");
+    }
+    
+    // -------------------- Instance -------------------- //
     
     private final String  name;
     private final Weight  weight;
     private final boolean italicized;
     private final boolean kerning;
+    private final boolean alignToInt;
     
     private final String id;
     
     final STBTTFontinfo info;
     final ByteBuffer    fileData;
     
-    final int ascentUnscaled;
-    final int descentUnscaled;
-    final int lineGapUnscaled;
+    public final int ascentUnscaled;
+    public final int descentUnscaled;
+    public final int lineGapUnscaled;
     
     final CharData[] charData;
     
-    final HashMap<@NotNull Integer, SizeData> sizeData;
+    final Texture texture;
     
-    private Font(String filePath, String name, Weight weight, boolean italicized, boolean kerning)
+    private Font(String filePath, String name, Weight weight, boolean italicized, boolean kerning, boolean alignToInt)
     {
         this.name       = name;
         this.weight     = weight;
         this.italicized = italicized;
         this.kerning    = kerning;
+        this.alignToInt = alignToInt;
         
         this.id = getID(this.name, this.weight, this.italicized);
         
-        this.info     = STBTTFontinfo.create();
-        this.fileData = readFromFile(filePath);
+        this.info     = STBTTFontinfo.malloc();
+        this.fileData = IOUtil.readFromFile(filePath);
         
         if (this.fileData == null || !stbtt_InitFont(this.info, this.fileData)) throw new RuntimeException("Font Data could not be loaded: " + this.id);
         
@@ -79,21 +171,75 @@ public class Font
             this.descentUnscaled = descent.get(0);
             this.lineGapUnscaled = lineGap.get(0);
             
-            IntBuffer advanceWidth    = stack.mallocInt(1);
-            IntBuffer leftSideBearing = stack.mallocInt(1);
+            int baseSize = 96;
             
-            IntBuffer x0 = stack.mallocInt(1);
-            IntBuffer y0 = stack.mallocInt(1);
-            IntBuffer x1 = stack.mallocInt(1);
-            IntBuffer y1 = stack.mallocInt(1);
+            STBTTPackedchar.Buffer charData = STBTTPackedchar.malloc(0xFFFF);
+            
+            int width;
+            int height;
+            
+            ByteBuffer buffer;
+            
+            boolean success;
+            
+            int textureSize = 32;
+            int samples     = 2;
+            while (true)
+            {
+                width  = baseSize * textureSize;
+                height = baseSize * (textureSize >> 1);
+                
+                buffer = MemoryUtil.memAlloc(width * height);
+                
+                charData.position(32);
+                try (STBTTPackContext pc = STBTTPackContext.malloc())
+                {
+                    stbtt_PackBegin(pc, buffer, width, height, 0, 2, MemoryUtil.NULL);
+                    stbtt_PackSetOversampling(pc, samples, samples);
+                    success = stbtt_PackFontRange(pc, this.fileData, 0, baseSize, charData.position(), charData);
+                    stbtt_PackEnd(pc);
+                }
+                charData.clear();
+                buffer.clear();
+                
+                textureSize <<= 1;
+                
+                if (success || textureSize >= 1000) break;
+                MemoryUtil.memFree(buffer);
+            }
+            
+            FloatBuffer x = stack.mallocFloat(1);
+            FloatBuffer y = stack.mallocFloat(1);
+            
+            STBTTAlignedQuad quad = STBTTAlignedQuad.malloc(stack);
             
             this.charData = new CharData[0xFFFF];
-            for (int i = 0; i < 0xFFFF; i++) this.charData[i] = new CharData(this, i, advanceWidth, leftSideBearing, x0, y0, x1, y1);
+            for (int i = 0, n = this.charData.length; i < n; i++)
+            {
+                x.put(0, 0);
+                y.put(0, 0);
+                
+                stbtt_GetPackedQuad(charData, width, height, i, x, y, quad, this.alignToInt);
+                
+                this.charData[i] = new CharData(i, quad);
+            }
+            
+            charData.free();
+            
+            // Converts GL_RED to GL_RGBA
+            ByteBuffer data = MemoryUtil.memAlloc(width * height * 4);
+            for (int i = 0; i < buffer.capacity(); i++) data.putInt((buffer.get(i) << 24) | 0x00FFFFFF);
+            data.flip();
+            
+            this.texture = Texture.load(data, width, height, 1, ColorFormat.RGBA);
+            // this.texture.filter(TextureFilter.LINEAR, TextureFilter.LINEAR);
+            
+            Image image = Image.load(data, width, height, 1, ColorFormat.RGBA);
+            image.export(this.id + ".png");
+            
+            MemoryUtil.memFree(buffer);
+            MemoryUtil.memFree(data);
         }
-        
-        this.sizeData = new HashMap<>();
-        
-        getSizeData(Font.DEFAULT_SIZE);
     }
     
     @Override
@@ -117,15 +263,17 @@ public class Font
         return Objects.hash(this.name, this.weight, this.italicized);
     }
     
-    /**
-     * Destroys the Font and free's its memory.
-     */
-    public void destroy()
+    public void delete()
     {
-        Font.LOGGER.fine("Destroying Font: %s", this);
-        
-        this.sizeData.forEach((i, sizeData) -> sizeData.texture.delete());
-        this.sizeData.clear();
+        if (Font.DEFAULT != this)
+        {
+            Font.LOGGER.fine("Deleting Font: %s", this);
+            
+            this.info.free();
+            MemoryUtil.memFree(this.fileData);
+            
+            this.texture.delete();
+        }
     }
     
     /**
@@ -161,58 +309,42 @@ public class Font
     }
     
     /**
+     * @return true if characters should be aligned to integer coordinates.
+     */
+    public boolean alignToInt()
+    {
+        return this.alignToInt;
+    }
+    
+    /**
+     * @return Gets the texture map of the font.
+     */
+    public Texture texture()
+    {
+        return this.texture;
+    }
+    
+    /**
      * @return Gets the scale of the size data.
      */
     public double scale(int size)
     {
-        return getSizeData(size).scale;
+        return stbtt_ScaleForPixelHeight(this.info, size);
     }
     
     /**
-     * @return Gets the ascent of the size data.
-     */
-    public double ascent(int size)
-    {
-        return getSizeData(size).ascent;
-    }
-    
-    /**
-     * @return Gets the descent of the size data.
-     */
-    public double descent(int size)
-    {
-        return getSizeData(size).descent;
-    }
-    
-    /**
-     * @return Gets the lineGap of the size data.
-     */
-    public double lineGap(int size)
-    {
-        return getSizeData(size).lineGap;
-    }
-    
-    /**
-     * @return Gets the texture map of the size data.
-     */
-    public Texture texture(int size)
-    {
-        return getSizeData(size).texture;
-    }
-    
-    /**
-     * Method to getBytes the character data for a specific size, generating it if necessary.
+     * Gets the kerning between two characters. If kerning is disabled then this offset is zero.
      *
-     * @param size The size in pixels.
-     * @return The size data.
+     * @param ch1 The first character.
+     * @param ch2 The second character.
+     * @return The number of pixels to offset ch2 when rendering.
      */
-    public SizeData getSizeData(int size)
+    public double getKernAdvanceUnscaled(CharData ch1, CharData ch2)
     {
-        return this.sizeData.computeIfAbsent(size, s -> {
-            Font.LOGGER.finest("Generating SizeData for font \"%s\" for size \"%s\"", this, s);
-            
-            return new SizeData(this, s);
-        });
+        if (ch1 == null) return 0.0;
+        if (ch2 == null) return 0.0;
+        if (!this.kerning) return 0.0;
+        return stbtt_GetGlyphKernAdvance(this.info, ch1.index, ch2.index);
     }
     
     /**
@@ -237,8 +369,6 @@ public class Font
     {
         Font.LOGGER.finest("Getting text width for text \"%s\" with font \"%s\" of size \"%s\"", text, this, size);
         
-        SizeData sizeData = getSizeData(size);
-        
         double width = 0;
         
         String[] lines = text.split("\n");
@@ -248,11 +378,12 @@ public class Font
             for (int i = 0, n = text.length(); i < n; i++)
             {
                 currChar = getCharData(text.charAt(i));
-                width += currChar.advanceWidthUnscaled + getKernAdvance(prevChar, currChar, size);
+                
+                width += getKernAdvanceUnscaled(prevChar, currChar) + currChar.advanceWidthUnscaled;
                 
                 prevChar = currChar;
             }
-            return width * sizeData.scale;
+            return width * scale(size);
         }
         else
         {
@@ -276,173 +407,55 @@ public class Font
         Font.LOGGER.finest("Getting text height for text \"%s\" with font \"%s\" of size \"%s\"", text, this, size);
         
         String[] lines = text.split("\n");
-        return lines.length * size;
+        return lines.length * (this.ascentUnscaled - this.descentUnscaled + this.lineGapUnscaled) * scale(size);
     }
     
-    /**
-     * Gets the kerning between two characters. If kerning is disabled then this offset is zero.
-     *
-     * @param ch1  The first character.
-     * @param ch2  The second character.
-     * @param size The size of the font.
-     * @return The number of pixels to offset ch2 when rendering.
-     */
-    public double getKernAdvance(CharData ch1, CharData ch2, int size)
+    public final class CharData
     {
-        if (ch1 == null) return 0.0;
-        if (ch2 == null) return 0.0;
-        if (!this.kerning) return 0.0;
-        return stbtt_GetGlyphKernAdvance(this.info, ch1.index, ch2.index) * getSizeData(size).scale;
-    }
-    
-    public double getAdvance(CharData ch, int size)
-    {
-        if (ch == null) return 0.0;
-        return ch.advanceWidthUnscaled * getSizeData(size).scale;
-    }
-    
-    public PackedQuad getPackedQuad(char character, int size)
-    {
-        return getSizeData(size).getPackedQuad(character);
-    }
-    
-    /**
-     * Registers a font to be used. All fonts need to be registered before they can be used. Font instances are owned by this class.
-     * <p>
-     * There is no checking if the characteristics provided actually match the font.
-     *
-     * @param filePath   The path to the .ttf file
-     * @param name       The registry name of the font.
-     * @param weight     The weight of the font.
-     * @param italicized If the font is italicized
-     * @param kerning    If kerning should be used when rendering.
-     */
-    public static void register(@NotNull String filePath, @NotNull String name, @NotNull Weight weight, boolean italicized, boolean kerning)
-    {
-        String fontID = getID(name, weight, italicized);
+        public final char character;
+        public final int  index;
+        public final int  advanceWidthUnscaled, leftSideBearingUnscaled;
+        public final int x0Unscaled, y0Unscaled, x1Unscaled, y1Unscaled;
+        public final double u0, v0, u1, v1;
         
-        if (Font.CACHE.containsKey(fontID))
+        private CharData(int character, @NotNull STBTTAlignedQuad quad)
         {
-            Font.LOGGER.warning("Font already registered: " + fontID);
-            return;
+            this.character = (char) character;
+            this.index     = stbtt_FindGlyphIndex(Font.this.info, this.character);
+            
+            try (MemoryStack stack = MemoryStack.stackPush())
+            {
+                IntBuffer advanceWidth    = stack.mallocInt(1);
+                IntBuffer leftSideBearing = stack.mallocInt(1);
+                
+                stbtt_GetGlyphHMetrics(Font.this.info, this.index, advanceWidth, leftSideBearing);
+                
+                this.advanceWidthUnscaled    = advanceWidth.get(0);
+                this.leftSideBearingUnscaled = leftSideBearing.get(0);
+                
+                IntBuffer x0 = stack.mallocInt(1);
+                IntBuffer y0 = stack.mallocInt(1);
+                IntBuffer x1 = stack.mallocInt(1);
+                IntBuffer y1 = stack.mallocInt(1);
+                
+                stbtt_GetGlyphBox(Font.this.info, this.index, x0, y0, x1, y1);
+                
+                this.x0Unscaled = x0.get(0);
+                this.y0Unscaled = Font.this.ascentUnscaled - y1.get(0);
+                this.x1Unscaled = x1.get(0);
+                this.y1Unscaled = Font.this.ascentUnscaled - y0.get(0);
+                
+                this.u0 = quad.s0();
+                this.v0 = quad.t0();
+                this.u1 = quad.s1();
+                this.v1 = quad.t1();
+            }
         }
         
-        Font.LOGGER.fine("Registering Font: " + fontID);
-        
-        Font.CACHE.put(fontID, new Font(filePath, name, weight, italicized, kerning));
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param name       The font name.
-     * @param weight     The weight of the font.
-     * @param italicized Whether the font is italic styled or not.
-     * @return The font object.
-     */
-    public static @NotNull Font get(@NotNull String name, @NotNull Weight weight, boolean italicized)
-    {
-        String fontID = getID(name, weight, italicized);
-        
-        if (Font.CACHE.containsKey(fontID)) return Font.CACHE.get(fontID);
-        
-        Font.LOGGER.warning("Font is not registered: " + fontID);
-        
-        return Font.DEFAULT;
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param name   The font name.
-     * @param weight The weight of the font.
-     * @return The font object.
-     */
-    public static @NotNull Font get(@NotNull String name, @NotNull Weight weight)
-    {
-        return get(name, weight, Font.DEFAULT_ITALICS);
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param name       The font name.
-     * @param italicized Whether the font is italic styled or not.
-     * @return The font object.
-     */
-    public static @NotNull Font get(@NotNull String name, boolean italicized)
-    {
-        return get(name, Font.DEFAULT_WEIGHT, italicized);
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param weight     The weight of the font.
-     * @param italicized Whether the font is italic styled or not.
-     * @return The font object.
-     */
-    public static @NotNull Font get(@NotNull Weight weight, boolean italicized)
-    {
-        return get(Font.DEFAULT_NAME, weight, italicized);
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param name The font name.
-     * @return The font object.
-     */
-    public static @NotNull Font get(@NotNull String name)
-    {
-        return get(name, Font.DEFAULT_WEIGHT, Font.DEFAULT_ITALICS);
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param weight The weight of the font.
-     * @return The font object.
-     */
-    public static @NotNull Font get(@NotNull Weight weight)
-    {
-        return get(Font.DEFAULT_NAME, weight, Font.DEFAULT_ITALICS);
-    }
-    
-    /**
-     * Gets a font with the specified properties.
-     *
-     * @param italicized Whether the font is italic styled or not.
-     * @return The font object.
-     */
-    public static @NotNull Font get(boolean italicized)
-    {
-        return get(Font.DEFAULT_NAME, Font.DEFAULT_WEIGHT, italicized);
-    }
-    
-    /**
-     * Checks if the font is registered.
-     *
-     * @param name       The font name.
-     * @param weight     The weight of the font.
-     * @param italicized Whether the font is italic styled or not.
-     * @return {@code true} if the font is registered.
-     */
-    public static boolean exists(@NotNull String name, @NotNull Weight weight, boolean italicized)
-    {
-        return Font.CACHE.containsKey(getID(name, weight, italicized));
-    }
-    
-    /**
-     * Builds a font tag with the provided properties.
-     *
-     * @param name       The font name
-     * @param weight     The weight of the font
-     * @param italicized If the font is italicized.
-     * @return The tag string.
-     */
-    public static @NotNull String getID(@NotNull String name, @NotNull Weight weight, boolean italicized)
-    {
-        return name + '_' + weight.tag() + (italicized ? "_italicized" : "");
+        @Override
+        public String toString()
+        {
+            return "CharData{" + this.character + ", font=" + Font.this + "}";
+        }
     }
 }
