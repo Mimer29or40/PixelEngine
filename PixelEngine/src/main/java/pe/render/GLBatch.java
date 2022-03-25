@@ -516,6 +516,46 @@ public class GLBatch
         texCoord2(u, v, 1.0);
     }
     
+    public static void vertex(@NotNull Vertex vertex)
+    {
+        if (vertex.x != null)
+        {
+            if (vertex.z != null)
+            {
+                pos(vertex.x, vertex.y, vertex.z);
+            }
+            else
+            {
+                pos(vertex.x, vertex.y);
+            }
+        }
+        if (vertex.u != null)
+        {
+            if (vertex.q != null)
+            {
+                texCoord(vertex.u, vertex.v, vertex.q);
+            }
+            else
+            {
+                texCoord(vertex.u, vertex.v);
+            }
+        }
+        if (vertex.nx != null) normal(vertex.nx, vertex.ny, vertex.nz);
+        if (vertex.tx != null) tangent(vertex.tx, vertex.ty, vertex.tz);
+        if (vertex.r != null) color(vertex.r, vertex.g, vertex.b, vertex.a);
+        if (vertex.u2 != null)
+        {
+            if (vertex.q2 != null)
+            {
+                texCoord(vertex.u2, vertex.v2, vertex.q2);
+            }
+            else
+            {
+                texCoord(vertex.u2, vertex.v2);
+            }
+        }
+    }
+    
     public static void checkBuffer(int vertexCount)
     {
         if (GL.currentBatch.pos.position() + vertexCount >= GL.currentBatch.elementsCount * 4) GL.currentBatch.draw();
@@ -962,6 +1002,80 @@ public class GLBatch
         public int draws()
         {
             return this.draws;
+        }
+    }
+    
+    public static class Vertex
+    {
+        private Double x, y, z;
+        private Double u, v, q;
+        private Double nx, ny, nz;
+        private Double tx, ty, tz;
+        private Integer r, g, b, a;
+        private Double u2, v2, q2;
+        
+        public void pos(double x, double y, double z)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+        
+        public void pos(double x, double y)
+        {
+            this.x = x;
+            this.y = y;
+            this.z = null;
+        }
+        
+        public void texCoord(double u, double v, double q)
+        {
+            this.u = u;
+            this.v = v;
+            this.q = q;
+        }
+        
+        public void texCoord(double u, double v)
+        {
+            this.u = u;
+            this.v = v;
+            this.q = 1.0;
+        }
+        
+        public void normal(double x, double y, double z)
+        {
+            this.nx = x;
+            this.ny = y;
+            this.nz = z;
+        }
+        
+        public void tangent(double x, double y, double z)
+        {
+            this.tx = x;
+            this.ty = y;
+            this.tz = z;
+        }
+        
+        public void color(int r, int g, int b, int a)
+        {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
+        }
+        
+        public void texCoord2(double u, double v, double q)
+        {
+            this.u2 = u;
+            this.v2 = v;
+            this.q2 = q;
+        }
+        
+        public void texCoord2(double u, double v)
+        {
+            this.u2 = u;
+            this.v2 = v;
+            this.q2 = 1.0;
         }
     }
 }
