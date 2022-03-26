@@ -65,6 +65,7 @@ public class FontSingle extends Font
     // -------------------- Instance -------------------- //
     
     final STBTTFontinfo info;
+    final ByteBuffer    fileData;
     
     final String  family;
     final Weight  weight;
@@ -85,7 +86,8 @@ public class FontSingle extends Font
     
     FontSingle(STBTTFontinfo info, ByteBuffer fileData, String family, Weight weight, boolean italicized, boolean kerning, boolean alignToInt)
     {
-        this.info = info;
+        this.info     = info;
+        this.fileData = fileData;
         
         this.family     = family;
         this.weight     = weight;
@@ -133,7 +135,7 @@ public class FontSingle extends Font
                 {
                     stbtt_PackBegin(pc, buffer, width, height, 0, 2, MemoryUtil.NULL);
                     stbtt_PackSetOversampling(pc, samples, samples);
-                    success = stbtt_PackFontRange(pc, fileData, 0, baseSize, charData.position(), charData);
+                    success = stbtt_PackFontRange(pc, this.fileData, 0, baseSize, charData.position(), charData);
                     stbtt_PackEnd(pc);
                 }
                 charData.clear();
@@ -220,6 +222,7 @@ public class FontSingle extends Font
             FontSingle.LOGGER.fine("Deleting Font: %s", this);
             
             this.info.free();
+            MemoryUtil.memFree(this.fileData);
             
             this.texture.delete();
             

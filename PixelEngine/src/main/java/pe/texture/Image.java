@@ -44,11 +44,11 @@ public class Image
     
     public static @NotNull Image loadFromFile(@NotNull String filePath)
     {
-        ByteBuffer fileData = readFromFile(filePath);
+        ByteBuffer fileData = readFromFile(filePath, new int[1], MemoryUtil::memAlloc);
         
         if (fileData == null) return new Image(null, 0, 0, 1, ColorFormat.RGBA);
         
-        Color.Buffer data;
+        Color.Buffer colorData;
         int          width;
         int          height;
         int          mipmaps;
@@ -75,7 +75,7 @@ public class Image
                     
                     format = ColorFormat.get(c.get());
                     
-                    data = Color.wrapSafe(format, _data);
+                    colorData = Color.wrapSafe(format, _data);
                     
                     width  = w.get();
                     height = h.get();
@@ -100,7 +100,7 @@ public class Image
                                 default -> ColorFormat.GRAY;
                             };
                     
-                    data = Color.wrapSafe(format, _data);
+                    colorData = Color.wrapSafe(format, _data);
                     
                     width  = w.get();
                     height = h.get();
@@ -116,9 +116,9 @@ public class Image
                 
                 format = ColorFormat.values()[fileData.getInt()];
                 
-                data = Color.malloc(format, width * height);
+                colorData = Color.malloc(format, width * height);
                 
-                MemoryUtil.memCopy(MemoryUtil.memAddress(fileData), data.address(), fileData.remaining());
+                MemoryUtil.memCopy(MemoryUtil.memAddress(fileData), colorData.address(), fileData.remaining());
             }
             // case ".dds" -> {}
             // case ".pkm" -> {}
@@ -127,12 +127,13 @@ public class Image
             // case ".astc" -> {}
             default -> throw new RuntimeException("File format not supported");
         }
-        return new Image(data, width, height, mipmaps, format);
+        MemoryUtil.memFree(fileData);
+        return new Image(colorData, width, height, mipmaps, format);
     }
     
     public static @NotNull Image loadAnimFromFile(@NotNull String fileName, int[] frameCount)
     {
-        ByteBuffer fileData = readFromFile(fileName);
+        ByteBuffer fileData = readFromFile(fileName, new int[1], MemoryUtil::memAlloc);
         
         if (fileData == null) return new Image(null, 0, 0, 1, ColorFormat.RGBA);
         
@@ -150,15 +151,19 @@ public class Image
                     
                     IntBuffer channels = stack.mallocInt(1);
                     
-                    ByteBuffer data = stbi_load_gif_from_memory(fileData, delays, width, height, frames, channels, 0);
+                    ByteBuffer colorData = stbi_load_gif_from_memory(fileData, delays, width, height, frames, channels, 0);
                     
                     ColorFormat format = ColorFormat.get(channels.get());
                     
+                    MemoryUtil.memFree(fileData);
+                    
                     frameCount[0] = frames.get();
-                    return new Image(Color.wrapSafe(format, data), width.get(), height.get(), 1, format);
+                    return new Image(Color.wrapSafe(format, colorData), width.get(), height.get(), 1, format);
                 }
             }
             default -> {
+                MemoryUtil.memFree(fileData);
+                
                 frameCount[0] = 1;
                 return loadFromFile(fileName);
             }

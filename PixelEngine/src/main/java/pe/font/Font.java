@@ -47,10 +47,10 @@ public abstract class Font
                                           true,
                                           false);
         
-        // Font.DEFAULT_FAMILY_INST = registerFamily("font/PressStart2P",
-        //                                           Font.DEFAULT_FAMILY,
-        //                                           true,
-        //                                           false);
+        Font.DEFAULT_FAMILY_INST = registerFamily("font/PressStart2P",
+                                                  Font.DEFAULT_FAMILY,
+                                                  true,
+                                                  false);
     }
     
     public static void destroy()
@@ -67,7 +67,7 @@ public abstract class Font
     private static @NotNull FontSingle register(@NotNull String filePath, boolean kerning, boolean alignToInt, boolean warn)
     {
         STBTTFontinfo info     = STBTTFontinfo.malloc();
-        ByteBuffer    fileData = IOUtil.readFromFile(filePath);
+        ByteBuffer    fileData = IOUtil.readFromFile(filePath, new int[1], MemoryUtil::memAlloc);
         
         if (fileData == null || !stbtt_InitFont(info, fileData)) throw new RuntimeException("Font Data could not be loaded: " + filePath);
         
@@ -110,7 +110,6 @@ public abstract class Font
         Font.LOGGER.fine("Loading Font \"%s\" from file: %s", fontID, filePath);
         
         FontSingle font = new FontSingle(info, fileData, family, weight, italicized, kerning, alignToInt);
-        MemoryUtil.memFree(fileData);
         
         Font.FONT_CACHE.put(fontID, font);
         return font;
