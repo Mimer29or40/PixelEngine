@@ -47,11 +47,13 @@ public abstract class Font
         
         Font.DEFAULT_FONT_INST = register("font/PressStart2P/PressStart2P.ttf",
                                           true,
+                                          false,
                                           false);
         
         Font.DEFAULT_FAMILY_INST = registerFamily("font/PressStart2P",
                                                   Font.DEFAULT_FAMILY,
                                                   true,
+                                                  false,
                                                   false);
     }
     
@@ -66,7 +68,7 @@ public abstract class Font
         List.copyOf(Font.FONT_CACHE.values()).forEach(FontSingle::delete);
     }
     
-    private static @NotNull FontSingle register(@NotNull String filePath, boolean kerning, boolean alignToInt, boolean warn)
+    private static @NotNull FontSingle register(@NotNull String filePath, boolean kerning, boolean alignToInt, boolean interpolated, boolean warn)
     {
         STBTTFontinfo info     = STBTTFontinfo.malloc();
         ByteBuffer    fileData = IOUtil.readFromFile(filePath, new int[1], MemoryUtil::memAlloc);
@@ -111,7 +113,7 @@ public abstract class Font
         
         Font.LOGGER.fine("Loading Font \"%s\" from file: %s", fontID, filePath);
         
-        FontSingle font = new FontSingle(info, fileData, family, weight, italicized, kerning, alignToInt);
+        FontSingle font = new FontSingle(info, fileData, family, weight, italicized, kerning, alignToInt, interpolated);
         
         Font.FONT_CACHE.put(fontID, font);
         return font;
@@ -122,22 +124,26 @@ public abstract class Font
      * <p>
      * There is no checking if the characteristics provided actually match the font.
      *
-     * @param filePath   The path to the .ttf file
-     * @param kerning    If kerning should be used when rendering.
-     * @param alignToInt If each character should align to integer values.
+     * @param filePath     The path to the .ttf file
+     * @param kerning      If kerning should be used when rendering.
+     * @param alignToInt   If each character should align to integer values.
+     * @param interpolated If the texture should be linear interpolated.
      */
-    public static @NotNull FontSingle register(@NotNull String filePath, boolean kerning, boolean alignToInt)
+    public static @NotNull FontSingle register(@NotNull String filePath, boolean kerning, boolean alignToInt, boolean interpolated)
     {
-        return register(filePath, kerning, alignToInt, true);
+        return register(filePath, kerning, alignToInt, interpolated, true);
     }
     
     /**
      * Registers a font family to be used.
      *
-     * @param directory The path to the directory where the .ttf files are located.
-     * @param name      The registry name for the family.
+     * @param directory    The path to the directory where the .ttf files are located.
+     * @param name         The registry name for the family.
+     * @param kerning      If kerning should be used when rendering.
+     * @param alignToInt   If each character should align to integer values.
+     * @param interpolated If the texture should be linear interpolated.
      */
-    public static @NotNull FontFamily registerFamily(@NotNull String directory, @NotNull String name, boolean kerning, boolean alignToInt)
+    public static @NotNull FontFamily registerFamily(@NotNull String directory, @NotNull String name, boolean kerning, boolean alignToInt, boolean interpolated)
     {
         String familyID = FontFamily.getID(name);
         
@@ -157,7 +163,7 @@ public abstract class Font
                 String fileName = FontFamily.getID(path.getFileName().toString());
                 if (fileName.startsWith(familyID) && fileName.endsWith(".ttf"))
                 {
-                    FontSingle font = Font.register(path.toString(), kerning, alignToInt, false);
+                    FontSingle font = Font.register(path.toString(), kerning, alignToInt, interpolated, false);
                     Font.LOGGER.fine("Added %s to Font Family: %s", font, familyID);
                 }
             });

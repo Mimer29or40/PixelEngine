@@ -111,17 +111,15 @@ public class TextState
                 this.underline = false;
                 this.strike    = false;
                 
-                this.textR = (byte) 255;
-                this.textG = (byte) 255;
-                this.textB = (byte) 255;
+                this.textR = 255;
+                this.textG = 255;
+                this.textB = 255;
+                this.textA = 255;
                 
-                this.textA = (byte) 255;
-                
-                this.backgroundR = (byte) 0;
-                this.backgroundG = (byte) 0;
-                this.backgroundB = (byte) 0;
-                
-                this.backgroundA = (byte) 0;
+                this.backgroundR = 0;
+                this.backgroundG = 0;
+                this.backgroundB = 0;
+                this.backgroundA = 0;
             }
             case TextFormat.WEIGHT -> this.weight = Weight.get(mod[1]);
             case TextFormat.ITALICS -> this.italicized = Boolean.parseBoolean(mod[1]);

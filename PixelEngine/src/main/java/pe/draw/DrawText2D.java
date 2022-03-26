@@ -151,7 +151,7 @@ public class DrawText2D extends Draw2D
             
             double xOffset = hPos == -1 ? 0 : hPos == 0 ? 0.5 * (this.w - lineWidth) : this.w - lineWidth;
             
-            this.font.drawTextImpl(line, x + xOffset, y + yOffset, state);
+            this.font.drawTextImpl(line, this.x + xOffset, this.y + yOffset, state);
             
             yOffset += lineHeight;
         }

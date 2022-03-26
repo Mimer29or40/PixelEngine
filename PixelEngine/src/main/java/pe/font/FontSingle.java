@@ -10,6 +10,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.ColorFormat;
 import pe.texture.Texture;
+import pe.texture.TextureFilter;
 import rutils.Logger;
 
 import java.nio.ByteBuffer;
@@ -82,7 +83,7 @@ public class FontSingle extends Font
     
     final Texture texture;
     
-    FontSingle(STBTTFontinfo info, ByteBuffer fileData, String family, Weight weight, boolean italicized, boolean kerning, boolean alignToInt)
+    FontSingle(STBTTFontinfo info, ByteBuffer fileData, String family, Weight weight, boolean italicized, boolean kerning, boolean alignToInt, boolean interpolated)
     {
         this.info     = info;
         this.fileData = fileData;
@@ -186,6 +187,7 @@ public class FontSingle extends Font
             data.flip();
             
             this.texture = Texture.load(data, width, height, 1, ColorFormat.RGBA);
+            if (interpolated) this.texture.filter(TextureFilter.LINEAR, TextureFilter.LINEAR);
             
             MemoryUtil.memFree(buffer);
             MemoryUtil.memFree(data);

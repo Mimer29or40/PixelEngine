@@ -160,7 +160,7 @@ public class Draw2DTest extends Engine
         texture = Texture.load(image);
         image.delete();
         
-        Font.registerFamily("demo/FiraSans", "FiraSans", true, false);
+        Font.registerFamily("demo/FiraSans", "FiraSans", true, false, true);
     }
     
     private void handleInput()
