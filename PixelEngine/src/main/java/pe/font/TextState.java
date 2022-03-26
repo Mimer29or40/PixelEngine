@@ -7,6 +7,7 @@ public class TextState
     public Weight  weight;
     public boolean italicized;
     
+    public Font       baseFont;
     public FontSingle prevFont;
     public FontSingle currFont;
     
@@ -37,8 +38,9 @@ public class TextState
         this.weight     = weight;
         this.italicized = italicized;
         
+        this.baseFont = font;
         this.prevFont = null;
-        this.currFont = font.withProperties(this.weight, this.italicized);
+        this.currFont = this.baseFont.withProperties(this.weight, this.italicized);
         
         this.size = size;
     }
@@ -48,6 +50,7 @@ public class TextState
         this.weight     = state.weight;
         this.italicized = state.italicized;
         
+        this.baseFont = state.baseFont;
         this.prevFont = state.prevFont;
         this.currFont = state.currFont;
         
@@ -155,7 +158,7 @@ public class TextState
         if (this.changeFont)
         {
             this.prevFont = this.currFont;
-            this.currFont = this.currFont.withProperties(this.weight, this.italicized);
+            this.currFont = this.baseFont.withProperties(this.weight, this.italicized);
             
             this.changeFont = false;
         }
