@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.system.MemoryUtil;
+import pe.render.DrawMode;
+import pe.render.GLBatch;
 import rutils.IOUtil;
 import rutils.Logger;
 
@@ -58,10 +60,10 @@ public abstract class Font
         Font.LOGGER.fine("Destroy");
         
         Font.DEFAULT_FAMILY_INST = null;
-        List.copyOf(Font.FAMILY_CACHE.values()).forEach(Font::delete);
+        List.copyOf(Font.FAMILY_CACHE.values()).forEach(FontFamily::delete);
         
         Font.DEFAULT_FONT_INST = null;
-        List.copyOf(Font.FONT_CACHE.values()).forEach(Font::delete);
+        List.copyOf(Font.FONT_CACHE.values()).forEach(FontSingle::delete);
     }
     
     private static @NotNull FontSingle register(@NotNull String filePath, boolean kerning, boolean alignToInt, boolean warn)
@@ -149,7 +151,6 @@ public abstract class Font
         
         Path familyPath = IOUtil.getPath(directory);
         
-        List<FontSingle> fonts = new ArrayList<>();
         try
         {
             Files.list(familyPath).forEach(path -> {
@@ -158,7 +159,6 @@ public abstract class Font
                 {
                     FontSingle font = Font.register(path.toString(), kerning, alignToInt, false);
                     Font.LOGGER.fine("Added %s to Font Family: %s", font, familyID);
-                    fonts.add(font);
                 }
             });
         }
@@ -167,9 +167,9 @@ public abstract class Font
             Font.LOGGER.warning("Fonts could not be created.", e);
         }
         
-        FontFamily group = new FontFamily(name, fonts);
-        Font.FAMILY_CACHE.put(name, group);
-        return group;
+        FontFamily family = new FontFamily(name);
+        Font.FAMILY_CACHE.put(name, family);
+        return family;
     }
     
     /**
@@ -212,9 +212,31 @@ public abstract class Font
         return Font.DEFAULT_FAMILY_INST;
     }
     
+    public static boolean isRegistered(@Nullable String family, @Nullable Weight weight, @Nullable Boolean italicized)
+    {
+        if (family == null) family = Font.DEFAULT_FAMILY;
+        if (weight == null) weight = Font.DEFAULT_WEIGHT;
+        if (italicized == null) italicized = Font.DEFAULT_ITALICS;
+        
+        String fontID = FontSingle.getID(family, weight, italicized);
+        
+        return Font.FONT_CACHE.containsKey(fontID);
+    }
+    
+    public static boolean isFamilyRegistered(@Nullable String name)
+    {
+        if (name == null) name = Font.DEFAULT_FAMILY;
+        
+        return Font.FAMILY_CACHE.containsKey(name);
+    }
+    
     // -------------------- Instance -------------------- //
     
-    public abstract void delete();
+    public abstract @NotNull FontSingle withProperties(@NotNull Weight weight, boolean italicized);
+    
+    public abstract @NotNull FontSingle withProperties(@NotNull Weight weight);
+    
+    public abstract @NotNull FontSingle withProperties(boolean italicized);
     
     /**
      * Calculates the width in pixels of the string. If the string contains line breaks, then it calculates the widest line and returns it.
@@ -223,7 +245,44 @@ public abstract class Font
      * @param size The size of the text.
      * @return The width in pixels of the string.
      */
-    public abstract double getTextWidth(@NotNull String text, int size);
+    public double getTextWidth(@NotNull String text, int size)
+    {
+        TextState state = new TextState(this, Font.DEFAULT_WEIGHT, Font.DEFAULT_ITALICS, size);
+        
+        String[] lines = text.split("\n");
+        if (lines.length == 1) return getTextWidthImpl(text, state);
+        
+        double width = 0;
+        for (String line : lines) width = Math.max(width, getTextWidthImpl(line, state));
+        return width;
+    }
+    
+    public double getTextWidthImpl(@NotNull String line, TextState state)
+    {
+        double width = 0;
+        
+        CharData prevChar = null, currChar;
+        
+        for (int i = 0, n = line.length(); i < n; i++)
+        {
+            char character = line.charAt(i);
+            
+            if (state.handleModifier(character)) continue;
+            
+            state.changeFont();
+            
+            currChar = state.currFont.charData[line.charAt(i)];
+            
+            double scale = state.currFont.scale(state.size);
+            
+            width += currChar.advanceWidthUnscaled() * scale;
+            
+            if (state.prevFont == state.currFont) width += state.currFont.getKernAdvanceUnscaled(prevChar, currChar) * scale;
+            
+            prevChar = currChar;
+        }
+        return width;
+    }
     
     /**
      * Calculates the height in pixels of the string. If the string contains line breaks, then it calculates the total height of all lines.
@@ -232,7 +291,105 @@ public abstract class Font
      * @param size The size of the text.
      * @return The height in pixels of the string.
      */
-    public abstract double getTextHeight(@NotNull String text, int size);
+    public double getTextHeight(@NotNull String text, int size)
+    {
+        TextState state = new TextState(this, Font.DEFAULT_WEIGHT, Font.DEFAULT_ITALICS, size);
+        
+        String[] lines = text.split("\n");
+        
+        double height = 0;
+        for (String line : lines) height += getTextHeightImpl(line, state);
+        return height;
+    }
     
-    public abstract void drawText(@NotNull String text, int size, double x, double y, int r, int g, int b, int a);
+    public double getTextHeightImpl(@NotNull String line, TextState state)
+    {
+        double height = 0;
+        
+        for (int i = 0, n = line.length(); i < n; i++)
+        {
+            char character = line.charAt(i);
+            
+            if (state.handleModifier(character)) continue;
+            
+            state.changeFont();
+            
+            double scale = state.currFont.scale(state.size);
+            
+            double charHeight = state.currFont.ascentUnscaled - state.currFont.descentUnscaled + state.currFont.lineGapUnscaled;
+            
+            height = Math.max(height, charHeight * scale);
+        }
+        
+        return height;
+    }
+    
+    public void drawTextImpl(@NotNull String line, double x, double y, @NotNull TextState state)
+    {
+        double scale = state.currFont.scale(state.size);
+        
+        ArrayList<GLBatch.Vertex> charVertices = new ArrayList<>();
+        ArrayList<GLBatch.Vertex> quadVertices = new ArrayList<>();
+        
+        CharData prevChar = null, currChar;
+        for (int i = 0, n = line.length(); i < n; i++)
+        {
+            char character = line.charAt(i);
+            
+            if (state.handleModifier(character)) continue;
+            
+            state.changeFont();
+            
+            currChar = state.currFont.charData[character];
+            
+            x += state.currFont.getKernAdvanceUnscaled(prevChar, currChar) * scale;
+            
+            double x0 = x + currChar.x0Unscaled() * scale;
+            double y0 = y + currChar.y0Unscaled() * scale;
+            double x1 = x + currChar.x1Unscaled() * scale;
+            double y1 = y + currChar.y1Unscaled() * scale;
+            
+            GLBatch.checkBuffer(6);
+            
+            GLBatch.setTexture(state.currFont.texture);
+            
+            GLBatch.begin(DrawMode.TRIANGLES);
+            
+            // 0
+            GLBatch.pos(x0, y0);
+            GLBatch.texCoord(currChar.u0(), currChar.v0());
+            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            
+            // 1
+            GLBatch.pos(x0, y1);
+            GLBatch.texCoord(currChar.u0(), currChar.v1());
+            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            
+            // 2
+            GLBatch.pos(x1, y1);
+            GLBatch.texCoord(currChar.u1(), currChar.v1());
+            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            
+            // 0
+            GLBatch.pos(x0, y0);
+            GLBatch.texCoord(currChar.u0(), currChar.v0());
+            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            
+            // 2
+            GLBatch.pos(x1, y1);
+            GLBatch.texCoord(currChar.u1(), currChar.v1());
+            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            
+            // 3
+            GLBatch.pos(x1, y0);
+            GLBatch.texCoord(currChar.u1(), currChar.v0());
+            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            
+            GLBatch.end();
+            
+            x += currChar.advanceWidthUnscaled() * scale;
+            
+            prevChar = currChar;
+        }
+    }
 }

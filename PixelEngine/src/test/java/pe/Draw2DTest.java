@@ -4,6 +4,8 @@ import org.joml.Vector2d;
 import org.joml.Vector2dc;
 import pe.color.Color;
 import pe.event.*;
+import pe.font.Font;
+import pe.font.TextFormat;
 import pe.texture.Image;
 import pe.texture.Texture;
 import pe.util.Util;
@@ -157,6 +159,8 @@ public class Draw2DTest extends Engine
         Image image = Image.genColorGradient(30, 30, Color.BLUE, Color.MAGENTA, Color.CYAN, Color.WHITE);
         texture = Texture.load(image);
         image.delete();
+        
+        Font.registerFamily("demo/FiraSans", "FiraSans", true, false);
     }
     
     private void handleInput()
@@ -623,32 +627,176 @@ public class Draw2DTest extends Engine
                     }
                 }
             }
-            case F11 -> {
-                double cx = draggableText[0].x;
-                double cy = draggableText[0].y;
-                double w  = Math.max(draggableText[1].x - cx, 0);
-                double h  = Math.max(draggableText[1].y - cy, 0);
-                
-                int size = Math.max((int) draggableText[2].y / 10, 1);
-                
-                Draw.drawRect2D()
-                    .corners(draggableText[0], draggableText[1])
-                    .thickness(1)
-                    .draw();
-                
-                Draw.drawText2D()
-                    .text("This is a very long string")
-                    .point(cx, cy)
-                    .bounds(w, h)
-                    .size(size)
-                    .draw();
-                
-                for (Vector2d point : draggableText)
-                {
-                    Draw.point2D().point(point).thickness(5).color(Color.WHITE).draw();
-                }
-            }
+            case F11 -> drawText(thickness);
         }
+    }
+    
+    int r = 255, g = 255, b = 255, a = 0;
+    
+    private void drawText(double thickness)
+    {
+        Font font;
+        double minX = Math.min(draggableText[0].x, draggableText[1].x);
+        double minY = Math.min(draggableText[0].y, draggableText[1].y);
+        double maxX = Math.max(draggableText[0].x, draggableText[1].x);
+        double maxY = Math.max(draggableText[0].y, draggableText[1].y);
+        
+        double w = Math.max(maxX - minX, 0);
+        double h = Math.max(maxY - minY, 0);
+        
+        int size = Math.max((int) draggableText[2].y / 10, 1);
+        
+        boolean ignoreFormatting = toggle;
+        
+        // Font font = toggle ? Font.getFamily("FireSans") : Font.get(null, null, null);
+        font = Font.get(null, null, null);
+        
+        int offset = 2;
+        Draw.drawRect2D()
+            .corners(minX - offset,
+                     minY - offset,
+                     maxX + offset,
+                     maxY + offset)
+            .thickness(1)
+            .draw();
+        
+        Draw.drawText2D()
+            .text("This is a very" + TextFormat.color(255, 0, 0) + " long string")
+            .point(minX, minY)
+            .bounds(w, h)
+            .size(size)
+            .font(font)
+            .ignoreFormatting(ignoreFormatting)
+            .draw();
+        
+        for (Vector2d point : draggableText)
+        {
+            Draw.point2D().point(point).thickness(5).color(Color.WHITE).draw();
+        }
+        
+        // int    size = 64;
+        String text;
+        double textWidth, textHeight, x0, y0, x1, y1;
+        // int    r, g, b, a;
+    
+        font = Font.getFamily("FiraSans");
+        
+        // r = 255;
+        // g = 255;
+        // b = 255;
+        // a = 100;
+        
+        text       = String.format("%sRed%s %sGreen%s\nWith multiple lines\n%sIta%slics%s\n%sBold\n%sBoldItalics%s\n%sUnderline%s and %sStrike\n%sBACKGROUND COLOR",
+                                   TextFormat.COLOR_RED,
+                                   TextFormat.COLOR_RESET,
+                                   TextFormat.COLOR_GREEN,
+                                   TextFormat.RESET_ALL,
+                                   TextFormat.ITALICS_ON + TextFormat.COLOR_YELLOW,
+                                   TextFormat.WEIGHT_EXTRA_BOLD,
+                                   TextFormat.ITALICS_OFF + TextFormat.COLOR_RESET,
+                                   TextFormat.WEIGHT_BOLD,
+                                   TextFormat.ITALICS_ON,
+                                   TextFormat.RESET_ALL,
+                                   TextFormat.COLOR_GRAY + TextFormat.UNDERLINE_ON,
+                                   TextFormat.STRIKE_ON,
+                                   TextFormat.UNDERLINE_OFF,
+                                   TextFormat.RESET_ALL + TextFormat.BACKGROUND_ALPHA_25 + TextFormat.BACKGROUND_BLUE);
+        textWidth  = font.getTextWidth(text, size);
+        textHeight = font.getTextHeight(text, size);
+        
+        x0 = 0;
+        y0 = 0;
+        x1 = textWidth;
+        y1 = y0 + textHeight;
+    
+        Draw.drawText2D().text(text).point(x0, y0).font(font).size(size).draw();
+        
+        Draw.line2D().point0(x0, y0).point1(x1, y0).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y0).point1(x1, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y1).point1(x0, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x0, y1).point1(x0, y0).thickness(thickness).color(r, g, b, a).draw();
+        
+        
+        text       = "ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz";
+        textWidth  = font.getTextWidth(text, size);
+        textHeight = font.getTextHeight(text, size);
+        
+        x0 = 0;
+        y0 = y1;
+        x1 = textWidth;
+        y1 = y0 + textHeight;
+    
+        Draw.drawText2D().text(text).point(x0, y0).font(font).size(size).draw();
+    
+        Draw.line2D().point0(x0, y0).point1(x1, y0).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y0).point1(x1, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y1).point1(x0, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x0, y1).point1(x0, y0).thickness(thickness).color(r, g, b, a).draw();
+        
+        
+        // text       = "Te Te Te";
+        // textWidth  = TextFormat.getTextWidth(text, size);
+        // textHeight = TextFormat.getTextHeight(text, size);
+        //
+        // x0 = 0;
+        // y0 = y1;
+        // x1 = textWidth;
+        // y1 = y0 + textHeight;
+        //
+        // TextFormat.drawText(text, size, x0, y0);
+        //
+        // ShapeRenderer.drawLine(x0, y0, x1, y0, 5, r, g, b, a);
+        // ShapeRenderer.drawLine(x1, y0, x1, y1, 5, r, g, b, a);
+        // ShapeRenderer.drawLine(x1, y1, x0, y1, 5, r, g, b, a);
+        // ShapeRenderer.drawLine(x0, y1, x0, y0, 5, r, g, b, a);
+        
+        
+        text       = TextFormat.BACKGROUND_GREEN + TextFormat.backgroundAlpha(a >> 2) + "Color Background";
+        textWidth  = font.getTextWidth(text, size);
+        textHeight = font.getTextHeight(text, size);
+        
+        x0 = 0;
+        y0 = y1;
+        x1 = textWidth;
+        y1 = y0 + textHeight;
+    
+        Draw.drawText2D().text(text).point(x0, y0).font(font).size(size).draw();
+    
+        Draw.line2D().point0(x0, y0).point1(x1, y0).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y0).point1(x1, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y1).point1(x0, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x0, y1).point1(x0, y0).thickness(thickness).color(r, g, b, a).draw();
+        
+        
+        text       = TextFormat.COLOR_ORANGE + TextFormat.alpha(a >> 2) + TextFormat.UNDERLINE_ON + TextFormat.STRIKE_ON + "Color Text";
+        textWidth  = font.getTextWidth(text, size);
+        textHeight = font.getTextHeight(text, size);
+        
+        x0 = 0;
+        y0 = y1;
+        x1 = textWidth;
+        y1 = y0 + textHeight;
+    
+        Draw.drawText2D().text(text).point(x0, y0).font(font).size(size).draw();
+    
+        Draw.line2D().point0(x0, y0).point1(x1, y0).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y0).point1(x1, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x1, y1).point1(x0, y1).thickness(thickness).color(r, g, b, a).draw();
+        Draw.line2D().point0(x0, y1).point1(x0, y0).thickness(thickness).color(r, g, b, a).draw();
+        
+        // r++;
+        // if (r > 255)
+        // {
+        //     g++;
+        //     r = 0;
+        // }
+        // if (g > 255)
+        // {
+        //     b++;
+        //     g = 0;
+        // }
+        // if (b > 255) b = 0;
+        if (a++ > 255 << 2) a = 0;
     }
     
     @Override

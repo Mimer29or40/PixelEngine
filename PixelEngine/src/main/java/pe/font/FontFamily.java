@@ -3,8 +3,7 @@ package pe.font;
 import org.jetbrains.annotations.NotNull;
 import rutils.Logger;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.Objects;
 
 @SuppressWarnings("unused")
 public class FontFamily extends Font
@@ -28,19 +27,42 @@ public class FontFamily extends Font
     
     private final FontSingle defaultFont;
     
-    private final HashMap<String, FontSingle> cache;
-    
-    FontFamily(String name, List<FontSingle> fonts)
+    FontFamily(@NotNull String name)
     {
         this.name = name;
         
-        this.cache = new HashMap<>();
-        for (FontSingle font : fonts)
-        {
-            this.cache.put(font.id, font);
-        }
-        
         this.defaultFont = Font.get(this.name, null, null);
+    }
+    
+    @Override
+    public String toString()
+    {
+        return "FontFamily{" + this.name + '}';
+    }
+    
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FontFamily font = (FontFamily) o;
+        return this.name.equals(font.name);
+    }
+    
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(this.name);
+    }
+    
+    public void delete()
+    {
+        if (Font.DEFAULT_FAMILY_INST != this)
+        {
+            FontFamily.LOGGER.fine("Deleting:", this);
+            
+            Font.FAMILY_CACHE.remove(this.name);
+        }
     }
     
     /**
@@ -51,39 +73,33 @@ public class FontFamily extends Font
         return this.name;
     }
     
-    /**
-     * Gets a font in this family with weight and italicized if one is available.
-     *
-     * @param weight     The requested weight
-     * @param italicized If it is italicized.
-     * @return The font if it exists or the family default.
-     */
-    public FontSingle getFont(Weight weight, boolean italicized)
+    @Override
+    public @NotNull FontSingle withProperties(@NotNull Weight weight, boolean italicized)
     {
-        return this.cache.getOrDefault(FontSingle.getID(this.name, weight, italicized), this.defaultFont);
+        if (Font.isRegistered(this.name, weight, italicized))
+        {
+            return Font.get(this.name, weight, italicized);
+        }
+        return this.defaultFont;
     }
     
     @Override
-    public void delete()
+    public @NotNull FontSingle withProperties(@NotNull Weight weight)
     {
-    
+        if (Font.isRegistered(this.name, weight, null))
+        {
+            return Font.get(this.name, weight, null);
+        }
+        return this.defaultFont;
     }
     
     @Override
-    public double getTextWidth(@NotNull String text, int size)
+    public @NotNull FontSingle withProperties(boolean italicized)
     {
-        return 0;
-    }
-    
-    @Override
-    public double getTextHeight(@NotNull String text, int size)
-    {
-        return 0;
-    }
-    
-    @Override
-    public void drawText(@NotNull String text, int size, double x, double y, int r, int g, int b, int a)
-    {
-    
+        if (Font.isRegistered(this.name, null, italicized))
+        {
+            return Font.get(this.name, null, italicized);
+        }
+        return this.defaultFont;
     }
 }

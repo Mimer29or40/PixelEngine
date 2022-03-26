@@ -5,12 +5,8 @@ import org.joml.Vector2dc;
 import org.joml.Vector2fc;
 import org.joml.Vector2ic;
 import pe.color.Colorc;
-import pe.font.Font;
-import pe.font.FontSingle;
-import pe.font.TextAlign;
-import pe.font.Weight;
+import pe.font.*;
 import rutils.Logger;
-import rutils.Math;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,14 +23,17 @@ public class DrawText2D extends Draw2D
     
     private double w, h;
     
-    private FontSingle font;
+    private Font font;
     
     private String  name;
     private Weight  weight;
-    private boolean italics;
-    private int     size;
+    private boolean italicized;
+    
+    private int size;
     
     private TextAlign align;
+    
+    private boolean ignoreFormatting;
     
     private int r, g, b, a;
     
@@ -50,13 +49,15 @@ public class DrawText2D extends Draw2D
         
         this.font = null;
         
-        this.name    = FontSingle.DEFAULT_FAMILY;
-        this.weight  = FontSingle.DEFAULT_WEIGHT;
-        this.italics = FontSingle.DEFAULT_ITALICS;
+        this.name       = FontSingle.DEFAULT_FAMILY;
+        this.weight     = FontSingle.DEFAULT_WEIGHT;
+        this.italicized = FontSingle.DEFAULT_ITALICS;
         
         this.size = FontSingle.DEFAULT_SIZE;
         
         this.align = TextAlign.TOP_LEFT;
+        
+        this.ignoreFormatting = false;
         
         this.r = 255;
         this.g = 255;
@@ -76,44 +77,55 @@ public class DrawText2D extends Draw2D
     @Override
     protected void drawImpl()
     {
-        if (this.font == null) this.font = Font.get(this.name, this.weight, this.italics);
+        if (this.font == null) this.font = Font.get(this.name, this.weight, this.italicized);
         
-        DrawText2D.LOGGER.finest("Drawing text=\"%s\" anchor=(%s, %s) bounds=(%s, %s) font=%s size=%s align=%s color=(%s, %s, %s, %s)",
+        DrawText2D.LOGGER.finest("Drawing text=\"%s\" anchor=(%s, %s) bounds=(%s, %s) font=%s size=%s align=%s ignoreFormatting=%s color=(%s, %s, %s, %s)",
                                  this.text,
                                  this.x, this.y, this.w, this.h,
-                                 this.font, this.size, this.align,
+                                 this.font, this.size, this.align, this.ignoreFormatting,
                                  this.r, this.g, this.b, this.a);
         
         List<String> lines;
         if (this.w > 0 && this.h > 0)
         {
             lines = new ArrayList<>();
+            
+            TextState state = new TextState(this.font, this.weight, this.italicized, this.size);
+            state.textR = this.r;
+            state.textG = this.g;
+            state.textB = this.b;
+            state.textA = this.a;
+            
+            state.ignoreChanges = this.ignoreFormatting;
+            
+            TextState lineState       = new TextState(this.font, this.weight, this.italicized, this.size);
+            TextState subLineState    = new TextState(this.font, this.weight, this.italicized, this.size);
+            TextState subSubLineState = new TextState(this.font, this.weight, this.italicized, this.size);
+            
             for (String line : this.text.split("\n"))
             {
-                if (this.font.getTextWidth(line, this.size) > w)
+                lineState.set(state);
+                if (this.font.getTextWidthImpl(line, state) > this.w)
                 {
                     String[]      subLines = line.split(" ");
                     StringBuilder builder  = new StringBuilder(subLines[0]);
                     for (int j = 1, n = subLines.length; j < n; j++)
                     {
-                        if (this.font.getTextWidth(builder + " " + subLines[j], this.size) > this.w)
+                        subLineState.set(lineState);
+                        if (this.font.getTextWidthImpl(builder + " " + subLines[j], subSubLineState.set(subLineState)) > this.w)
                         {
-                            if (this.font.getTextWidth(builder.toString(), this.size) > this.w) break;
-                            if ((lines.size() + 1) * this.size > this.h) break;
                             lines.add(builder.toString());
                             builder.setLength(0);
                             builder.append(subLines[j]);
+                            lineState.set(subLineState);
                             continue;
                         }
                         builder.append(" ").append(subLines[j]);
                     }
-                    if (this.font.getTextWidth(builder.toString(), this.size) > this.w) break;
-                    if ((lines.size() + 1) * this.size > this.h) break;
                     lines.add(builder.toString());
                 }
                 else
                 {
-                    if ((lines.size() + 1) * this.size > this.h) break;
                     lines.add(line);
                 }
             }
@@ -123,6 +135,8 @@ public class DrawText2D extends Draw2D
             lines = Arrays.asList(this.text.split("\n"));
         }
         
+        TextState state = new TextState(this.font, this.weight, this.italicized, this.size);
+        
         double actualHeight = this.font.getTextHeight(this.text, this.size);
         
         int hPos = this.align.getH(), vPos = this.align.getV();
@@ -130,14 +144,14 @@ public class DrawText2D extends Draw2D
         double yOffset = vPos == -1 ? 0 : vPos == 0 ? 0.5 * (this.h - actualHeight) : this.h - actualHeight;
         for (String line : lines)
         {
-            double lineWidth  = Math.ceil(this.font.getTextWidth(line, this.size));
-            double lineHeight = Math.ceil(this.font.getTextHeight(line, this.size));
+            state.ignoreChanges = true;
+            double lineWidth  = this.font.getTextWidthImpl(line, state);
+            double lineHeight = this.font.getTextHeightImpl(line, state);
+            state.ignoreChanges = this.ignoreFormatting;
             
             double xOffset = hPos == -1 ? 0 : hPos == 0 ? 0.5 * (this.w - lineWidth) : this.w - lineWidth;
             
-            this.font.drawText(line, this.size,
-                               this.x + xOffset, this.y + yOffset,
-                               this.r, this.g, this.b, this.a);
+            this.font.drawTextImpl(line, x + xOffset, y + yOffset, state);
             
             yOffset += lineHeight;
         }
@@ -194,7 +208,7 @@ public class DrawText2D extends Draw2D
         return bounds(bounds.x(), bounds.y());
     }
     
-    public DrawText2D font(@NotNull FontSingle font)
+    public DrawText2D font(@NotNull Font font)
     {
         this.font = font;
         return this;
@@ -212,9 +226,9 @@ public class DrawText2D extends Draw2D
         return this;
     }
     
-    public DrawText2D italics(boolean italics)
+    public DrawText2D italicized(boolean italicized)
     {
-        this.italics = italics;
+        this.italicized = italicized;
         return this;
     }
     
@@ -227,6 +241,12 @@ public class DrawText2D extends Draw2D
     public DrawText2D align(@NotNull TextAlign align)
     {
         this.align = align;
+        return this;
+    }
+    
+    public DrawText2D ignoreFormatting(boolean ignoreFormatting)
+    {
+        this.ignoreFormatting = ignoreFormatting;
         return this;
     }
     

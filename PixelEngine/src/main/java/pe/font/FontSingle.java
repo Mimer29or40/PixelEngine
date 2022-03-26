@@ -9,8 +9,6 @@ import org.lwjgl.stb.STBTTPackedchar;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.ColorFormat;
-import pe.render.DrawMode;
-import pe.render.GLBatch;
 import pe.texture.Texture;
 import rutils.Logger;
 
@@ -122,7 +120,7 @@ public class FontSingle extends Font
             boolean success;
             
             int textureSize = 32;
-            int samples     = 2;
+            int samples     = 1;
             while (true)
             {
                 width  = baseSize * textureSize;
@@ -219,7 +217,7 @@ public class FontSingle extends Font
     {
         if (Font.DEFAULT_FONT_INST != this)
         {
-            FontSingle.LOGGER.fine("Deleting Font: %s", this);
+            FontSingle.LOGGER.fine("Deleting:", this);
             
             this.info.free();
             MemoryUtil.memFree(this.fileData);
@@ -293,118 +291,21 @@ public class FontSingle extends Font
         return stbtt_GetGlyphKernAdvance(this.info, ch1.index(), ch2.index());
     }
     
-    /**
-     * Calculates the width in pixels of the string. If the string contains line breaks, then it calculates the widest line and returns it.
-     *
-     * @param text The text.
-     * @param size The size of the text.
-     * @return The width in pixels of the string.
-     */
     @Override
-    public double getTextWidth(@NotNull String text, int size)
+    public @NotNull FontSingle withProperties(@NotNull Weight weight, boolean italicized)
     {
-        FontSingle.LOGGER.finest("Getting text width for text \"%s\" with font \"%s\" of size \"%s\"", text, this, size);
-        
-        double width = 0;
-        
-        String[] lines = text.split("\n");
-        if (lines.length == 1)
-        {
-            CharData currChar, prevChar = null;
-            for (int i = 0, n = text.length(); i < n; i++)
-            {
-                currChar = this.charData[text.charAt(i)];
-                
-                width += getKernAdvanceUnscaled(prevChar, currChar) + currChar.advanceWidthUnscaled();
-                
-                prevChar = currChar;
-            }
-            return width * scale(size);
-        }
-        else
-        {
-            for (String line : lines)
-            {
-                width = Math.max(width, getTextWidth(line, size));
-            }
-            return width;
-        }
-    }
-    
-    /**
-     * Calculates the height in pixels of the string. If the string contains line breaks, then it calculates the total height of all lines.
-     *
-     * @param text The text.
-     * @param size The size of the text.
-     * @return The height in pixels of the string.
-     */
-    @Override
-    public double getTextHeight(@NotNull String text, int size)
-    {
-        FontSingle.LOGGER.finest("Getting text height for text \"%s\" with font \"%s\" of size \"%s\"", text, this, size);
-        
-        String[] lines = text.split("\n");
-        return lines.length * (this.ascentUnscaled - this.descentUnscaled + this.lineGapUnscaled) * scale(size);
+        return this;
     }
     
     @Override
-    public void drawText(@NotNull String text, int size, double x, double y, int r, int g, int b, int a)
+    public @NotNull FontSingle withProperties(@NotNull Weight weight)
     {
-        double scale = scale(size);
-        
-        CharData prevChar = null, currChar;
-        for (int i = 0, n = text.length(); i < n; i++)
-        {
-            currChar = this.charData[text.charAt(i)];
-            
-            x += getKernAdvanceUnscaled(prevChar, currChar) * scale;
-            
-            double x0 = x + currChar.x0Unscaled() * scale;
-            double y0 = y + currChar.y0Unscaled() * scale;
-            double x1 = x + currChar.x1Unscaled() * scale;
-            double y1 = y + currChar.y1Unscaled() * scale;
-            
-            GLBatch.checkBuffer(6);
-            
-            GLBatch.setTexture(this.texture);
-            
-            GLBatch.begin(DrawMode.TRIANGLES);
-            
-            // 0
-            GLBatch.pos(x0, y0);
-            GLBatch.texCoord(currChar.u0(), currChar.v0());
-            GLBatch.color(r, g, b, a);
-            
-            // 1
-            GLBatch.pos(x0, y1);
-            GLBatch.texCoord(currChar.u0(), currChar.v1());
-            GLBatch.color(r, g, b, a);
-            
-            // 2
-            GLBatch.pos(x1, y1);
-            GLBatch.texCoord(currChar.u1(), currChar.v1());
-            GLBatch.color(r, g, b, a);
-            
-            // 0
-            GLBatch.pos(x0, y0);
-            GLBatch.texCoord(currChar.u0(), currChar.v0());
-            GLBatch.color(r, g, b, a);
-            
-            // 2
-            GLBatch.pos(x1, y1);
-            GLBatch.texCoord(currChar.u1(), currChar.v1());
-            GLBatch.color(r, g, b, a);
-            
-            // 3
-            GLBatch.pos(x1, y0);
-            GLBatch.texCoord(currChar.u1(), currChar.v0());
-            GLBatch.color(r, g, b, a);
-            
-            GLBatch.end();
-            
-            x += currChar.advanceWidthUnscaled() * scale;
-            
-            prevChar = currChar;
-        }
+        return this;
+    }
+    
+    @Override
+    public @NotNull FontSingle withProperties(boolean italicized)
+    {
+        return this;
     }
 }

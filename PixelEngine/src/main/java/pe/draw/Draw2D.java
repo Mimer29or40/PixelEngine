@@ -93,6 +93,8 @@ public abstract class Draw2D
             
             GLBatch.checkBuffer(6);
             
+            GLBatch.setTexture(Draw2D.texture);
+            
             GLBatch.begin(DrawMode.TRIANGLES);
             
             Draw2D.VERTEX0.pos(x1 + nx, y1 + ny);
@@ -132,6 +134,7 @@ public abstract class Draw2D
             GLBatch.checkBuffer((pointsCount - 2) * 2);
             
             GLBatch.begin(DrawMode.LINES);
+            
             for (int i = 1; i < pointsCount - 2; i++)
             {
                 int p0 = i << 1;
@@ -394,6 +397,8 @@ public abstract class Draw2D
     {
         GLBatch.checkBuffer(4);
         
+        GLBatch.setTexture(Draw2D.texture);
+        
         GLBatch.begin(DrawMode.TRIANGLES);
         
         Draw2D.VERTEX0.pos(x0, y0);
@@ -619,6 +624,7 @@ public abstract class Draw2D
         GLBatch.setTexture(Draw2D.texture);
         
         GLBatch.begin(DrawMode.TRIANGLES);
+        
         for (int i = 0; i < segments; i++)
         {
             theta = start + (i + 1) * inc;
