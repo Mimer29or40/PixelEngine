@@ -6,6 +6,7 @@ import org.joml.Vector2fc;
 import org.joml.Vector2ic;
 import pe.color.Colorc;
 import pe.font.Font;
+import pe.font.FontSingle;
 import pe.font.TextAlign;
 import pe.font.Weight;
 import rutils.Logger;
@@ -26,7 +27,7 @@ public class DrawText2D extends Draw2D
     
     private double w, h;
     
-    private Font font;
+    private FontSingle font;
     
     private String  name;
     private Weight  weight;
@@ -49,11 +50,11 @@ public class DrawText2D extends Draw2D
         
         this.font = null;
         
-        this.name    = Font.DEFAULT_NAME;
-        this.weight  = Font.DEFAULT_WEIGHT;
-        this.italics = Font.DEFAULT_ITALICS;
+        this.name    = FontSingle.DEFAULT_FAMILY;
+        this.weight  = FontSingle.DEFAULT_WEIGHT;
+        this.italics = FontSingle.DEFAULT_ITALICS;
         
-        this.size = Font.DEFAULT_SIZE;
+        this.size = FontSingle.DEFAULT_SIZE;
         
         this.align = TextAlign.TOP_LEFT;
         
@@ -134,9 +135,9 @@ public class DrawText2D extends Draw2D
             
             double xOffset = hPos == -1 ? 0 : hPos == 0 ? 0.5 * (this.w - lineWidth) : this.w - lineWidth;
             
-            drawText(this.font, this.size, line,
-                     this.x + xOffset, this.y + yOffset,
-                     this.r, this.g, this.b, this.a);
+            this.font.drawText(line, this.size,
+                               this.x + xOffset, this.y + yOffset,
+                               this.r, this.g, this.b, this.a);
             
             yOffset += lineHeight;
         }
@@ -193,7 +194,7 @@ public class DrawText2D extends Draw2D
         return bounds(bounds.x(), bounds.y());
     }
     
-    public DrawText2D font(@NotNull Font font)
+    public DrawText2D font(@NotNull FontSingle font)
     {
         this.font = font;
         return this;

@@ -2,7 +2,6 @@ package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import pe.font.Font;
 import pe.render.DrawMode;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
@@ -755,52 +754,6 @@ public abstract class Draw2D
         double v1 = (srcY + srcH) / height;
         
         drawTexture(texture, x0, y0, x1, y1, x2, y2, x3, y3, u0, v0, u0, v1, u1, v1, u1, v0, r, g, b, a);
-    }
-    
-    protected static void drawText(@NotNull Font font, int size, @NotNull String text, double x, double y, int r, int g, int b, int a)
-    {
-        double scale = font.scale(size);
-        
-        Font.CharData prevChar = null, currChar;
-        for (int i = 0, n = text.length(); i < n; i++)
-        {
-            currChar = font.getCharData(text.charAt(i));
-            
-            x += font.getKernAdvanceUnscaled(prevChar, currChar) * scale;
-            
-            double x0 = x + currChar.x0Unscaled * scale;
-            double y0 = y + currChar.y0Unscaled * scale;
-            double x1 = x + currChar.x1Unscaled * scale;
-            double y1 = y + currChar.y1Unscaled * scale;
-            
-            GLBatch.checkBuffer(6);
-            
-            GLBatch.setTexture(font.texture());
-            
-            GLBatch.begin(DrawMode.TRIANGLES);
-            
-            Draw2D.VERTEX0.pos(x0, y0);
-            Draw2D.VERTEX0.texCoord(currChar.u0, currChar.v0);
-            Draw2D.VERTEX0.color(r, g, b, a);
-            Draw2D.VERTEX1.pos(x0, y1);
-            Draw2D.VERTEX1.texCoord(currChar.u0, currChar.v1);
-            Draw2D.VERTEX1.color(r, g, b, a);
-            Draw2D.VERTEX2.pos(x1, y1);
-            Draw2D.VERTEX2.texCoord(currChar.u1, currChar.v1);
-            Draw2D.VERTEX2.color(r, g, b, a);
-            Draw2D.VERTEX3.pos(x1, y0);
-            Draw2D.VERTEX3.texCoord(currChar.u1, currChar.v0);
-            Draw2D.VERTEX3.color(r, g, b, a);
-            
-            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
-            windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
-            
-            GLBatch.end();
-            
-            x += currChar.advanceWidthUnscaled * scale;
-            
-            prevChar = currChar;
-        }
     }
     
     protected static int segments(double rx, double ry)

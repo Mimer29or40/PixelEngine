@@ -1,5 +1,8 @@
 package pe.font;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public enum Weight
 {
     THIN,
@@ -25,17 +28,17 @@ public enum Weight
         return tag;
     }
     
-    public static Weight get(String weightString)
+    public static @Nullable Weight get(@NotNull String subfamily)
     {
-        String str = format(weightString);
+        String str = format(subfamily);
         for (Weight weight : Weight.values())
         {
-            if (weight.tag().equals(str)) return weight;
+            if (str.equals(weight.tag()) || str.contains(weight.tag())) return weight;
         }
-        return Weight.REGULAR;
+        return null;
     }
     
-    private static String format(String weight)
+    private static @NotNull String format(@NotNull String weight)
     {
         return weight.replace("_", "").toLowerCase();
     }
