@@ -118,37 +118,7 @@ public abstract class Engine
             
             GL.setup();
             
-            Layer.setup(width, height);
-            
             Font.setup();
-            
-            int r = Layer.primary().width() >> 1;
-            int l = -r;
-            int b = Layer.primary().height() >> 1;
-            int t = -b;
-            
-            GLBatch.matrixMode(MatrixMode.PROJECTION);
-            GLBatch.loadIdentity();
-            GLBatch.ortho(l, r, b, t, 1.0, -1.0);
-            
-            GLBatch.matrixMode(MatrixMode.VIEW);
-            GLBatch.loadIdentity();
-            GLBatch.translate(l, t, 0.0);
-            
-            GLBatch.matrixMode(MatrixMode.MODEL);
-            GLBatch.loadIdentity();
-            
-            GLBatch.matrixMode(MatrixMode.NORMAL);
-            GLBatch.loadIdentity();
-            
-            GLBatch.colorMode(ColorMode.DIFFUSE);
-            GLBatch.loadWhite();
-            
-            GLBatch.colorMode(ColorMode.SPECULAR);
-            GLBatch.loadWhite();
-            
-            GLBatch.colorMode(ColorMode.AMBIENT);
-            GLBatch.loadWhite();
         }
         
         private static void events()
@@ -159,15 +129,11 @@ public abstract class Engine
             Keyboard.events(time);
             Joystick.events(time);
             Window.events(time);
-            
-            Layer.events();
         }
         
         private static void destroy()
         {
             Font.destroy();
-            
-            Layer.destroy();
             
             GL.destroy();
             
@@ -357,17 +323,19 @@ public abstract class Engine
                                 
                                 if (!Time.paused)
                                 {
-                                    GLFramebuffer.bind(Layer.primary);
+                                    GLFramebuffer.bind(null);
                                     GLProgram.bind(null);
                                     
                                     GL.defaultState();
                                     GL.wireframe(Engine.wireframe);
                                     
+                                    GL.clearScreenBuffers(ScreenBuffer.COLOR);
+                                    
                                     GLBatch.bind(null);
                                     
-                                    int r = Layer.primary().width() >> 1;
+                                    int r = GLFramebuffer.currentWidth() >> 1;
                                     int l = -r;
-                                    int b = Layer.primary().height() >> 1;
+                                    int b = GLFramebuffer.currentHeight() >> 1;
                                     int t = -b;
                                     
                                     GLBatch.matrixMode(MatrixMode.PROJECTION);
@@ -407,6 +375,11 @@ public abstract class Engine
                                     Extension.stage(Extension.Stage.POST_DRAW);
                                     // Engine.renderer.pop(); // TODO
                                     
+                                    GUI.draw();
+                                    // Debug.draw();
+                                    // NuklearGUI.draw();
+                                    // ImGUI.draw();
+                                    
                                     GLBatch.BatchStats stats = GLBatch.stats();
                                     
                                     // Engine.renderer.finish(); // TODO
@@ -414,12 +387,6 @@ public abstract class Engine
                                     Engine.vertices = stats.vertices();
                                     Engine.draws    = stats.draws();
                                 }
-                                
-                                Layer.draw();
-                                GUI.draw();
-                                // Debug.draw();
-                                // NuklearGUI.draw();
-                                // ImGUI.draw();
                                 
                                 Window.swap();
                                 
