@@ -9,6 +9,7 @@ import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
 import pe.event.*;
+import pe.render.GLFramebuffer;
 import pe.shape.AABB2i;
 import pe.shape.AABB2ic;
 import pe.texture.Image;
@@ -447,6 +448,11 @@ public class Window
     
     private static final Vector2i deltaI = new Vector2i();
     private static final Vector2d deltaD = new Vector2d();
+    
+    private static final Vector2d windowToScreen      = new Vector2d();
+    private static final Vector2d screenToWindow      = new Vector2d();
+    private static final Vector2d windowToFramebuffer = new Vector2d();
+    private static final Vector2d framebufferToWindow = new Vector2d();
     
     // -------------------- Instance -------------------- //
     
@@ -1351,6 +1357,264 @@ public class Window
     public static void swap()
     {
         glfwSwapBuffers(Window.handle);
+    }
+    
+    // -------------------- Utility Methods -------------------- //
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the screen origin.
+     *
+     * @param x   The x coordinate of the window point
+     * @param y   The y coordinate of the window point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToScreen(double x, double y, @NotNull Vector2d out)
+    {
+        out.x = x - Window.x();
+        out.y = y - Window.y();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the screen origin.
+     *
+     * @param pos The window point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToScreen(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return windowToScreen(pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the screen origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param x The x coordinate of the window point
+     * @param y The y coordinate of the window point
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToScreen(double x, double y)
+    {
+        return windowToScreen(x, y, Window.windowToScreen);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the screen origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param pos The window point
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToScreen(@NotNull Vector2dc pos)
+    {
+        return windowToScreen(pos.x(), pos.y(), Window.windowToScreen);
+    }
+    
+    /**
+     * Converts a point relative to the screen origin to a point relative to
+     * the window origin.
+     *
+     * @param x   The x coordinate of the screen point
+     * @param y   The y coordinate of the screen point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc screenToWindow(double x, double y, @NotNull Vector2d out)
+    {
+        out.x = x + Window.x();
+        out.y = y + Window.y();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the screen origin to a point relative to
+     * the window origin.
+     *
+     * @param pos The screen point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc screenToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return screenToWindow(pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the screen origin to a point relative to
+     * the window origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param x The x coordinate of the screen point
+     * @param y The y coordinate of the screen point
+     * @return The results
+     */
+    @NotNull
+    public static Vector2dc screenToWindow(double x, double y)
+    {
+        return screenToWindow(x, y, Window.screenToWindow);
+    }
+    
+    /**
+     * Converts a point relative to the screen origin to a point relative to
+     * the window origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param pos The screen point
+     * @return The results
+     */
+    @NotNull
+    public static Vector2dc screenToWindow(@NotNull Vector2dc pos)
+    {
+        return screenToWindow(pos.x(), pos.y(), Window.screenToWindow);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the current framebuffer origin.
+     *
+     * @param x   The x coordinate of the window point
+     * @param y   The y coordinate of the window point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToFramebuffer(double x, double y, @NotNull Vector2d out)
+    {
+        out.x = x * GLFramebuffer.currentWidth() / Window.width();
+        out.y = y * GLFramebuffer.currentHeight() / Window.height();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the framebuffer origin.
+     *
+     * @param pos The window point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc windowToFramebuffer(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return windowToFramebuffer(pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the framebuffer origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param x The x coordinate of the window point
+     * @param y The y coordinate of the window point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc windowToFramebuffer(double x, double y)
+    {
+        return windowToFramebuffer(x, y, Window.windowToFramebuffer);
+    }
+    
+    /**
+     * Converts a point relative to the window origin to a point relative to
+     * the framebuffer origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param pos The window point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc windowToFramebuffer(@NotNull Vector2dc pos)
+    {
+        return windowToFramebuffer(pos.x(), pos.y(), Window.windowToFramebuffer);
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative to
+     * the window origin.
+     *
+     * @param x   The x coordinate of the framebuffer point
+     * @param y   The y coordinate of the framebuffer point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc framebufferToWindow(double x, double y, @NotNull Vector2d out)
+    {
+        out.x = x * Window.width() / GLFramebuffer.currentWidth();
+        out.y = y * Window.height() / GLFramebuffer.currentHeight();
+        return out;
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative to
+     * the window origin.
+     *
+     * @param pos The framebuffer point
+     * @param out The vector to store the results
+     * @return The results stored in {@code out}.
+     */
+    @NotNull
+    public static Vector2dc framebufferToWindow(@NotNull Vector2dc pos, @NotNull Vector2d out)
+    {
+        return framebufferToWindow(pos.x(), pos.y(), out);
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative to
+     * the window origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param x The x coordinate of the framebuffer point
+     * @param y The y coordinate of the framebuffer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc framebufferToWindow(double x, double y)
+    {
+        return framebufferToWindow(x, y, Window.framebufferToWindow);
+    }
+    
+    /**
+     * Converts a point relative to the framebuffer origin to a point relative to
+     * the window origin.
+     * <p>
+     * <b>Note:</b> The results are only valid until the next time this is
+     * called.
+     *
+     * @param pos The framebuffer point
+     * @return The results.
+     */
+    @NotNull
+    public static Vector2dc framebufferToWindow(@NotNull Vector2dc pos)
+    {
+        return framebufferToWindow(pos.x(), pos.y(), Window.framebufferToWindow);
     }
     
     // -------------------- Utility Classes -------------------- //
