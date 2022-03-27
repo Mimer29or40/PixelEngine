@@ -2,11 +2,16 @@ package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import pe.font.CharData;
+import pe.font.TextState;
 import pe.render.DrawMode;
+import pe.render.GL;
 import pe.render.GLBatch;
 import pe.render.GLTexture;
 import rutils.Logger;
 import rutils.Math;
+
+import java.util.ArrayList;
 
 public abstract class Draw2D
 {
@@ -16,16 +21,21 @@ public abstract class Draw2D
     
     protected static double u0, v0, u1, v1;
     
-    private static final Vertex VERTEX0 = new Vertex(), VERTEX1 = new Vertex(), VERTEX2 = new Vertex(), VERTEX3 = new Vertex();
+    private static final GLBatch.Vertex VERTEX0, VERTEX1, VERTEX2, VERTEX3;
     
     static
     {
-        Draw2D.texture = null;
+        texture = null;
         
-        Draw2D.u0 = 0.0;
-        Draw2D.v0 = 0.0;
-        Draw2D.u1 = 1.0;
-        Draw2D.v1 = 1.0;
+        u0 = 0.0;
+        v0 = 0.0;
+        u1 = 1.0;
+        v1 = 1.0;
+        
+        VERTEX0 = new GLBatch.Vertex();
+        VERTEX1 = new GLBatch.Vertex();
+        VERTEX2 = new GLBatch.Vertex();
+        VERTEX3 = new GLBatch.Vertex();
     }
     
     public static void setTexture(@Nullable GLTexture texture)
@@ -72,15 +82,15 @@ public abstract class Draw2D
         {
             GLBatch.checkBuffer(2);
             
+            GLBatch.setTexture(Draw2D.texture);
+            
             GLBatch.begin(DrawMode.LINES);
             
-            Draw2D.VERTEX0.pos(x0, y0);
-            Draw2D.VERTEX0.color(r0, g0, b0, a0);
-            Draw2D.VERTEX1.pos(x1, y1);
-            Draw2D.VERTEX1.color(r1, g1, b1, a1);
+            GLBatch.pos(x0, y0);
+            GLBatch.color(r0, g0, b0, a0);
             
-            Draw2D.VERTEX0.apply();
-            Draw2D.VERTEX1.apply();
+            GLBatch.pos(x1, y1);
+            GLBatch.color(r1, g1, b1, a1);
             
             GLBatch.end();
         }
@@ -97,14 +107,10 @@ public abstract class Draw2D
             
             GLBatch.begin(DrawMode.TRIANGLES);
             
-            Draw2D.VERTEX0.pos(x1 + nx, y1 + ny);
-            Draw2D.VERTEX0.color(r1, g1, b1, a1);
-            Draw2D.VERTEX1.pos(x0 + nx, y0 + ny);
-            Draw2D.VERTEX1.color(r0, g0, b0, a0);
-            Draw2D.VERTEX2.pos(x0 - nx, y0 - ny);
-            Draw2D.VERTEX2.color(r0, g0, b0, a0);
-            Draw2D.VERTEX3.pos(x1 - nx, y1 - ny);
-            Draw2D.VERTEX3.color(r1, g1, b1, a1);
+            Draw2D.VERTEX0.clear().pos(x1 + nx, y1 + ny).color(r1, g1, b1, a1);
+            Draw2D.VERTEX1.clear().pos(x0 + nx, y0 + ny).color(r0, g0, b0, a0);
+            Draw2D.VERTEX2.clear().pos(x0 - nx, y0 - ny).color(r0, g0, b0, a0);
+            Draw2D.VERTEX3.clear().pos(x1 - nx, y1 - ny).color(r1, g1, b1, a1);
             
             windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
             windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
@@ -147,13 +153,8 @@ public abstract class Draw2D
                 _b1 = Math.lerp(b0, b1, lerp);
                 _a1 = Math.lerp(a0, a1, lerp);
                 
-                Draw2D.VERTEX0.pos(points[p0], points[p0 + 1]);
-                Draw2D.VERTEX0.color(_r0, _g0, _b0, _a0);
-                Draw2D.VERTEX1.pos(points[p1], points[p1 + 1]);
-                Draw2D.VERTEX1.color(_r1, _g1, _b1, _a1);
-                
-                Draw2D.VERTEX0.apply();
-                Draw2D.VERTEX1.apply();
+                GLBatch.vertex(Draw2D.VERTEX0.clear().pos(points[p0], points[p0 + 1]).color(_r0, _g0, _b0, _a0));
+                GLBatch.vertex(Draw2D.VERTEX1.clear().pos(points[p1], points[p1 + 1]).color(_r1, _g1, _b1, _a1));
                 
                 _r0 = _r1;
                 _g0 = _g1;
@@ -331,32 +332,18 @@ public abstract class Draw2D
                 
                 if (drawBevel)
                 {
-                    Draw2D.VERTEX0.pos(o0x, o0y);
-                    Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
-                    Draw2D.VERTEX0.color(_r0, _g0, _b0, _a0);
-                    Draw2D.VERTEX1.pos(o1x, o1y);
-                    Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
-                    Draw2D.VERTEX1.color(_r0, _g0, _b0, _a0);
-                    Draw2D.VERTEX2.pos(o2x, o2y);
-                    Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
-                    Draw2D.VERTEX2.color(_r0, _g0, _b0, _a0);
+                    Draw2D.VERTEX0.clear().pos(o0x, o0y).texCoord(Draw2D.u0, Draw2D.v0).color(_r0, _g0, _b0, _a0);
+                    Draw2D.VERTEX1.clear().pos(o1x, o1y).texCoord(Draw2D.u0, Draw2D.v1).color(_r0, _g0, _b0, _a0);
+                    Draw2D.VERTEX2.clear().pos(o2x, o2y).texCoord(Draw2D.u1, Draw2D.v1).color(_r0, _g0, _b0, _a0);
                     
                     windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
                 }
                 
                 // Generates Line Strip
-                Draw2D.VERTEX0.pos(o2x, o2y);
-                Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
-                Draw2D.VERTEX0.color(_r0, _g0, _b0, _a0);
-                Draw2D.VERTEX1.pos(o1x, o1y);
-                Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
-                Draw2D.VERTEX1.color(_r0, _g0, _b0, _a0);
-                Draw2D.VERTEX2.pos(o3x, o3y);
-                Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
-                Draw2D.VERTEX2.color(_r1, _g1, _b1, _a1);
-                Draw2D.VERTEX3.pos(o4x, o4y);
-                Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v1);
-                Draw2D.VERTEX3.color(_r1, _g1, _b1, _a1);
+                Draw2D.VERTEX0.clear().pos(o2x, o2y).texCoord(Draw2D.u0, Draw2D.v0).color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX1.clear().pos(o1x, o1y).texCoord(Draw2D.u0, Draw2D.v1).color(_r0, _g0, _b0, _a0);
+                Draw2D.VERTEX2.clear().pos(o3x, o3y).texCoord(Draw2D.u1, Draw2D.v1).color(_r1, _g1, _b1, _a1);
+                Draw2D.VERTEX3.clear().pos(o4x, o4y).texCoord(Draw2D.u1, Draw2D.v1).color(_r1, _g1, _b1, _a1);
                 
                 windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
                 windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
@@ -378,15 +365,9 @@ public abstract class Draw2D
         
         GLBatch.begin(DrawMode.TRIANGLES);
         
-        Draw2D.VERTEX0.pos(x0, y0);
-        Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
-        Draw2D.VERTEX0.color(r0, g0, b0, a0);
-        Draw2D.VERTEX1.pos(x1, y1);
-        Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
-        Draw2D.VERTEX1.color(r1, g1, b1, a1);
-        Draw2D.VERTEX2.pos(x2, y2);
-        Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
-        Draw2D.VERTEX2.color(r2, g2, b2, a2);
+        Draw2D.VERTEX0.clear().pos(x0, y0).texCoord(Draw2D.u0, Draw2D.v0).color(r0, g0, b0, a0);
+        Draw2D.VERTEX1.clear().pos(x1, y1).texCoord(Draw2D.u0, Draw2D.v1).color(r1, g1, b1, a1);
+        Draw2D.VERTEX2.clear().pos(x2, y2).texCoord(Draw2D.u1, Draw2D.v1).color(r2, g2, b2, a2);
         
         windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
         
@@ -401,18 +382,10 @@ public abstract class Draw2D
         
         GLBatch.begin(DrawMode.TRIANGLES);
         
-        Draw2D.VERTEX0.pos(x0, y0);
-        Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
-        Draw2D.VERTEX0.color(r0, g0, b0, a0);
-        Draw2D.VERTEX1.pos(x1, y1);
-        Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
-        Draw2D.VERTEX1.color(r1, g1, b1, a1);
-        Draw2D.VERTEX2.pos(x2, y2);
-        Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
-        Draw2D.VERTEX2.color(r2, g2, b2, a2);
-        Draw2D.VERTEX3.pos(x3, y3);
-        Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v0);
-        Draw2D.VERTEX3.color(r3, g3, b3, a3);
+        Draw2D.VERTEX0.clear().pos(x0, y0).texCoord(Draw2D.u0, Draw2D.v0).color(r0, g0, b0, a0);
+        Draw2D.VERTEX1.clear().pos(x1, y1).texCoord(Draw2D.u0, Draw2D.v1).color(r1, g1, b1, a1);
+        Draw2D.VERTEX2.clear().pos(x2, y2).texCoord(Draw2D.u1, Draw2D.v1).color(r2, g2, b2, a2);
+        Draw2D.VERTEX3.clear().pos(x3, y3).texCoord(Draw2D.u1, Draw2D.v0).color(r3, g3, b3, a3);
         
         windQuad();
         
@@ -533,9 +506,7 @@ public abstract class Draw2D
         
         GLBatch.begin(DrawMode.TRIANGLES);
         
-        Draw2D.VERTEX0.pos(cx, cy);
-        Draw2D.VERTEX0.texCoord(Draw2D.u1, Draw2D.v1);
-        Draw2D.VERTEX0.color(ri, gi, bi, ai);
+        Draw2D.VERTEX0.clear().pos(cx, cy).texCoord(Draw2D.u1, Draw2D.v1).color(ri, gi, bi, ai);
         
         for (int i = 0; i < segments; i++)
         {
@@ -552,12 +523,8 @@ public abstract class Draw2D
             p1x += x;
             p1y += y;
             
-            Draw2D.VERTEX1.pos(p0x, p0y);
-            Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v0);
-            Draw2D.VERTEX1.color(ro, go, bo, ao);
-            Draw2D.VERTEX2.pos(p1x, p1y);
-            Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v0);
-            Draw2D.VERTEX2.color(ro, go, bo, ao);
+            Draw2D.VERTEX1.clear().pos(p0x, p0y).texCoord(Draw2D.u0, Draw2D.v0).color(ro, go, bo, ao);
+            Draw2D.VERTEX2.clear().pos(p1x, p1y).texCoord(Draw2D.u1, Draw2D.v0).color(ro, go, bo, ao);
             
             windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
             
@@ -650,18 +617,10 @@ public abstract class Draw2D
             x1o += x;
             y1o += y;
             
-            Draw2D.VERTEX0.pos(x0o, y0o);
-            Draw2D.VERTEX0.texCoord(Draw2D.u0, Draw2D.v0);
-            Draw2D.VERTEX0.color(ro, go, bo, ao);
-            Draw2D.VERTEX1.pos(x0i, y0i);
-            Draw2D.VERTEX1.texCoord(Draw2D.u0, Draw2D.v1);
-            Draw2D.VERTEX1.color(ri, gi, bi, ai);
-            Draw2D.VERTEX2.pos(x1i, y1i);
-            Draw2D.VERTEX2.texCoord(Draw2D.u1, Draw2D.v1);
-            Draw2D.VERTEX2.color(ri, gi, bi, ai);
-            Draw2D.VERTEX3.pos(x1o, y1o);
-            Draw2D.VERTEX3.texCoord(Draw2D.u1, Draw2D.v0);
-            Draw2D.VERTEX3.color(ro, go, bo, ao);
+            Draw2D.VERTEX0.clear().pos(x0o, y0o).texCoord(Draw2D.u0, Draw2D.v0).color(ro, go, bo, ao);
+            Draw2D.VERTEX1.clear().pos(x0i, y0i).texCoord(Draw2D.u0, Draw2D.v1).color(ri, gi, bi, ai);
+            Draw2D.VERTEX2.clear().pos(x1i, y1i).texCoord(Draw2D.u1, Draw2D.v1).color(ri, gi, bi, ai);
+            Draw2D.VERTEX3.clear().pos(x1o, y1o).texCoord(Draw2D.u1, Draw2D.v0).color(ro, go, bo, ao);
             
             windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX1, Draw2D.VERTEX2);
             windTriangle(Draw2D.VERTEX0, Draw2D.VERTEX2, Draw2D.VERTEX3);
@@ -682,18 +641,10 @@ public abstract class Draw2D
         
         GLBatch.begin(DrawMode.TRIANGLES);
         
-        Draw2D.VERTEX0.pos(x0, y0);
-        Draw2D.VERTEX0.texCoord(u0, v0);
-        Draw2D.VERTEX0.color(r, g, b, a);
-        Draw2D.VERTEX1.pos(x1, y1);
-        Draw2D.VERTEX1.texCoord(u1, v1);
-        Draw2D.VERTEX1.color(r, g, b, a);
-        Draw2D.VERTEX2.pos(x2, y2);
-        Draw2D.VERTEX2.texCoord(u2, v2);
-        Draw2D.VERTEX2.color(r, g, b, a);
-        Draw2D.VERTEX3.pos(x3, y3);
-        Draw2D.VERTEX3.texCoord(u3, v3);
-        Draw2D.VERTEX3.color(r, g, b, a);
+        Draw2D.VERTEX0.clear().pos(x0, y0).texCoord(u0, v0).color(r, g, b, a);
+        Draw2D.VERTEX1.clear().pos(x1, y1).texCoord(u1, v1).color(r, g, b, a);
+        Draw2D.VERTEX2.clear().pos(x2, y2).texCoord(u2, v2).color(r, g, b, a);
+        Draw2D.VERTEX3.clear().pos(x3, y3).texCoord(u3, v3).color(r, g, b, a);
         
         windQuad();
         
@@ -762,6 +713,163 @@ public abstract class Draw2D
         drawTexture(texture, x0, y0, x1, y1, x2, y2, x3, y3, u0, v0, u0, v1, u1, v1, u1, v0, r, g, b, a);
     }
     
+    public void drawText(@NotNull TextState state, @NotNull String line, double x, double y)
+    {
+        double scale = state.currFont.scale(state.size);
+        
+        ArrayList<GLBatch.VertexGroup> textVertices = new ArrayList<>();
+        ArrayList<GLBatch.VertexGroup> quadVertices = new ArrayList<>();
+        
+        CharData prevChar = null, currChar;
+        for (int i = 0, n = line.length(); i < n; i++)
+        {
+            char character = line.charAt(i);
+            
+            if (state.handleModifier(character)) continue;
+            
+            state.changeFont();
+            
+            currChar = state.currFont.charData.get(character);
+            
+            x += state.currFont.getKernAdvanceUnscaled(prevChar, currChar) * scale;
+            
+            double x0 = x + currChar.x0Unscaled() * scale;
+            double y0 = y + currChar.y0Unscaled() * scale;
+            double x1 = x + currChar.x1Unscaled() * scale;
+            double y1 = y + currChar.y1Unscaled() * scale;
+            
+            textVertices.add(new GLBatch.VertexGroup(
+                    state.currFont.texture,
+                    new GLBatch.Vertex()
+                            .pos(x0, y0) // v0
+                            .texCoord(currChar.u0(), currChar.v0())
+                            .color(state.textR, state.textG, state.textB, state.textA),
+                    new GLBatch.Vertex()
+                            .pos(x0, y1) // v1
+                            .texCoord(currChar.u0(), currChar.v1())
+                            .color(state.textR, state.textG, state.textB, state.textA),
+                    new GLBatch.Vertex()
+                            .pos(x1, y1) // v2
+                            .texCoord(currChar.u1(), currChar.v1())
+                            .color(state.textR, state.textG, state.textB, state.textA),
+                    new GLBatch.Vertex()
+                            .pos(x1, y0) // v3
+                            .texCoord(currChar.u1(), currChar.v0())
+                            .color(state.textR, state.textG, state.textB, state.textA)
+            ));
+            
+            double advance = currChar.advanceWidthUnscaled() * scale;
+            
+            if (state.backgroundA != 0)
+            {
+                x0 = x;
+                y0 = y;
+                x1 = x0 + advance;
+                y1 = y0 + (state.currFont.ascentUnscaled - state.currFont.descentUnscaled) * scale;
+                
+                quadVertices.add(new GLBatch.VertexGroup(
+                        null,
+                        new GLBatch.Vertex()
+                                .pos(x0, y0) // v0
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                        new GLBatch.Vertex()
+                                .pos(x0, y1) // v1
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y1) // v2
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y0) // v3
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA)
+                ));
+            }
+            
+            if (state.underline)
+            {
+                x0 = x;
+                y0 = y + state.currFont.ascentUnscaled * scale * 1.05F;
+                x1 = x0 + advance;
+                y1 = y0 + (100 * scale);
+                
+                textVertices.add(new GLBatch.VertexGroup(
+                        null,
+                        new GLBatch.Vertex()
+                                .pos(x0, y0) // v0
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x0, y1) // v1
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y1) // v2
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y0) // v3
+                                .color(state.textR, state.textG, state.textB, state.textA)
+                ));
+            }
+            
+            if (state.strike)
+            {
+                x0 = x;
+                y0 = y + state.currFont.ascentUnscaled * scale * 0.65F;
+                x1 = x0 + advance;
+                y1 = y0 + (100 * scale);
+                
+                textVertices.add(new GLBatch.VertexGroup(
+                        null,
+                        new GLBatch.Vertex()
+                                .pos(x0, y0) // v0
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x0, y1) // v1
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y1) // v2
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y0) // v3
+                                .color(state.textR, state.textG, state.textB, state.textA)
+                ));
+            }
+            
+            x += advance;
+            
+            prevChar = currChar;
+        }
+        
+        for (GLBatch.VertexGroup vertexGroup : quadVertices)
+        {
+            GLBatch.Vertex[] vertices = vertexGroup.points();
+            
+            GLBatch.checkBuffer(6);
+            GLBatch.setTexture(GL.defaultTexture());
+            GLBatch.begin(DrawMode.TRIANGLES);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[1]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[3]);
+            GLBatch.end();
+        }
+        
+        for (GLBatch.VertexGroup vertexGroup : textVertices)
+        {
+            GLBatch.Vertex[] vertices = vertexGroup.points();
+            
+            GLBatch.checkBuffer(6);
+            GLBatch.setTexture(vertexGroup.texture());
+            GLBatch.begin(DrawMode.TRIANGLES);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[1]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[3]);
+            GLBatch.end();
+        }
+    }
+    
     protected static int segments(double rx, double ry)
     {
         return segments(rx, ry, 0, Math.PI2);
@@ -772,20 +880,20 @@ public abstract class Draw2D
         return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * (stop - start) / Math.PI2), 8, 48);
     }
     
-    private static void windTriangle(Vertex v0, Vertex v1, Vertex v2)
+    private static void windTriangle(GLBatch.Vertex v0, GLBatch.Vertex v1, GLBatch.Vertex v2)
     {
-        v0.apply();
+        GLBatch.vertex(v0);
         
         double cross = (v1.x - v0.x) * (v2.y - v1.y) - (v1.y - v0.y) * (v2.x - v1.x);
         if (cross > 0.0)
         {
-            v2.apply();
-            v1.apply();
+            GLBatch.vertex(v2);
+            GLBatch.vertex(v1);
         }
         else
         {
-            v1.apply();
-            v2.apply();
+            GLBatch.vertex(v1);
+            GLBatch.vertex(v2);
         }
     }
     
@@ -860,47 +968,5 @@ public abstract class Draw2D
         drawImpl();
         
         reset();
-    }
-    
-    private static final class Vertex
-    {
-        private double x, y;
-        private double u, v, q;
-        private int r, g, b, a;
-        
-        private void pos(double x, double y)
-        {
-            this.x = x;
-            this.y = y;
-        }
-        
-        private void texCoord(double u, double v)
-        {
-            this.u = u;
-            this.v = v;
-            this.q = 1.0;
-        }
-        
-        private void color(int r, int g, int b, int a)
-        {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.a = a;
-        }
-        
-        private void apply()
-        {
-            GLBatch.pos(this.x, this.y);
-            if (Double.compare(this.q, 1.0) == 0)
-            {
-                GLBatch.texCoord(this.u, this.v, this.q);
-            }
-            else
-            {
-                GLBatch.texCoord(this.u * this.q, this.v * this.q, this.q);
-            }
-            GLBatch.color(this.r, this.g, this.b, this.a);
-        }
     }
 }

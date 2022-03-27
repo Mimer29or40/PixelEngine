@@ -79,7 +79,7 @@ public class TextState
         return this;
     }
     
-    boolean handleModifier(char character)
+    public boolean handleModifier(char character)
     {
         if (character == TextFormat.MODIFIER)
         {
@@ -102,7 +102,7 @@ public class TextState
         return false;
     }
     
-    void changeState(@NotNull String modifierTag)
+    public void changeState(@NotNull String modifierTag)
     {
         String[] mod = modifierTag.split("" + TextFormat.SEPARATOR);
         switch (mod[0])
@@ -153,7 +153,7 @@ public class TextState
         this.changeFont = true;
     }
     
-    void changeFont()
+    public void changeFont()
     {
         if (this.changeFont)
         {

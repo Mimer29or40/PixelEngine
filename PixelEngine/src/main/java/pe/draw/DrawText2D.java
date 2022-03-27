@@ -71,14 +71,13 @@ public class DrawText2D extends Draw2D
         if (!this.hasPoint) throw new IllegalStateException("Must provide point");
         if (this.w < 0) throw new IllegalStateException("Width must be >= 0");
         if (this.h < 0) throw new IllegalStateException("Height must be >= 0");
+        if (this.font == null) this.font = Font.get(this.name, this.weight, this.italicized);
         if (this.size < 0) throw new IllegalStateException("Text Size must be >= 0");
     }
     
     @Override
     protected void drawImpl()
     {
-        if (this.font == null) this.font = Font.get(this.name, this.weight, this.italicized);
-        
         DrawText2D.LOGGER.finest("Drawing text=\"%s\" anchor=(%s, %s) bounds=(%s, %s) font=%s size=%s align=%s ignoreFormatting=%s color=(%s, %s, %s, %s)",
                                  this.text,
                                  this.x, this.y, this.w, this.h,
@@ -91,11 +90,10 @@ public class DrawText2D extends Draw2D
             lines = new ArrayList<>();
             
             TextState state = new TextState(this.font, this.weight, this.italicized, this.size);
-            state.textR = this.r;
-            state.textG = this.g;
-            state.textB = this.b;
-            state.textA = this.a;
-            
+            state.textR         = this.r;
+            state.textG         = this.g;
+            state.textB         = this.b;
+            state.textA         = this.a;
             state.ignoreChanges = this.ignoreFormatting;
             
             TextState lineState       = new TextState(this.font, this.weight, this.italicized, this.size);
@@ -136,6 +134,13 @@ public class DrawText2D extends Draw2D
         }
         
         TextState state = new TextState(this.font, this.weight, this.italicized, this.size);
+        state.textR         = this.r;
+        state.textG         = this.g;
+        state.textB         = this.b;
+        state.textA         = this.a;
+        state.ignoreChanges = this.ignoreFormatting;
+        
+        TextState other = new TextState(this.font, this.weight, this.italicized, this.size);
         
         double actualHeight = this.font.getTextHeight(this.text, this.size);
         
@@ -144,14 +149,12 @@ public class DrawText2D extends Draw2D
         double yOffset = vPos == -1 ? 0 : vPos == 0 ? 0.5 * (this.h - actualHeight) : this.h - actualHeight;
         for (String line : lines)
         {
-            state.ignoreChanges = true;
-            double lineWidth  = this.font.getTextWidthImpl(line, state);
-            double lineHeight = this.font.getTextHeightImpl(line, state);
-            state.ignoreChanges = this.ignoreFormatting;
+            double lineWidth  = this.font.getTextWidthImpl(line, other.set(state));
+            double lineHeight = this.font.getTextHeightImpl(line, other.set(state));
             
             double xOffset = hPos == -1 ? 0 : hPos == 0 ? 0.5 * (this.w - lineWidth) : this.w - lineWidth;
             
-            this.font.drawTextImpl(line, this.x + xOffset, this.y + yOffset, state);
+            drawText(state, line, this.x + xOffset, this.y + yOffset);
             
             yOffset += lineHeight;
         }

@@ -17,6 +17,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static org.lwjgl.stb.STBTruetype.*;
@@ -66,22 +69,22 @@ public class FontSingle extends Font
     final STBTTFontinfo info;
     final ByteBuffer    fileData;
     
-    final String  family;
-    final Weight  weight;
-    final boolean italicized;
+    public final String  family;
+    public final Weight  weight;
+    public final boolean italicized;
     
-    final boolean kerning;
-    final boolean alignToInt;
+    public final boolean kerning;
+    public final boolean alignToInt;
     
-    final String id;
+    public final String id;
     
     public final int ascentUnscaled;
     public final int descentUnscaled;
     public final int lineGapUnscaled;
     
-    final CharData[] charData;
+    public final List<CharData> charData;
     
-    final Texture texture;
+    public final Texture texture;
     
     FontSingle(STBTTFontinfo info, ByteBuffer fileData, String family, Weight weight, boolean italicized, boolean kerning, boolean alignToInt, boolean interpolated)
     {
@@ -111,7 +114,7 @@ public class FontSingle extends Font
             
             int baseSize = 96;
             
-            STBTTPackedchar.Buffer charData = STBTTPackedchar.malloc(0xFFFF);
+            STBTTPackedchar.Buffer packedChars = STBTTPackedchar.malloc(0xFFFF);
             
             int width;
             int height;
@@ -129,15 +132,15 @@ public class FontSingle extends Font
                 
                 buffer = MemoryUtil.memAlloc(width * height);
                 
-                charData.position(32);
+                packedChars.position(32);
                 try (STBTTPackContext pc = STBTTPackContext.malloc())
                 {
                     stbtt_PackBegin(pc, buffer, width, height, 0, 2, MemoryUtil.NULL);
                     stbtt_PackSetOversampling(pc, samples, samples);
-                    success = stbtt_PackFontRange(pc, this.fileData, 0, baseSize, charData.position(), charData);
+                    success = stbtt_PackFontRange(pc, this.fileData, 0, baseSize, packedChars.position(), packedChars);
                     stbtt_PackEnd(pc);
                 }
-                charData.clear();
+                packedChars.clear();
                 buffer.clear();
                 
                 textureSize <<= 1;
@@ -159,27 +162,30 @@ public class FontSingle extends Font
             
             STBTTAlignedQuad quad = STBTTAlignedQuad.malloc(stack);
             
-            this.charData = new CharData[0xFFFF];
-            for (int i = 0, n = this.charData.length; i < n; i++)
+            int size = 0xFFFF;
+            
+            List<CharData> charData = new ArrayList<>(size);
+            for (int i = 0; i < size; i++)
             {
                 int index = stbtt_FindGlyphIndex(this.info, i);
                 
                 stbtt_GetGlyphHMetrics(this.info, index, advanceWidth, leftSideBearing);
                 stbtt_GetGlyphBox(this.info, index, x0, y0, x1, y1);
-                stbtt_GetPackedQuad(charData, width, height, i, x, y, quad, this.alignToInt);
+                stbtt_GetPackedQuad(packedChars, width, height, i, x, y, quad, this.alignToInt);
                 
                 int x0Unscaled = x0.get(0);
                 int y0Unscaled = this.ascentUnscaled - y1.get(0);
                 int x1Unscaled = x1.get(0);
                 int y1Unscaled = this.ascentUnscaled - y0.get(0);
                 
-                this.charData[i] = new CharData((char) i, index,
-                                                advanceWidth.get(0), leftSideBearing.get(0),
-                                                x0Unscaled, y0Unscaled, x1Unscaled, y1Unscaled,
-                                                quad.s0(), quad.t0(), quad.s1(), quad.t1());
+                charData.add(new CharData((char) i, index,
+                                          advanceWidth.get(0), leftSideBearing.get(0),
+                                          x0Unscaled, y0Unscaled, x1Unscaled, y1Unscaled,
+                                          quad.s0(), quad.t0(), quad.s1(), quad.t1()));
             }
+            this.charData = Collections.unmodifiableList(charData);
             
-            charData.free();
+            packedChars.free();
             
             // Converts GL_RED to GL_RGBA
             ByteBuffer data = MemoryUtil.memAlloc(width * height * 4);

@@ -518,9 +518,9 @@ public class GLBatch
     
     public static void vertex(@NotNull Vertex vertex)
     {
-        if (vertex.x != null)
+        if (vertex.hasPos)
         {
-            if (vertex.z != null)
+            if (vertex.hasPosZ)
             {
                 pos(vertex.x, vertex.y, vertex.z);
             }
@@ -529,29 +529,29 @@ public class GLBatch
                 pos(vertex.x, vertex.y);
             }
         }
-        if (vertex.u != null)
+        if (vertex.hasTexCoord)
         {
-            if (vertex.q != null)
-            {
-                texCoord(vertex.u, vertex.v, vertex.q);
-            }
-            else
+            if (Double.compare(vertex.q, 1.0) == 0)
             {
                 texCoord(vertex.u, vertex.v);
             }
-        }
-        if (vertex.nx != null) normal(vertex.nx, vertex.ny, vertex.nz);
-        if (vertex.tx != null) tangent(vertex.tx, vertex.ty, vertex.tz);
-        if (vertex.r != null) color(vertex.r, vertex.g, vertex.b, vertex.a);
-        if (vertex.u2 != null)
-        {
-            if (vertex.q2 != null)
+            else
             {
-                texCoord(vertex.u2, vertex.v2, vertex.q2);
+                texCoord(vertex.u * vertex.q, vertex.v * vertex.q, vertex.q);
+            }
+        }
+        if (vertex.hasNormal) normal(vertex.nx, vertex.ny, vertex.nz);
+        if (vertex.hasTangent) tangent(vertex.tx, vertex.ty, vertex.tz);
+        if (vertex.hasColor) color(vertex.r, vertex.g, vertex.b, vertex.a);
+        if (vertex.hasTexCoord2)
+        {
+            if (Double.compare(vertex.q2, 1.0) == 0)
+            {
+                texCoord2(vertex.u2, vertex.v2);
             }
             else
             {
-                texCoord(vertex.u2, vertex.v2);
+                texCoord2(vertex.u2 * vertex.q2, vertex.v2 * vertex.q2, vertex.q2);
             }
         }
     }
@@ -1007,83 +1007,113 @@ public class GLBatch
     
     public static class Vertex
     {
-        public Double x, y, z;
-        public Double u, v, q;
-        public Double nx, ny, nz;
-        public Double tx, ty, tz;
-        public Integer r, g, b, a;
-        public Double u2, v2, q2;
+        public double x, y, z;
+        public double u, v, q;
+        public double nx, ny, nz;
+        public double tx, ty, tz;
+        public int r, g, b, a;
+        public double u2, v2, q2;
+        
+        private boolean hasPos;
+        private boolean hasPosZ;
+        private boolean hasTexCoord;
+        private boolean hasNormal;
+        private boolean hasTangent;
+        private boolean hasColor;
+        private boolean hasTexCoord2;
+        
+        public @NotNull Vertex clear()
+        {
+            this.hasPos       = false;
+            this.hasPosZ      = false;
+            this.hasTexCoord  = false;
+            this.hasNormal    = false;
+            this.hasTangent   = false;
+            this.hasColor     = false;
+            this.hasTexCoord2 = false;
+            return this;
+        }
         
         public @NotNull Vertex pos(double x, double y, double z)
         {
-            this.x = x;
-            this.y = y;
-            this.z = z;
+            this.x       = x;
+            this.y       = y;
+            this.z       = z;
+            this.hasPos  = true;
+            this.hasPosZ = true;
             return this;
         }
         
         public @NotNull Vertex pos(double x, double y)
         {
-            this.x = x;
-            this.y = y;
-            this.z = null;
+            this.x       = x;
+            this.y       = y;
+            this.hasPos  = true;
+            this.hasPosZ = false;
             return this;
         }
         
         public @NotNull Vertex texCoord(double u, double v, double q)
         {
-            this.u = u;
-            this.v = v;
-            this.q = q;
+            this.u           = u;
+            this.v           = v;
+            this.q           = q;
+            this.hasTexCoord = true;
             return this;
         }
         
         public @NotNull Vertex texCoord(double u, double v)
         {
-            this.u = u;
-            this.v = v;
-            this.q = 1.0;
+            this.u           = u;
+            this.v           = v;
+            this.q           = 1.0;
+            this.hasTexCoord = true;
             return this;
         }
         
         public @NotNull Vertex normal(double x, double y, double z)
         {
-            this.nx = x;
-            this.ny = y;
-            this.nz = z;
+            this.nx        = x;
+            this.ny        = y;
+            this.nz        = z;
+            this.hasNormal = true;
             return this;
         }
         
         public @NotNull Vertex tangent(double x, double y, double z)
         {
-            this.tx = x;
-            this.ty = y;
-            this.tz = z;
+            this.tx         = x;
+            this.ty         = y;
+            this.tz         = z;
+            this.hasTangent = true;
             return this;
         }
         
         public @NotNull Vertex color(int r, int g, int b, int a)
         {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-            this.a = a;
+            this.r        = r;
+            this.g        = g;
+            this.b        = b;
+            this.a        = a;
+            this.hasColor = true;
             return this;
         }
         
         public @NotNull Vertex texCoord2(double u, double v, double q)
         {
-            this.u2 = u;
-            this.v2 = v;
-            this.q2 = q;
+            this.u2           = u;
+            this.v2           = v;
+            this.q2           = q;
+            this.hasTexCoord2 = true;
             return this;
         }
         
         public @NotNull Vertex texCoord2(double u, double v)
         {
-            this.u2 = u;
-            this.v2 = v;
-            this.q2 = 1.0;
+            this.u2           = u;
+            this.v2           = v;
+            this.q2           = 1.0;
+            this.hasTexCoord2 = true;
             return this;
         }
     }
