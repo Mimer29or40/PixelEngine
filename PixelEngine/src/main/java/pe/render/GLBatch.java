@@ -444,16 +444,16 @@ public class GLBatch
         
         this.stackIndex = 0;
         
-        this.projection = new Matrix4d[GL.MAX_MATRIX_STACK_SIZE];
-        this.view       = new Matrix4d[GL.MAX_MATRIX_STACK_SIZE];
-        this.model      = new Matrix4d[GL.MAX_MATRIX_STACK_SIZE];
-        this.normal     = new Matrix4d[GL.MAX_MATRIX_STACK_SIZE];
+        this.projection = new Matrix4d[GL.BATCH_STACK_SIZE];
+        this.view       = new Matrix4d[GL.BATCH_STACK_SIZE];
+        this.model      = new Matrix4d[GL.BATCH_STACK_SIZE];
+        this.normal     = new Matrix4d[GL.BATCH_STACK_SIZE];
         
-        this.diffuse  = Color_RGBA.create(GL.MAX_MATRIX_STACK_SIZE);
-        this.specular = Color_RGBA.create(GL.MAX_MATRIX_STACK_SIZE);
-        this.ambient  = Color_RGBA.create(GL.MAX_MATRIX_STACK_SIZE);
+        this.diffuse  = Color_RGBA.create(GL.BATCH_STACK_SIZE);
+        this.specular = Color_RGBA.create(GL.BATCH_STACK_SIZE);
+        this.ambient  = Color_RGBA.create(GL.BATCH_STACK_SIZE);
         
-        for (int i = 0; i < GL.MAX_MATRIX_STACK_SIZE; i++)
+        for (int i = 0; i < GL.BATCH_STACK_SIZE; i++)
         {
             this.projection[i] = new Matrix4d();
             this.view[i]       = new Matrix4d();

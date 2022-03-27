@@ -23,9 +23,8 @@ public final class GL // TODO - Instance GL for multiple contexts
     public static final int DEFAULT_BATCH_DRAWCALLS = 256; // Default number of batch draw calls (by state changes: mode, texture)
     public static final int MAX_ACTIVE_TEXTURES     = 16;  // Maximum number of additional textures that can be activated on batch drawing (SetShaderValueTexture())
     
-    public static final int STACK_SIZE              = 32; // Initial size of Property stack
-    public static final int MAX_MATRIX_STACK_SIZE   = 32; // Maximum size of internal Matrix stack
-    public static final int MAX_COLOR_STACK_SIZE    = 32; // Maximum size of internal Color stack
+    public static final int STATE_STACK_SIZE        = 32; // Initial size of GL Property stack
+    public static final int BATCH_STACK_SIZE        = 32; // Initial size of Batch Property stack
     public static final int MAX_MESH_VERTEX_BUFFERS = 7;  // Maximum vertex buffers (VBO) per mesh
     public static final int MAX_SHADER_LOCATIONS    = 32; // Maximum number of shader locations supported
     public static final int MAX_MATERIAL_MAPS       = 12; // Maximum number of shader maps supported
@@ -34,30 +33,6 @@ public final class GL // TODO - Instance GL for multiple contexts
     public static final float DEFAULT_CULL_DISTANCE_FAR  = 1000.0f; // Default projection matrix far cull distance
     
     private static final Logger LOGGER = new Logger();
-    
-    static boolean depthClamp;
-    static boolean lineSmooth;
-    static boolean textureCubeMapSeamless;
-    
-    static boolean wireframe;
-    
-    static BlendMode   blendMode;
-    static DepthMode   depthMode;
-    static StencilMode stencilMode;
-    static ScissorMode scissorMode;
-    
-    static int colorMask;
-    static int depthMask;
-    static int stencilMask;
-    
-    static int clearColor;
-    static int clearDepth;
-    static int clearStencil;
-    
-    static CullFace cullFace;
-    static Winding  winding;
-    
-    static final ScissorMode scissorModeCustom = new ScissorMode(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
     
     static GLShader defaultVertShader;
     static GLShader defaultFragShader;
@@ -72,6 +47,32 @@ public final class GL // TODO - Instance GL for multiple contexts
     
     static GLBatch defaultBatch;
     static GLBatch currentBatch;
+    
+    static final ScissorMode scissorModeCustom = new ScissorMode(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    
+    static int stackIndex;
+    
+    static boolean[] depthClamp;
+    static boolean[] lineSmooth;
+    static boolean[] textureCubeMapSeamless;
+    
+    static boolean[] wireframe;
+    
+    static BlendMode[]   blendMode;
+    static DepthMode[]   depthMode;
+    static StencilMode[] stencilMode;
+    static ScissorMode[] scissorMode;
+    
+    static boolean[][] colorMask;
+    static boolean[]   depthMask;
+    static int[]       stencilMask;
+    
+    static double[][] clearColor;
+    static double[]   clearDepth;
+    static int[]      clearStencil;
+    
+    static CullFace[] cullFace;
+    static Winding[]  winding;
     
     public static void setup()
     {
@@ -103,6 +104,30 @@ public final class GL // TODO - Instance GL for multiple contexts
         // TODO - Setup Uniform Buffer for default things
         // TODO - Setup Default Uniform values
         
+        GL.stackIndex = 0;
+        
+        GL.depthClamp             = new boolean[GL.STATE_STACK_SIZE];
+        GL.lineSmooth             = new boolean[GL.STATE_STACK_SIZE];
+        GL.textureCubeMapSeamless = new boolean[GL.STATE_STACK_SIZE];
+        
+        GL.wireframe = new boolean[GL.STATE_STACK_SIZE];
+        
+        GL.blendMode   = new BlendMode[GL.STATE_STACK_SIZE];
+        GL.depthMode   = new DepthMode[GL.STATE_STACK_SIZE];
+        GL.stencilMode = new StencilMode[GL.STATE_STACK_SIZE];
+        GL.scissorMode = new ScissorMode[GL.STATE_STACK_SIZE];
+        
+        GL.colorMask   = new boolean[GL.STATE_STACK_SIZE][4];
+        GL.depthMask   = new boolean[GL.STATE_STACK_SIZE];
+        GL.stencilMask = new int[GL.STATE_STACK_SIZE];
+        
+        GL.clearColor   = new double[GL.STATE_STACK_SIZE][4];
+        GL.clearDepth   = new double[GL.STATE_STACK_SIZE];
+        GL.clearStencil = new int[GL.STATE_STACK_SIZE];
+        
+        GL.cullFace = new CullFace[GL.STATE_STACK_SIZE];
+        GL.winding  = new Winding[GL.STATE_STACK_SIZE];
+        
         GL.defaultState();
     }
     
@@ -126,6 +151,8 @@ public final class GL // TODO - Instance GL for multiple contexts
     
     public static void defaultState()
     {
+        GL.LOGGER.finest("Setting Default State");
+        
         GL33.glPixelStorei(GL33.GL_PACK_ALIGNMENT, 1);
         GL33.glPixelStorei(GL33.GL_UNPACK_ALIGNMENT, 1);
         
@@ -150,6 +177,98 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         cullFace(CullFace.DEFAULT);
         winding(Winding.DEFAULT);
+    }
+    
+    public static void pushState()
+    {
+        GL.LOGGER.finest("Pushing State Stack");
+        
+        boolean depthClamp             = GL.depthClamp[GL.stackIndex];
+        boolean lineSmooth             = GL.lineSmooth[GL.stackIndex];
+        boolean textureCubeMapSeamless = GL.textureCubeMapSeamless[GL.stackIndex];
+        
+        boolean wireframe = GL.wireframe[GL.stackIndex];
+        
+        BlendMode   blendMode   = GL.blendMode[GL.stackIndex];
+        DepthMode   depthMode   = GL.depthMode[GL.stackIndex];
+        StencilMode stencilMode = GL.stencilMode[GL.stackIndex];
+        ScissorMode scissorMode = GL.scissorMode[GL.stackIndex];
+        
+        boolean[] colorMask   = GL.colorMask[GL.stackIndex];
+        boolean   depthMask   = GL.depthMask[GL.stackIndex];
+        int       stencilMask = GL.stencilMask[GL.stackIndex];
+        
+        double[] clearColor   = GL.clearColor[GL.stackIndex];
+        double   clearDepth   = GL.clearDepth[GL.stackIndex];
+        int      clearStencil = GL.clearStencil[GL.stackIndex];
+        
+        CullFace cullFace = GL.cullFace[GL.stackIndex];
+        Winding  winding  = GL.winding[GL.stackIndex];
+        
+        GL.stackIndex++;
+        
+        GL.depthClamp[GL.stackIndex]             = depthClamp;
+        GL.lineSmooth[GL.stackIndex]             = lineSmooth;
+        GL.textureCubeMapSeamless[GL.stackIndex] = textureCubeMapSeamless;
+        
+        GL.wireframe[GL.stackIndex] = wireframe;
+        
+        GL.blendMode[GL.stackIndex]   = blendMode;
+        GL.depthMode[GL.stackIndex]   = depthMode;
+        GL.stencilMode[GL.stackIndex] = stencilMode;
+        GL.scissorMode[GL.stackIndex] = scissorMode;
+        
+        GL.colorMask[GL.stackIndex][0] = colorMask[0];
+        GL.colorMask[GL.stackIndex][1] = colorMask[1];
+        GL.colorMask[GL.stackIndex][2] = colorMask[2];
+        GL.colorMask[GL.stackIndex][3] = colorMask[3];
+        GL.depthMask[GL.stackIndex]    = depthMask;
+        GL.stencilMask[GL.stackIndex]  = stencilMask;
+        
+        GL.clearColor[GL.stackIndex][0] = clearColor[0];
+        GL.clearColor[GL.stackIndex][1] = clearColor[1];
+        GL.clearColor[GL.stackIndex][2] = clearColor[2];
+        GL.clearColor[GL.stackIndex][3] = clearColor[3];
+        GL.clearDepth[GL.stackIndex]    = clearDepth;
+        GL.clearStencil[GL.stackIndex]  = clearStencil;
+        
+        GL.cullFace[GL.stackIndex] = cullFace;
+        GL.winding[GL.stackIndex]  = winding;
+    }
+    
+    public static void popState()
+    {
+        GL.LOGGER.finest("Popping State Stack");
+        
+        GL.stackIndex++;
+        
+        depthClamp(GL.depthClamp[GL.stackIndex]);
+        lineSmooth(GL.lineSmooth[GL.stackIndex]);
+        textureCubeMapSeamless(GL.textureCubeMapSeamless[GL.stackIndex]);
+        
+        wireframe(GL.wireframe[GL.stackIndex]);
+        
+        blendMode(GL.blendMode[GL.stackIndex]);
+        depthMode(GL.depthMode[GL.stackIndex]);
+        stencilMode(GL.stencilMode[GL.stackIndex]);
+        scissorMode(GL.scissorMode[GL.stackIndex]);
+        
+        colorMask(GL.colorMask[GL.stackIndex][0],
+                  GL.colorMask[GL.stackIndex][1],
+                  GL.colorMask[GL.stackIndex][2],
+                  GL.colorMask[GL.stackIndex][3]);
+        depthMask(GL.depthMask[GL.stackIndex]);
+        stencilMask(GL.stencilMask[GL.stackIndex]);
+        
+        clearColor(GL.clearColor[GL.stackIndex][0],
+                   GL.clearColor[GL.stackIndex][1],
+                   GL.clearColor[GL.stackIndex][2],
+                   GL.clearColor[GL.stackIndex][3]);
+        clearDepth(GL.clearDepth[GL.stackIndex]);
+        clearStencil(GL.clearStencil[GL.stackIndex]);
+        
+        cullFace(GL.cullFace[GL.stackIndex]);
+        winding(GL.winding[GL.stackIndex]);
     }
     
     public static @NotNull GLShader defaultVertShader()
@@ -202,9 +321,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Depth Clamp Flag:", depthClamp);
         
-        if (GL.depthClamp != depthClamp)
+        if (GL.depthClamp[GL.stackIndex] != depthClamp)
         {
-            GL.depthClamp = depthClamp;
+            GL.depthClamp[GL.stackIndex] = depthClamp;
             
             if (depthClamp)
             {
@@ -227,9 +346,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Line Smooth Flag:", lineSmooth);
         
-        if (GL.lineSmooth != lineSmooth)
+        if (GL.lineSmooth[GL.stackIndex] != lineSmooth)
         {
-            GL.lineSmooth = lineSmooth;
+            GL.lineSmooth[GL.stackIndex] = lineSmooth;
             
             if (lineSmooth)
             {
@@ -254,9 +373,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Texture Cube Map Seamless Flag:", textureCubeMapSeamless);
         
-        if (GL.textureCubeMapSeamless != textureCubeMapSeamless)
+        if (GL.textureCubeMapSeamless[GL.stackIndex] != textureCubeMapSeamless)
         {
-            GL.textureCubeMapSeamless = textureCubeMapSeamless;
+            GL.textureCubeMapSeamless[GL.stackIndex] = textureCubeMapSeamless;
             
             if (textureCubeMapSeamless)
             {
@@ -278,9 +397,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Wireframe Flag:", wireframe);
         
-        if (GL.wireframe != wireframe)
+        if (GL.wireframe[GL.stackIndex] != wireframe)
         {
-            GL.wireframe = wireframe;
+            GL.wireframe[GL.stackIndex] = wireframe;
             
             GL33.glPolygonMode(GL33.GL_FRONT_AND_BACK, wireframe ? GL33.GL_LINE : GL33.GL_FILL);
         }
@@ -299,9 +418,9 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         GL.LOGGER.finest("Setting Blend Mode:", mode);
         
-        if (!Objects.equals(GL.blendMode, mode))
+        if (!Objects.equals(GL.blendMode[GL.stackIndex], mode))
         {
-            GL.blendMode = mode;
+            GL.blendMode[GL.stackIndex] = mode;
             
             if (mode == BlendMode.NONE)
             {
@@ -327,9 +446,9 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         GL.LOGGER.finest("Setting Depth Mode:", mode);
         
-        if (!Objects.equals(GL.depthMode, mode))
+        if (!Objects.equals(GL.depthMode[GL.stackIndex], mode))
         {
-            GL.depthMode = mode;
+            GL.depthMode[GL.stackIndex] = mode;
             
             if (mode == DepthMode.NONE)
             {
@@ -363,9 +482,9 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         GL.LOGGER.finest("Setting Stencil Mode:", mode);
         
-        if (!Objects.equals(GL.stencilMode, mode))
+        if (!Objects.equals(GL.stencilMode[GL.stackIndex], mode))
         {
-            GL.stencilMode = mode;
+            GL.stencilMode[GL.stackIndex] = mode;
             
             if (mode == StencilMode.NONE)
             {
@@ -397,9 +516,9 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         GL.LOGGER.finest("Setting ScissorMode:", mode);
         
-        if (!Objects.equals(GL.scissorMode, mode))
+        if (!Objects.equals(GL.scissorMode[GL.stackIndex], mode))
         {
-            GL.scissorMode = mode;
+            GL.scissorMode[GL.stackIndex] = mode;
             
             if (mode == ScissorMode.NONE)
             {
@@ -429,7 +548,7 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Custom Scissor: [%s, %s, %s, %s]", x, y, width, height);
         
-        GL.scissorMode = GL.scissorModeCustom;
+        GL.scissorMode[GL.stackIndex] = GL.scissorModeCustom;
         
         GL33.glEnable(GL33.GL_SCISSOR_TEST);
         GL33.glScissor(x, y, width, height);
@@ -449,11 +568,15 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Color Mask: r=%s g=%s b=%s a=%s", r, g, b, a);
         
-        int mask = (r ? 8 : 0) | (g ? 4 : 0) | (b ? 2 : 0) | (a ? 1 : 0);
-        
-        if (GL.colorMask != mask)
+        if ((Math.abs(Boolean.compare(GL.colorMask[GL.stackIndex][0], r)) +
+             Math.abs(Boolean.compare(GL.colorMask[GL.stackIndex][1], g)) +
+             Math.abs(Boolean.compare(GL.colorMask[GL.stackIndex][2], b)) +
+             Math.abs(Boolean.compare(GL.colorMask[GL.stackIndex][3], a))) != 0)
         {
-            GL.colorMask = mask;
+            GL.colorMask[GL.stackIndex][0] = r;
+            GL.colorMask[GL.stackIndex][1] = g;
+            GL.colorMask[GL.stackIndex][2] = b;
+            GL.colorMask[GL.stackIndex][3] = a;
             
             GL33.glColorMask(r, g, b, a);
         }
@@ -469,11 +592,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Depth Mask:", flag);
         
-        int mask = flag ? 1 : 0;
-        
-        if (GL.depthMask != mask)
+        if (GL.depthMask[GL.stackIndex] != flag)
         {
-            GL.depthMask = mask;
+            GL.depthMask[GL.stackIndex] = flag;
             
             GL33.glDepthMask(flag);
         }
@@ -493,9 +614,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Stencil Mask: 0x%02X", mask);
         
-        if (GL.stencilMask != mask)
+        if (GL.stencilMask[GL.stackIndex] != mask)
         {
-            GL.stencilMask = mask;
+            GL.stencilMask[GL.stackIndex] = mask;
             
             GL33.glStencilMask(mask);
         }
@@ -514,11 +635,15 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Clear Color: (%.3f, %.3f, %.3f, %.3f)", r, g, b, a);
         
-        int hash = Objects.hash(r, g, b, a);
-        
-        if (GL.clearColor != hash)
+        if ((Math.abs(Double.compare(GL.clearColor[GL.stackIndex][0], r)) +
+             Math.abs(Double.compare(GL.clearColor[GL.stackIndex][1], g)) +
+             Math.abs(Double.compare(GL.clearColor[GL.stackIndex][2], b)) +
+             Math.abs(Double.compare(GL.clearColor[GL.stackIndex][3], a))) != 0)
         {
-            GL.clearColor = hash;
+            GL.clearColor[GL.stackIndex][0] = r;
+            GL.clearColor[GL.stackIndex][1] = g;
+            GL.clearColor[GL.stackIndex][2] = b;
+            GL.clearColor[GL.stackIndex][3] = a;
             
             GL33.glClearColor((float) r, (float) g, (float) b, (float) a);
         }
@@ -538,9 +663,9 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         int hash = Double.hashCode(depth);
         
-        if (GL.clearDepth != hash)
+        if (GL.clearDepth[GL.stackIndex] != hash)
         {
-            GL.clearDepth = hash;
+            GL.clearDepth[GL.stackIndex] = hash;
             
             GL33.glClearDepth(depth);
         }
@@ -556,9 +681,9 @@ public final class GL // TODO - Instance GL for multiple contexts
     {
         GL.LOGGER.finest("Setting Clear Stencil: 0x%02X", stencil);
         
-        if (GL.clearStencil != stencil)
+        if (GL.clearStencil[GL.stackIndex] != stencil)
         {
-            GL.clearStencil = stencil;
+            GL.clearStencil[GL.stackIndex] = stencil;
             
             GL33.glClearStencil(stencil);
         }
@@ -616,9 +741,9 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         GL.LOGGER.finest("Setting Cull Face:", cullFace);
         
-        if (!Objects.equals(GL.cullFace, cullFace))
+        if (!Objects.equals(GL.cullFace[GL.stackIndex], cullFace))
         {
-            GL.cullFace = cullFace;
+            GL.cullFace[GL.stackIndex] = cullFace;
             
             if (cullFace == CullFace.NONE)
             {
@@ -651,15 +776,15 @@ public final class GL // TODO - Instance GL for multiple contexts
         
         GL.LOGGER.finest("Setting Winding:", winding);
         
-        if (!Objects.equals(GL.winding, winding))
+        if (!Objects.equals(GL.winding[GL.stackIndex], winding))
         {
-            GL.winding = winding;
+            GL.winding[GL.stackIndex] = winding;
             
             GL33.glFrontFace(winding.ref);
         }
     }
     
-    private static Color.Buffer readBuffer(int buffer, int x, int y, int width, int height, @NotNull ColorFormat format)
+    private static Color.@NotNull Buffer readBuffer(int buffer, int x, int y, int width, int height, @NotNull ColorFormat format)
     {
         ByteBuffer data = MemoryUtil.memAlloc(width * height * format.sizeof);
         
