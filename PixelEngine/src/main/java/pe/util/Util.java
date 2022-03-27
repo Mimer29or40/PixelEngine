@@ -166,8 +166,8 @@ public class Util
     @NotNull
     public static Vector2dc windowToFramebuffer(double x, double y, @NotNull Vector2d out)
     {
-        out.x = (x * GLFramebuffer.currentWidth() / Window.width());
-        out.y = (y * GLFramebuffer.currentHeight() / Window.height());
+        out.x = x * GLFramebuffer.currentWidth() / Window.width();
+        out.y = y * GLFramebuffer.currentHeight() / Window.height();
         return out;
     }
     
@@ -230,8 +230,8 @@ public class Util
     @NotNull
     public static Vector2dc framebufferToWindow(double x, double y, @NotNull Vector2d out)
     {
-        out.x = (x * Window.width() / GLFramebuffer.currentWidth());
-        out.y = (y * Window.height() / GLFramebuffer.currentHeight());
+        out.x = x * Window.width() / GLFramebuffer.currentWidth();
+        out.y = y * Window.height() / GLFramebuffer.currentHeight();
         return out;
     }
     
@@ -304,8 +304,8 @@ public class Util
             Util.LOGGER.warning(index, "does not exist");
             return out.set(x, y);
         }
-        out.x = (x - layer.bounds().x()) * (double) Window.width() / (double) layer.bounds().width();
-        out.y = (y - layer.bounds().y()) * (double) Window.height() / (double) layer.bounds().height();
+        out.x = (x - layer.bounds().x()) / (double) layer.bounds().width() * (double) layer.width();
+        out.y = (y - layer.bounds().y()) / (double) layer.bounds().height() * (double) layer.height();
         return out;
     }
     
@@ -390,8 +390,8 @@ public class Util
             Util.LOGGER.warning(index, "does not exist");
             return out.set(x, y);
         }
-        out.x = (x * (double) layer.bounds().width() / (double) Window.width()) + layer.bounds().x();
-        out.y = (y * (double) layer.bounds().height() / (double) Window.height()) + layer.bounds().y();
+        out.x = (x * (double) layer.bounds().width() / (double) layer.width()) + layer.bounds().x();
+        out.y = (y * (double) layer.bounds().height() / (double) layer.height()) + layer.bounds().y();
         return out;
     }
     
@@ -476,8 +476,14 @@ public class Util
             Util.LOGGER.warning(index, "does not exist");
             return out.set(x, y);
         }
-        out.x = (x - layer.bounds().x()) * (double) GLFramebuffer.currentWidth() / (double) layer.bounds().width();
-        out.y = (y - layer.bounds().y()) * (double) GLFramebuffer.currentHeight() / (double) layer.bounds().height();
+    
+        // Framebuffer to Window
+        x = x * Window.width() / GLFramebuffer.currentWidth();
+        y = y * Window.height() / GLFramebuffer.currentHeight();
+    
+        // Window to Layer
+        out.x = (x - layer.bounds().x()) / (double) layer.bounds().width() * (double) layer.width();
+        out.y = (y - layer.bounds().y()) / (double) layer.bounds().height() * (double) layer.height();
         return out;
     }
     
@@ -562,8 +568,14 @@ public class Util
             Util.LOGGER.warning(index, "does not exist");
             return out.set(x, y);
         }
-        out.x = (x - layer.bounds().x()) * (double) GLFramebuffer.currentWidth() / (double) layer.bounds().width();
-        out.y = (y - layer.bounds().y()) * (double) GLFramebuffer.currentHeight() / (double) layer.bounds().height();
+        
+        // Layer to Window
+        x = (x * (double) layer.bounds().width() / (double) layer.width()) + layer.bounds().x();
+        y = (y * (double) layer.bounds().height() / (double) layer.height()) + layer.bounds().y();
+    
+        // Window to Framebuffer
+        out.x = x * GLFramebuffer.currentWidth() / Window.width();
+        out.y = y * GLFramebuffer.currentHeight() / Window.height();
         return out;
     }
     

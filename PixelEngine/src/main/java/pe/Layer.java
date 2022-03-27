@@ -37,27 +37,22 @@ public final class Layer extends GLFramebuffer
                       layout(location = 0) in float aIndex;
                       layout(location = 1) in vec2 aTexCoord;
                       uniform vec2 framebuffer;
-                      uniform float aspect;
+                      uniform vec4 layer;
                       out vec2 texCoord;
                       
                       vec2 toViewport(float x, float y)
                       {
-                          x = (2.0 * x / framebuffer.x) - 1;
-                          y = (2.0 * y / framebuffer.y) - 1;
+                          x = (2.0 * x / framebuffer.x) - 1.0;
+                          y = (2.0 * y / framebuffer.y) - 1.0;
                           return vec2(x, y);
                       }
                       
                       void main(void)
                       {
-                          float width = framebuffer.x;
-                          float height = round(framebuffer.x / aspect);
-                          if (height > framebuffer.y)
-                          {
-                              width = round(framebuffer.y * aspect);
-                              height = framebuffer.y;
-                          }
-                          float x = (framebuffer.x - width) * 0.5;
-                          float y = (framebuffer.y - height) * 0.5;
+                          float x = layer.x;
+                          float y = layer.y;
+                          float w = layer.z;
+                          float h = layer.w;
                           
                           vec2 pos = vec2(0, 0);
                           if (aIndex == 0.0)
@@ -66,15 +61,15 @@ public final class Layer extends GLFramebuffer
                           }
                           else if (aIndex == 1.0)
                           {
-                              pos = toViewport(x, y + height);
+                              pos = toViewport(x, y + h);
                           }
                           else if (aIndex == 2.0)
                           {
-                              pos = toViewport(x + width, y);
+                              pos = toViewport(x + w, y);
                           }
                           else if (aIndex == 3.0)
                           {
-                              pos = toViewport(x + width, y + height);
+                              pos = toViewport(x + w, y + h);
                           }
                           
                           texCoord = aTexCoord;
@@ -171,7 +166,7 @@ public final class Layer extends GLFramebuffer
         {
             if (layer == null) continue;
             
-            GLProgram.Uniform.float1("aspect", layer.aspectRatio());
+            GLProgram.Uniform.vec4("layer", layer.bounds.x(), layer.bounds.y(), layer.bounds.width(), layer.bounds.height());
             
             GLTexture.bind(layer.color());
             Layer.vertexArray.drawElements(DrawMode.TRIANGLES, 6);
