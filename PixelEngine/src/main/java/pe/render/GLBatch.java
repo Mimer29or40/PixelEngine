@@ -210,7 +210,7 @@ public class GLBatch
         }
     }
     
-    private void draw()
+    private void drawInternal()
     {
         // Check to see if the vertex array was updated.
         if (this.pos.position() > 0)
@@ -328,7 +328,7 @@ public class GLBatch
                 this.tex2.position(this.tex2.position() + drawCall.alignment);
             }
             
-            if (++this.currentDraw >= this.drawCalls.length) draw();
+            if (++this.currentDraw >= this.drawCalls.length) drawInternal();
         }
     }
     
@@ -361,11 +361,16 @@ public class GLBatch
     
     public static BatchStats stats()
     {
-        GL.currentBatch.draw();
+        GL.currentBatch.drawInternal();
         
         GL.currentBatch.stats.set(GL.currentBatch.internalStats);
         GL.currentBatch.internalStats.reset();
         return GL.currentBatch.stats;
+    }
+    
+    public static void draw()
+    {
+        GL.currentBatch.drawInternal();
     }
     
     public static void begin(@NotNull DrawMode mode)
@@ -558,7 +563,7 @@ public class GLBatch
     
     public static void checkBuffer(int vertexCount)
     {
-        if (GL.currentBatch.pos.position() + vertexCount >= GL.currentBatch.elementsCount * 4) GL.currentBatch.draw();
+        if (GL.currentBatch.pos.position() + vertexCount >= GL.currentBatch.elementsCount * 4) GL.currentBatch.drawInternal();
     }
     
     /**

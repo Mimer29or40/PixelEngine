@@ -361,8 +361,6 @@ public abstract class Engine
                                     GLBatch.colorMode(ColorMode.AMBIENT);
                                     GLBatch.loadWhite();
                                     
-                                    // Engine.renderer.start(); // TODO
-                                    
                                     // Engine.renderer.push(); // TODO
                                     Extension.stage(Extension.Stage.PRE_DRAW);
                                     // Engine.renderer.pop(); // TODO
@@ -381,8 +379,6 @@ public abstract class Engine
                                     // ImGUI.draw();
                                     
                                     GLBatch.BatchStats stats = GLBatch.stats();
-                                    
-                                    // Engine.renderer.finish(); // TODO
                                     
                                     Engine.vertices = stats.vertices();
                                     Engine.draws    = stats.draws();
