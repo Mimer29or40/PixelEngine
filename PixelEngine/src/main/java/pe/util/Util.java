@@ -41,7 +41,7 @@ public class Util
         Layer layer = Layer.get(index);
         if (layer == null)
         {
-            Util.LOGGER.warning(index, "does not exist");
+            Util.LOGGER.warning("Layer.%s does not exist", index);
             return out.set(x, y);
         }
         out.x = (x - layer.bounds().x()) / (double) layer.bounds().width() * (double) layer.width();
@@ -127,7 +127,7 @@ public class Util
         Layer layer = Layer.get(index);
         if (layer == null)
         {
-            Util.LOGGER.warning(index, "does not exist");
+            Util.LOGGER.warning("Layer.%s does not exist", index);
             return out.set(x, y);
         }
         out.x = (x * (double) layer.bounds().width() / (double) layer.width()) + layer.bounds().x();
@@ -213,7 +213,7 @@ public class Util
         Layer layer = Layer.get(index);
         if (layer == null)
         {
-            Util.LOGGER.warning(index, "does not exist");
+            Util.LOGGER.warning("Layer.%s does not exist", index);
             return out.set(x, y);
         }
     
@@ -305,7 +305,7 @@ public class Util
         Layer layer = Layer.get(index);
         if (layer == null)
         {
-            Util.LOGGER.warning(index, "does not exist");
+            Util.LOGGER.warning("Layer.%s does not exist", index);
             return out.set(x, y);
         }
         
