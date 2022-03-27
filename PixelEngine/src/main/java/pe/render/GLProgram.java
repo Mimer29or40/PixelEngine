@@ -33,22 +33,26 @@ public class GLProgram
                                                                   ATTRIBUTE_COLOR,
                                                                   ATTRIBUTE_TEXCOORD2);
     
+    public static final String UNIFORM_MATRIX_MVP        = "MATRIX_MVP";
     public static final String UNIFORM_MATRIX_PROJECTION = "MATRIX_PROJECTION";
     public static final String UNIFORM_MATRIX_VIEW       = "MATRIX_VIEW";
     public static final String UNIFORM_MATRIX_MODEL      = "MATRIX_MODEL";
-    public static final String UNIFORM_MATRIX_MVP        = "MATRIX_MVP";
     public static final String UNIFORM_MATRIX_NORMAL     = "MATRIX_NORMAL";
-    public static final String UNIFORM_VECTOR_VIEW       = "VECTOR_VIEW";
+    public static final String UNIFORM_VECTOR_VIEW_X     = "VECTOR_VIEW_X";
+    public static final String UNIFORM_VECTOR_VIEW_Y     = "VECTOR_VIEW_Y";
+    public static final String UNIFORM_VECTOR_VIEW_Z     = "VECTOR_VIEW_Z";
     public static final String UNIFORM_COLOR_DIFFUSE     = "COLOR_DIFFUSE";
     public static final String UNIFORM_COLOR_SPECULAR    = "COLOR_SPECULAR";
     public static final String UNIFORM_COLOR_AMBIENT     = "COLOR_AMBIENT";
     
-    public static final List<String> DEFAULT_UNIFORMS = List.of(UNIFORM_MATRIX_PROJECTION,
+    public static final List<String> DEFAULT_UNIFORMS = List.of(UNIFORM_MATRIX_MVP,
+                                                                UNIFORM_MATRIX_PROJECTION,
                                                                 UNIFORM_MATRIX_VIEW,
                                                                 UNIFORM_MATRIX_MODEL,
-                                                                UNIFORM_MATRIX_MVP,
                                                                 UNIFORM_MATRIX_NORMAL,
-                                                                UNIFORM_VECTOR_VIEW,
+                                                                UNIFORM_VECTOR_VIEW_X,
+                                                                UNIFORM_VECTOR_VIEW_Y,
+                                                                UNIFORM_VECTOR_VIEW_Z,
                                                                 UNIFORM_COLOR_DIFFUSE,
                                                                 UNIFORM_COLOR_SPECULAR,
                                                                 UNIFORM_COLOR_AMBIENT);

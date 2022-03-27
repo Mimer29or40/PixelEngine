@@ -59,7 +59,7 @@ public class GUI
             {
                 int x = (int) mMoved.x();
                 int y = (int) mMoved.y();
-    
+                
                 int hoveredIndex = -1;
                 for (int i = 0; i < Windows.size(); i++)
                 {
@@ -69,7 +69,7 @@ public class GUI
                 }
                 if (hoveredIndex >= 0)
                 {
-                    hoveredWindow = Windows.get(hoveredIndex);
+                    hoveredWindow         = Windows.get(hoveredIndex);
                     hoveredWindow.hovered = true;
                     mMoved.consume();
                 }
@@ -86,7 +86,7 @@ public class GUI
             {
                 int x = (int) mbDown.x();
                 int y = (int) mbDown.y();
-    
+                
                 int focusedIndex = -1;
                 for (int i = 0; i < Windows.size(); i++)
                 {
@@ -96,7 +96,7 @@ public class GUI
                 }
                 if (focusedIndex >= 0)
                 {
-                    focusedWindow = Windows.remove(focusedIndex);
+                    focusedWindow         = Windows.remove(focusedIndex);
                     focusedWindow.focused = true;
                     Windows.add(0, focusedWindow);
                     mbDown.consume();
@@ -154,28 +154,14 @@ public class GUI
         int b = Window.framebufferHeight() >> 1;
         int t = -b;
         
-        GLBatch.matrixMode(MatrixMode.PROJECTION);
-        GLBatch.loadIdentity();
-        GLBatch.ortho(l, r, b, t, 1.0, -1.0);
+        GLBatch.projection().setOrtho(l, r, b, t, 1.0, -1.0);
+        GLBatch.view().identity().translate(l, t, 0.0);
+        GLBatch.model().identity();
+        GLBatch.normal().identity();
         
-        GLBatch.matrixMode(MatrixMode.VIEW);
-        GLBatch.loadIdentity();
-        GLBatch.translate(l, t, 0.0);
-        
-        GLBatch.matrixMode(MatrixMode.MODEL);
-        GLBatch.loadIdentity();
-        
-        GLBatch.matrixMode(MatrixMode.NORMAL);
-        GLBatch.loadIdentity();
-        
-        GLBatch.colorMode(ColorMode.DIFFUSE);
-        GLBatch.loadWhite();
-        
-        GLBatch.colorMode(ColorMode.SPECULAR);
-        GLBatch.loadWhite();
-        
-        GLBatch.colorMode(ColorMode.AMBIENT);
-        GLBatch.loadWhite();
+        GLBatch.diffuse().set(Color.WHITE);
+        GLBatch.specular().set(Color.WHITE);
+        GLBatch.ambient().set(Color.WHITE);
         
         for (int i = Windows.size() - 1; i >= 0; i--)
         {

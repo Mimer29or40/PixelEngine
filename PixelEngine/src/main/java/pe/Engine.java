@@ -317,7 +317,7 @@ public abstract class Engine
                                 Extension.stage(Extension.Stage.POST_EVENTS);
                                 
                                 GUI.handleEvents();
-                                // Debug.handleEvents();
+                                Debug.handleEvents();
                                 // NuklearGUI.handleEvents();
                                 // ImGUI.handleEvents();
                                 
@@ -338,43 +338,29 @@ public abstract class Engine
                                     int b = GLFramebuffer.currentHeight() >> 1;
                                     int t = -b;
                                     
-                                    GLBatch.matrixMode(MatrixMode.PROJECTION);
-                                    GLBatch.loadIdentity();
-                                    GLBatch.ortho(l, r, b, t, 1.0, -1.0);
+                                    GLBatch.projection().setOrtho(l, r, b, t, 1.0, -1.0);
+                                    GLBatch.view().identity().translate(l, t, 0.0);
+                                    GLBatch.model().identity();
+                                    GLBatch.normal().identity();
                                     
-                                    GLBatch.matrixMode(MatrixMode.VIEW);
-                                    GLBatch.loadIdentity();
-                                    GLBatch.translate(l, t, 0.0);
+                                    GLBatch.diffuse().set(Color.WHITE);
+                                    GLBatch.specular().set(Color.WHITE);
+                                    GLBatch.ambient().set(Color.WHITE);
                                     
-                                    GLBatch.matrixMode(MatrixMode.MODEL);
-                                    GLBatch.loadIdentity();
-                                    
-                                    GLBatch.matrixMode(MatrixMode.NORMAL);
-                                    GLBatch.loadIdentity();
-                                    
-                                    GLBatch.colorMode(ColorMode.DIFFUSE);
-                                    GLBatch.loadWhite();
-                                    
-                                    GLBatch.colorMode(ColorMode.SPECULAR);
-                                    GLBatch.loadWhite();
-                                    
-                                    GLBatch.colorMode(ColorMode.AMBIENT);
-                                    GLBatch.loadWhite();
-                                    
-                                    // Engine.renderer.push(); // TODO
+                                    GLBatch.push();
                                     Extension.stage(Extension.Stage.PRE_DRAW);
-                                    // Engine.renderer.pop(); // TODO
+                                    GLBatch.pop();
                                     
-                                    // Engine.renderer.push(); // TODO
+                                    GLBatch.push();
                                     Engine.instance.draw(Time.delta());
-                                    // Engine.renderer.pop(); // TODO
+                                    GLBatch.pop();
                                     
-                                    // Engine.renderer.push(); // TODO
+                                    GLBatch.push();
                                     Extension.stage(Extension.Stage.POST_DRAW);
-                                    // Engine.renderer.pop(); // TODO
+                                    GLBatch.pop();
                                     
                                     GUI.draw();
-                                    // Debug.draw();
+                                    Debug.draw();
                                     // NuklearGUI.draw();
                                     // ImGUI.draw();
                                     
@@ -429,7 +415,7 @@ public abstract class Engine
                         Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
                         
                         GUI.destroy();
-                        // Debug.destroy();
+                        Debug.destroy();
                         // NuklearGUI.destroy();
                         // ImGUI.destroy();
                         
@@ -484,7 +470,7 @@ public abstract class Engine
         IO.setup(width, height, pixelWidth, pixelHeight);
         
         GUI.setup();
-        // Debug.setup();
+        Debug.setup();
         // NuklearGUI.setup();
         // ImGUI.setup();
     }

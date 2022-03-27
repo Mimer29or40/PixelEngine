@@ -23,6 +23,7 @@ public final class GL // TODO - Instance GL for multiple contexts
     public static final int DEFAULT_BATCH_DRAWCALLS = 256; // Default number of batch draw calls (by state changes: mode, texture)
     public static final int MAX_ACTIVE_TEXTURES     = 16;  // Maximum number of additional textures that can be activated on batch drawing (SetShaderValueTexture())
     
+    public static final int STACK_SIZE              = 32; // Initial size of Property stack
     public static final int MAX_MATRIX_STACK_SIZE   = 32; // Maximum size of internal Matrix stack
     public static final int MAX_COLOR_STACK_SIZE    = 32; // Maximum size of internal Color stack
     public static final int MAX_MESH_VERTEX_BUFFERS = 7;  // Maximum vertex buffers (VBO) per mesh

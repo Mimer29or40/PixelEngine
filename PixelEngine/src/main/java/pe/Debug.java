@@ -502,7 +502,7 @@ public final class Debug
     
     static void handleEvents()
     {
-        if (Modifier.all(Modifier.SHIFT, Modifier.CONTROL, Modifier.ALT))
+        if (Modifier.only(Modifier.SHIFT, Modifier.CONTROL, Modifier.ALT))
         {
             for (EventKeyboardKeyDown event : Engine.Events.get(EventKeyboardKeyDown.class))
             {

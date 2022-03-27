@@ -34,7 +34,7 @@ public final class EXT_GIF extends Extension
     @StageMethod(stage = Stage.POST_EVENTS)
     static void postEvents()
     {
-        if (Keyboard.down(Keyboard.Key.F12) && Modifier.all(Modifier.CONTROL, Modifier.SHIFT))
+        if (Keyboard.down(Keyboard.Key.F12) && Modifier.only(Modifier.CONTROL, Modifier.SHIFT))
         {
             if (EXT_GIF.recording)
             {
