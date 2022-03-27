@@ -1007,75 +1007,86 @@ public class GLBatch
     
     public static class Vertex
     {
-        private Double x, y, z;
-        private Double u, v, q;
-        private Double nx, ny, nz;
-        private Double tx, ty, tz;
-        private Integer r, g, b, a;
-        private Double u2, v2, q2;
+        public Double x, y, z;
+        public Double u, v, q;
+        public Double nx, ny, nz;
+        public Double tx, ty, tz;
+        public Integer r, g, b, a;
+        public Double u2, v2, q2;
         
-        public void pos(double x, double y, double z)
+        public @NotNull Vertex pos(double x, double y, double z)
         {
             this.x = x;
             this.y = y;
             this.z = z;
+            return this;
         }
         
-        public void pos(double x, double y)
+        public @NotNull Vertex pos(double x, double y)
         {
             this.x = x;
             this.y = y;
             this.z = null;
+            return this;
         }
         
-        public void texCoord(double u, double v, double q)
+        public @NotNull Vertex texCoord(double u, double v, double q)
         {
             this.u = u;
             this.v = v;
             this.q = q;
+            return this;
         }
         
-        public void texCoord(double u, double v)
+        public @NotNull Vertex texCoord(double u, double v)
         {
             this.u = u;
             this.v = v;
             this.q = 1.0;
+            return this;
         }
         
-        public void normal(double x, double y, double z)
+        public @NotNull Vertex normal(double x, double y, double z)
         {
             this.nx = x;
             this.ny = y;
             this.nz = z;
+            return this;
         }
         
-        public void tangent(double x, double y, double z)
+        public @NotNull Vertex tangent(double x, double y, double z)
         {
             this.tx = x;
             this.ty = y;
             this.tz = z;
+            return this;
         }
         
-        public void color(int r, int g, int b, int a)
+        public @NotNull Vertex color(int r, int g, int b, int a)
         {
             this.r = r;
             this.g = g;
             this.b = b;
             this.a = a;
+            return this;
         }
         
-        public void texCoord2(double u, double v, double q)
+        public @NotNull Vertex texCoord2(double u, double v, double q)
         {
             this.u2 = u;
             this.v2 = v;
             this.q2 = q;
+            return this;
         }
         
-        public void texCoord2(double u, double v)
+        public @NotNull Vertex texCoord2(double u, double v)
         {
             this.u2 = u;
             this.v2 = v;
             this.q2 = 1.0;
+            return this;
         }
     }
+    
+    public record VertexGroup(GLTexture texture, Vertex... points) {}
 }

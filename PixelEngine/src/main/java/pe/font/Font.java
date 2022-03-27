@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.system.MemoryUtil;
 import pe.render.DrawMode;
+import pe.render.GL;
 import pe.render.GLBatch;
 import rutils.IOUtil;
 import rutils.Logger;
@@ -334,8 +335,8 @@ public abstract class Font
     {
         double scale = state.currFont.scale(state.size);
         
-        ArrayList<GLBatch.Vertex> charVertices = new ArrayList<>();
-        ArrayList<GLBatch.Vertex> quadVertices = new ArrayList<>();
+        ArrayList<GLBatch.VertexGroup> textVertices = new ArrayList<>();
+        ArrayList<GLBatch.VertexGroup> quadVertices = new ArrayList<>();
         
         CharData prevChar = null, currChar;
         for (int i = 0, n = line.length(); i < n; i++)
@@ -355,47 +356,135 @@ public abstract class Font
             double x1 = x + currChar.x1Unscaled() * scale;
             double y1 = y + currChar.y1Unscaled() * scale;
             
-            GLBatch.checkBuffer(6);
+            textVertices.add(new GLBatch.VertexGroup(
+                    state.currFont.texture,
+                    new GLBatch.Vertex()
+                            .pos(x0, y0) // v0
+                            .texCoord(currChar.u0(), currChar.v0())
+                            .color(state.textR, state.textG, state.textB, state.textA),
+                    new GLBatch.Vertex()
+                            .pos(x0, y1) // v1
+                            .texCoord(currChar.u0(), currChar.v1())
+                            .color(state.textR, state.textG, state.textB, state.textA),
+                    new GLBatch.Vertex()
+                            .pos(x1, y1) // v2
+                            .texCoord(currChar.u1(), currChar.v1())
+                            .color(state.textR, state.textG, state.textB, state.textA),
+                    new GLBatch.Vertex()
+                            .pos(x1, y0) // v3
+                            .texCoord(currChar.u1(), currChar.v0())
+                            .color(state.textR, state.textG, state.textB, state.textA)
+            ));
             
-            GLBatch.setTexture(state.currFont.texture);
+            double advance = currChar.advanceWidthUnscaled() * scale;
             
-            GLBatch.begin(DrawMode.TRIANGLES);
+            if (state.backgroundA != 0)
+            {
+                x0 = x;
+                y0 = y;
+                x1 = x0 + advance;
+                y1 = y0 + (state.currFont.ascentUnscaled - state.currFont.descentUnscaled) * scale;
+                
+                quadVertices.add(new GLBatch.VertexGroup(
+                        null,
+                        new GLBatch.Vertex()
+                                .pos(x0, y0) // v0
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                        new GLBatch.Vertex()
+                                .pos(x0, y1) // v1
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y1) // v2
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y0) // v3
+                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA)
+                ));
+            }
             
-            // 0
-            GLBatch.pos(x0, y0);
-            GLBatch.texCoord(currChar.u0(), currChar.v0());
-            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            if (state.underline)
+            {
+                x0 = x;
+                y0 = y + state.currFont.ascentUnscaled * scale * 1.05F;
+                x1 = x0 + advance;
+                y1 = y0 + (100 * scale);
+                
+                textVertices.add(new GLBatch.VertexGroup(
+                        null,
+                        new GLBatch.Vertex()
+                                .pos(x0, y0) // v0
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x0, y1) // v1
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y1) // v2
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y0) // v3
+                                .color(state.textR, state.textG, state.textB, state.textA)
+                ));
+            }
             
-            // 1
-            GLBatch.pos(x0, y1);
-            GLBatch.texCoord(currChar.u0(), currChar.v1());
-            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
+            if (state.strike)
+            {
+                x0 = x;
+                y0 = y + state.currFont.ascentUnscaled * scale * 0.65F;
+                x1 = x0 + advance;
+                y1 = y0 + (100 * scale);
+                
+                textVertices.add(new GLBatch.VertexGroup(
+                        null,
+                        new GLBatch.Vertex()
+                                .pos(x0, y0) // v0
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x0, y1) // v1
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y1) // v2
+                                .color(state.textR, state.textG, state.textB, state.textA),
+                        new GLBatch.Vertex()
+                                .pos(x1, y0) // v3
+                                .color(state.textR, state.textG, state.textB, state.textA)
+                ));
+            }
             
-            // 2
-            GLBatch.pos(x1, y1);
-            GLBatch.texCoord(currChar.u1(), currChar.v1());
-            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
-            
-            // 0
-            GLBatch.pos(x0, y0);
-            GLBatch.texCoord(currChar.u0(), currChar.v0());
-            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
-            
-            // 2
-            GLBatch.pos(x1, y1);
-            GLBatch.texCoord(currChar.u1(), currChar.v1());
-            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
-            
-            // 3
-            GLBatch.pos(x1, y0);
-            GLBatch.texCoord(currChar.u1(), currChar.v0());
-            GLBatch.color(state.textR, state.textG, state.textB, state.textA);
-            
-            GLBatch.end();
-            
-            x += currChar.advanceWidthUnscaled() * scale;
+            x += advance;
             
             prevChar = currChar;
+        }
+        
+        for (GLBatch.VertexGroup vertexGroup : quadVertices)
+        {
+            GLBatch.Vertex[] vertices = vertexGroup.points();
+            
+            GLBatch.checkBuffer(6);
+            GLBatch.setTexture(GL.defaultTexture());
+            GLBatch.begin(DrawMode.TRIANGLES);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[1]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[3]);
+            GLBatch.end();
+        }
+        
+        for (GLBatch.VertexGroup vertexGroup : textVertices)
+        {
+            GLBatch.Vertex[] vertices = vertexGroup.points();
+            
+            GLBatch.checkBuffer(6);
+            GLBatch.setTexture(vertexGroup.texture());
+            GLBatch.begin(DrawMode.TRIANGLES);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[1]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[0]);
+            GLBatch.vertex(vertices[2]);
+            GLBatch.vertex(vertices[3]);
+            GLBatch.end();
         }
     }
 }

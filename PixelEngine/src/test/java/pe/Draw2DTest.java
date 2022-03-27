@@ -686,7 +686,7 @@ public class Draw2DTest extends Engine
         // b = 255;
         // a = 100;
         
-        text       = String.format("%sRed%s %sGreen%s\nWith multiple lines\n%sIta%slics%s\n%sBold\n%sBoldItalics%s\n%sUnderline%s and %sStrike\n%sBACKGROUND COLOR",
+        text       = String.format("%sRed%s %sGreen%s\nWith multiple lines\n%sIta%slics%s\n%sBold\n%sBoldItalics%s\n%sUnderline %sand%s Strike\n%sBACKGROUND COLOR",
                                    TextFormat.COLOR_RED,
                                    TextFormat.COLOR_RESET,
                                    TextFormat.COLOR_GREEN,
