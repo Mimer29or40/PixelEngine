@@ -8,7 +8,6 @@ import pe.font.Font;
 import pe.font.TextFormat;
 import pe.texture.Image;
 import pe.texture.Texture;
-import pe.util.Util;
 import rutils.Logger;
 import rutils.Math;
 
@@ -462,8 +461,8 @@ public class Draw2DTest extends Engine
                 Draw.fillRect2D()
                     .point(cx, cy)
                     .size(w, h)
-                    .origin(ox, oy)
-                    .angle(rotation)
+                    .rotationOrigin(ox, oy)
+                    .rotationAngle(rotation)
                     .gradientH(Color.BLUE, Color.LIGHT_GREEN)
                     .draw();
                 
@@ -471,8 +470,8 @@ public class Draw2DTest extends Engine
                     .point(cx, cy)
                     .size(w, h)
                     .thickness(thickness)
-                    .origin(ox, oy)
-                    .angle(rotation)
+                    .rotationOrigin(ox, oy)
+                    .rotationAngle(rotation)
                     .color(Color.DARKER_RED)
                     .draw();
                 
@@ -496,34 +495,34 @@ public class Draw2DTest extends Engine
                 if (toggle)
                 {
                     Draw.fillEllipse2D()
-                        .center(cx, cy)
+                        .point(cx, cy)
                         .radius(rx, ry)
-                        .origin(ox, oy)
-                        .angles(0, Math.toRadians(vValue))
-                        .angle(rotation)
+                        .rotationOrigin(ox, oy)
+                        .stopAngle(Math.toRadians(vValue))
+                        .rotationAngle(rotation)
                         .color(Color.CYAN)
                         .draw();
                 }
                 else
                 {
                     Draw.fillEllipse2D()
-                        .center(cx, cy)
+                        .point(cx, cy)
                         .radius(rx, ry)
-                        .origin(ox, oy)
-                        .angles(0, Math.toRadians(vValue))
-                        .angle(rotation)
-                        .colorInner(Color.GRAY)
-                        .colorOuter(Color.YELLOW)
+                        .rotationOrigin(ox, oy)
+                        .stopAngle(Math.toRadians(vValue))
+                        .rotationAngle(rotation)
+                        .color0(Color.GRAY)
+                        .color1(Color.YELLOW)
                         .draw();
                 }
                 
                 Draw.drawEllipse2D()
-                    .center(cx, cy)
+                    .point(cx, cy)
                     .radius(rx, ry)
                     .thickness(thickness)
-                    .origin(ox, oy)
-                    .angles(0, Math.toRadians(vValue))
-                    .angle(rotation)
+                    .rotationOrigin(ox, oy)
+                    .stopAngle(Math.toRadians(vValue))
+                    .rotationAngle(rotation)
                     .color(Color.DARKER_BLUE)
                     .draw();
                 
@@ -550,37 +549,37 @@ public class Draw2DTest extends Engine
                 if (toggle)
                 {
                     Draw.fillRing2D()
-                        .center(cx, cy)
-                        .radiusInner(rxi, ryi)
-                        .radiusOuter(rxo, ryo)
-                        .origin(ox, oy)
-                        .angles(0, Math.toRadians(vValue))
-                        .angle(rotation)
+                        .point(cx, cy)
+                        .radius0(rxi, ryi)
+                        .radius1(rxo, ryo)
+                        .rotationOrigin(ox, oy)
+                        .stopAngle(Math.toRadians(vValue))
+                        .rotationAngle(rotation)
                         .color(Color.DARK_MAGENTA)
                         .draw();
                 }
                 else
                 {
                     Draw.fillRing2D()
-                        .center(cx, cy)
-                        .radiusInner(rxi, ryi)
-                        .radiusOuter(rxo, ryo)
-                        .origin(ox, oy)
-                        .angles(0, Math.toRadians(vValue))
-                        .angle(rotation)
-                        .colorInner(Color.DARK_RED)
-                        .colorOuter(Color.LIGHT_GREEN)
+                        .point(cx, cy)
+                        .radius0(rxi, ryi)
+                        .radius1(rxo, ryo)
+                        .rotationOrigin(ox, oy)
+                        .stopAngle(Math.toRadians(vValue))
+                        .rotationAngle(rotation)
+                        .color0(Color.DARK_RED)
+                        .color1(Color.LIGHT_GREEN)
                         .draw();
                 }
                 
                 Draw.drawRing2D()
-                    .center(cx, cy)
-                    .radiusInner(rxi, ryi)
-                    .radiusOuter(rxo, ryo)
+                    .point(cx, cy)
+                    .radius0(rxi, ryi)
+                    .radius1(rxo, ryo)
                     .thickness(thickness)
-                    .origin(ox, oy)
-                    .angles(0, Math.toRadians(vValue))
-                    .angle(rotation)
+                    .rotationOrigin(ox, oy)
+                    .stopAngle(Math.toRadians(vValue))
+                    .rotationAngle(rotation)
                     .color(Color.DARKER_BLUE)
                     .draw();
                 
@@ -605,8 +604,8 @@ public class Draw2DTest extends Engine
                     Draw.drawTexture2D()
                         .texture(texture)
                         .dst(cx, cy, w, h)
-                        .origin(w * 0.5, h * 0.5)
-                        .angle(rotation)
+                        .rotationOrigin(w * 0.5, h * 0.5)
+                        .rotationAngle(rotation)
                         .draw();
                 }
                 else
@@ -661,7 +660,7 @@ public class Draw2DTest extends Engine
         Draw.drawText2D()
             .text("This is a very" + TextFormat.color(255, 0, 0) + " long string")
             .point(minX, minY)
-            .bounds(w, h)
+            .size(w, h)
             .size(size)
             .font(font)
             .ignoreFormatting(ignoreFormatting)

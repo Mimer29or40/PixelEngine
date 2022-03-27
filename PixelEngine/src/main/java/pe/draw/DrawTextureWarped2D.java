@@ -1,18 +1,22 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
-import pe.texture.Texture;
 import rutils.Logger;
 
-public class DrawTextureWarped2D extends Draw2D
+public class DrawTextureWarped2D extends Draw2D implements Texture<DrawTextureWarped2D>,
+                                                           Point0<DrawTextureWarped2D>,
+                                                           Point1<DrawTextureWarped2D>,
+                                                           Point2<DrawTextureWarped2D>,
+                                                           Point3<DrawTextureWarped2D>,
+                                                           UV0<DrawTextureWarped2D>,
+                                                           UV1<DrawTextureWarped2D>,
+                                                           UV2<DrawTextureWarped2D>,
+                                                           UV3<DrawTextureWarped2D>,
+                                                           Color<DrawTextureWarped2D>
 {
     private static final Logger LOGGER = new Logger();
     
-    private Texture texture;
+    private pe.texture.Texture texture;
     
     private double x0, y0, x1, y1, x2, y2, x3, y3;
     private boolean hasPoint0, hasPoint1, hasPoint2, hasPoint3;
@@ -74,12 +78,14 @@ public class DrawTextureWarped2D extends Draw2D
                     this.r, this.g, this.b, this.a);
     }
     
-    public DrawTextureWarped2D texture(@NotNull Texture texture)
+    @Override
+    public DrawTextureWarped2D texture(@NotNull pe.texture.Texture texture)
     {
         this.texture = texture;
         return this;
     }
     
+    @Override
     public DrawTextureWarped2D point0(double x, double y)
     {
         this.x0        = x;
@@ -88,21 +94,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D point0(@NotNull Vector2ic vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point0(@NotNull Vector2fc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point0(@NotNull Vector2dc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D point1(double x, double y)
     {
         this.x1        = x;
@@ -111,21 +103,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D point1(@NotNull Vector2ic vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point1(@NotNull Vector2fc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point1(@NotNull Vector2dc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D point2(double x, double y)
     {
         this.x2        = x;
@@ -134,21 +112,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D point2(@NotNull Vector2ic vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point2(@NotNull Vector2fc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point2(@NotNull Vector2dc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D point3(double x, double y)
     {
         this.x3        = x;
@@ -157,21 +121,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D point3(@NotNull Vector2ic vec)
-    {
-        return point3(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point3(@NotNull Vector2fc vec)
-    {
-        return point3(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D point3(@NotNull Vector2dc vec)
-    {
-        return point3(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D uv0(double u, double v)
     {
         this.u0 = u;
@@ -179,21 +129,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D uv0(@NotNull Vector2ic vec)
-    {
-        return uv0(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv0(@NotNull Vector2fc vec)
-    {
-        return uv0(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv0(@NotNull Vector2dc vec)
-    {
-        return uv0(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D uv1(double u, double v)
     {
         this.u1 = u;
@@ -201,21 +137,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D uv1(@NotNull Vector2ic vec)
-    {
-        return uv1(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv1(@NotNull Vector2fc vec)
-    {
-        return uv1(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv1(@NotNull Vector2dc vec)
-    {
-        return uv1(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D uv2(double u, double v)
     {
         this.u2 = u;
@@ -223,21 +145,7 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D uv2(@NotNull Vector2ic vec)
-    {
-        return uv2(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv2(@NotNull Vector2fc vec)
-    {
-        return uv2(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv2(@NotNull Vector2dc vec)
-    {
-        return uv2(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTextureWarped2D uv3(double u, double v)
     {
         this.u3 = u;
@@ -245,32 +153,13 @@ public class DrawTextureWarped2D extends Draw2D
         return this;
     }
     
-    public DrawTextureWarped2D uv3(@NotNull Vector2ic vec)
-    {
-        return uv3(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv3(@NotNull Vector2fc vec)
-    {
-        return uv3(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D uv3(@NotNull Vector2dc vec)
-    {
-        return uv3(vec.x(), vec.y());
-    }
-    
-    public DrawTextureWarped2D tint(int r, int g, int b, int a)
+    @Override
+    public DrawTextureWarped2D color(int r, int g, int b, int a)
     {
         this.r = r;
         this.g = g;
         this.b = b;
         this.a = a;
         return this;
-    }
-    
-    public DrawTextureWarped2D tint(@NotNull Colorc color)
-    {
-        return tint(color.r(), color.g(), color.b(), color.a());
     }
 }

@@ -1,16 +1,16 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 import rutils.Math;
 
 import java.util.Arrays;
 
-public class DrawRect2D extends Draw2D
+public class DrawRect2D extends Draw2D implements Point<DrawRect2D>,
+                                                  Size<DrawRect2D>,
+                                                  Corners<DrawRect2D>,
+                                                  Thickness<DrawRect2D>,
+                                                  Rotation<DrawRect2D>,
+                                                  Color<DrawRect2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -137,6 +137,7 @@ public class DrawRect2D extends Draw2D
                   this.r, this.g, this.b, this.a);
     }
     
+    @Override
     public DrawRect2D point(double x, double y)
     {
         this.x        = x;
@@ -145,52 +146,16 @@ public class DrawRect2D extends Draw2D
         return this;
     }
     
-    public DrawRect2D point(@NotNull Vector2ic vec)
+    @Override
+    public DrawRect2D size(double width, double height)
     {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawRect2D point(@NotNull Vector2fc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawRect2D point(@NotNull Vector2dc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawRect2D size(double x, double y)
-    {
-        this.width   = x;
-        this.height  = y;
+        this.width   = width;
+        this.height  = height;
         this.hasSize = true;
         return this;
     }
     
-    public DrawRect2D size(@NotNull Vector2ic vec)
-    {
-        return size(vec.x(), vec.y());
-    }
-    
-    public DrawRect2D size(@NotNull Vector2fc vec)
-    {
-        return size(vec.x(), vec.y());
-    }
-    
-    public DrawRect2D size(@NotNull Vector2dc vec)
-    {
-        return size(vec.x(), vec.y());
-    }
-    
-    public DrawRect2D size(double radius)
-    {
-        this.width   = radius;
-        this.height  = radius;
-        this.hasSize = true;
-        return this;
-    }
-    
+    @Override
     public DrawRect2D corners(double topLeftX, double topLeftY, double bottomRightX, double bottomRightY)
     {
         this.width  = bottomRightX - topLeftX;
@@ -203,21 +168,7 @@ public class DrawRect2D extends Draw2D
         return this;
     }
     
-    public DrawRect2D corners(@NotNull Vector2ic topLeft, @NotNull Vector2ic bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public DrawRect2D corners(@NotNull Vector2fc topLeft, @NotNull Vector2fc bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public DrawRect2D corners(@NotNull Vector2dc topLeft, @NotNull Vector2dc bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
+    @Override
     public DrawRect2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -225,34 +176,22 @@ public class DrawRect2D extends Draw2D
         return this;
     }
     
-    public DrawRect2D origin(double x, double y)
+    @Override
+    public DrawRect2D rotationOrigin(double x, double y)
     {
         this.originX = x;
         this.originY = y;
         return this;
     }
     
-    public DrawRect2D origin(@NotNull Vector2ic origin)
+    @Override
+    public DrawRect2D rotationAngle(double angleRadians)
     {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public DrawRect2D origin(@NotNull Vector2fc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public DrawRect2D origin(@NotNull Vector2dc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public DrawRect2D angle(double angle)
-    {
-        this.angle = angle;
+        this.angle = angleRadians;
         return this;
     }
     
+    @Override
     public DrawRect2D color(int r, int g, int b, int a)
     {
         this.r = r;
@@ -260,10 +199,5 @@ public class DrawRect2D extends Draw2D
         this.b = b;
         this.a = a;
         return this;
-    }
-    
-    public DrawRect2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
     }
 }

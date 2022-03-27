@@ -1,14 +1,18 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 import rutils.Math;
 
-public class DrawRing2D extends Draw2D
+public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
+                                                  Radius0<DrawRing2D>,
+                                                  Radius1<DrawRing2D>,
+                                                  Thickness<DrawRing2D>,
+                                                  StartStop<DrawRing2D>,
+                                                  Rotation<DrawRing2D>,
+                                                  Segments<DrawRing2D>,
+                                                  Color<DrawRing2D>,
+                                                  Color0<DrawRing2D>,
+                                                  Color1<DrawRing2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -85,7 +89,8 @@ public class DrawRing2D extends Draw2D
                     this.ro, this.go, this.bo, this.ao);
     }
     
-    public DrawRing2D center(double x, double y)
+    @Override
+    public DrawRing2D point(double x, double y)
     {
         this.x         = x;
         this.y         = y;
@@ -93,22 +98,8 @@ public class DrawRing2D extends Draw2D
         return this;
     }
     
-    public DrawRing2D center(@NotNull Vector2ic vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D center(@NotNull Vector2fc vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D center(@NotNull Vector2dc vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusInner(double x, double y)
+    @Override
+    public DrawRing2D radius0(double x, double y)
     {
         this.rxi      = x;
         this.ryi      = y;
@@ -116,30 +107,8 @@ public class DrawRing2D extends Draw2D
         return this;
     }
     
-    public DrawRing2D radiusInner(@NotNull Vector2ic vec)
-    {
-        return radiusInner(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusInner(@NotNull Vector2fc vec)
-    {
-        return radiusInner(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusInner(@NotNull Vector2dc vec)
-    {
-        return radiusInner(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusInner(double radius)
-    {
-        this.rxi      = radius;
-        this.ryi      = radius;
-        this.hasSizeI = true;
-        return this;
-    }
-    
-    public DrawRing2D radiusOuter(double x, double y)
+    @Override
+    public DrawRing2D radius1(double x, double y)
     {
         this.rxo      = x;
         this.ryo      = y;
@@ -147,29 +116,7 @@ public class DrawRing2D extends Draw2D
         return this;
     }
     
-    public DrawRing2D radiusOuter(@NotNull Vector2ic vec)
-    {
-        return radiusOuter(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusOuter(@NotNull Vector2fc vec)
-    {
-        return radiusOuter(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusOuter(@NotNull Vector2dc vec)
-    {
-        return radiusOuter(vec.x(), vec.y());
-    }
-    
-    public DrawRing2D radiusOuter(double radius)
-    {
-        this.rxo      = radius;
-        this.ryo      = radius;
-        this.hasSizeO = true;
-        return this;
-    }
-    
+    @Override
     public DrawRing2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -177,62 +124,43 @@ public class DrawRing2D extends Draw2D
         return this;
     }
     
-    public DrawRing2D angles(double start, double stop)
+    @Override
+    public DrawRing2D startAngle(double start)
     {
         this.start = start;
-        this.stop  = stop;
         return this;
     }
     
-    public DrawRing2D angles(@NotNull Vector2ic angles)
+    @Override
+    public DrawRing2D stopAngle(double stop)
     {
-        return angles(angles.x(), angles.y());
+        this.stop = stop;
+        return this;
     }
     
-    public DrawRing2D angles(@NotNull Vector2fc angles)
-    {
-        return angles(angles.x(), angles.y());
-    }
-    
-    public DrawRing2D angles(@NotNull Vector2dc angles)
-    {
-        return angles(angles.x(), angles.y());
-    }
-    
-    public DrawRing2D origin(double x, double y)
+    @Override
+    public DrawRing2D rotationOrigin(double x, double y)
     {
         this.originX = x;
         this.originY = y;
         return this;
     }
     
-    public DrawRing2D origin(@NotNull Vector2ic origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public DrawRing2D origin(@NotNull Vector2fc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public DrawRing2D origin(@NotNull Vector2dc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public DrawRing2D angle(double angle)
+    @Override
+    public DrawRing2D rotationAngle(double angle)
     {
         this.angle = angle;
         return this;
     }
     
+    @Override
     public DrawRing2D segments(int segments)
     {
         this.segments = segments;
         return this;
     }
     
+    @Override
     public DrawRing2D color(int r, int g, int b, int a)
     {
         this.ri = this.ro = r;
@@ -242,12 +170,8 @@ public class DrawRing2D extends Draw2D
         return this;
     }
     
-    public DrawRing2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
-    public DrawRing2D colorInner(int r, int g, int b, int a)
+    @Override
+    public DrawRing2D color0(int r, int g, int b, int a)
     {
         this.ri = r;
         this.gi = g;
@@ -256,22 +180,13 @@ public class DrawRing2D extends Draw2D
         return this;
     }
     
-    public DrawRing2D colorInner(@NotNull Colorc color)
-    {
-        return colorInner(color.r(), color.g(), color.b(), color.a());
-    }
-    
-    public DrawRing2D colorOuter(int r, int g, int b, int a)
+    @Override
+    public DrawRing2D color1(int r, int g, int b, int a)
     {
         this.ro = r;
         this.go = g;
         this.bo = b;
         this.ao = a;
         return this;
-    }
-    
-    public DrawRing2D colorOuter(@NotNull Colorc color)
-    {
-        return colorOuter(color.r(), color.g(), color.b(), color.a());
     }
 }

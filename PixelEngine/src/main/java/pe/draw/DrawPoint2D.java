@@ -1,13 +1,10 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 
-public class DrawPoint2D extends Draw2D
+public class DrawPoint2D extends Draw2D implements Point<DrawPoint2D>,
+                                                   Thickness<DrawPoint2D>,
+                                                   Color<DrawPoint2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -50,6 +47,7 @@ public class DrawPoint2D extends Draw2D
         drawPoint(this.x, this.y, this.thickness, this.r, this.g, this.b, this.a);
     }
     
+    @Override
     public DrawPoint2D point(double x, double y)
     {
         this.x        = x;
@@ -58,21 +56,7 @@ public class DrawPoint2D extends Draw2D
         return this;
     }
     
-    public DrawPoint2D point(@NotNull Vector2ic vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawPoint2D point(@NotNull Vector2fc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawPoint2D point(@NotNull Vector2dc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawPoint2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -80,6 +64,7 @@ public class DrawPoint2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawPoint2D color(int r, int g, int b, int a)
     {
         this.r = r;
@@ -87,10 +72,5 @@ public class DrawPoint2D extends Draw2D
         this.b = b;
         this.a = a;
         return this;
-    }
-    
-    public DrawPoint2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
     }
 }

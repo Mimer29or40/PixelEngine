@@ -1,15 +1,15 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 
 import java.util.Arrays;
 
-public class DrawQuad2D extends Draw2D
+public class DrawQuad2D extends Draw2D implements Point0<DrawQuad2D>,
+                                                  Point1<DrawQuad2D>,
+                                                  Point2<DrawQuad2D>,
+                                                  Point3<DrawQuad2D>,
+                                                  Thickness<DrawQuad2D>,
+                                                  Color<DrawQuad2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -89,7 +89,7 @@ public class DrawQuad2D extends Draw2D
                   this.r, this.g, this.b, this.a);
     }
     
-    
+    @Override
     public DrawQuad2D point0(double x, double y)
     {
         this.x0        = x;
@@ -98,21 +98,7 @@ public class DrawQuad2D extends Draw2D
         return this;
     }
     
-    public DrawQuad2D point0(@NotNull Vector2ic vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point0(@NotNull Vector2fc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point0(@NotNull Vector2dc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawQuad2D point1(double x, double y)
     {
         this.x1        = x;
@@ -121,21 +107,7 @@ public class DrawQuad2D extends Draw2D
         return this;
     }
     
-    public DrawQuad2D point1(@NotNull Vector2ic vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point1(@NotNull Vector2fc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point1(@NotNull Vector2dc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawQuad2D point2(double x, double y)
     {
         this.x2        = x;
@@ -144,21 +116,7 @@ public class DrawQuad2D extends Draw2D
         return this;
     }
     
-    public DrawQuad2D point2(@NotNull Vector2ic vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point2(@NotNull Vector2fc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point2(@NotNull Vector2dc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawQuad2D point3(double x, double y)
     {
         this.x3        = x;
@@ -167,21 +125,7 @@ public class DrawQuad2D extends Draw2D
         return this;
     }
     
-    public DrawQuad2D point3(@NotNull Vector2ic vec)
-    {
-        return point3(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point3(@NotNull Vector2fc vec)
-    {
-        return point3(vec.x(), vec.y());
-    }
-    
-    public DrawQuad2D point3(@NotNull Vector2dc vec)
-    {
-        return point3(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawQuad2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -189,6 +133,7 @@ public class DrawQuad2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawQuad2D color(int r, int g, int b, int a)
     {
         this.r = r;
@@ -196,10 +141,5 @@ public class DrawQuad2D extends Draw2D
         this.b = b;
         this.a = a;
         return this;
-    }
-    
-    public DrawQuad2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
     }
 }

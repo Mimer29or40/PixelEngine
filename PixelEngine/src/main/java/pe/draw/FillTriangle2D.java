@@ -1,13 +1,14 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 
-public class FillTriangle2D extends Draw2D
+public class FillTriangle2D extends Draw2D implements Point0<FillTriangle2D>,
+                                                      Point1<FillTriangle2D>,
+                                                      Point2<FillTriangle2D>,
+                                                      Color<FillTriangle2D>,
+                                                      Color0<FillTriangle2D>,
+                                                      Color1<FillTriangle2D>,
+                                                      Color2<FillTriangle2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -54,6 +55,7 @@ public class FillTriangle2D extends Draw2D
         fillTriangle(this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1, this.r2, this.g2, this.b2, this.a2);
     }
     
+    @Override
     public FillTriangle2D point0(double x, double y)
     {
         this.x0        = x;
@@ -62,21 +64,7 @@ public class FillTriangle2D extends Draw2D
         return this;
     }
     
-    public FillTriangle2D point0(@NotNull Vector2ic vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public FillTriangle2D point0(@NotNull Vector2fc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public FillTriangle2D point0(@NotNull Vector2dc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
+    @Override
     public FillTriangle2D point1(double x, double y)
     {
         this.x1        = x;
@@ -85,21 +73,7 @@ public class FillTriangle2D extends Draw2D
         return this;
     }
     
-    public FillTriangle2D point1(@NotNull Vector2ic vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public FillTriangle2D point1(@NotNull Vector2fc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public FillTriangle2D point1(@NotNull Vector2dc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
+    @Override
     public FillTriangle2D point2(double x, double y)
     {
         this.x2        = x;
@@ -108,21 +82,7 @@ public class FillTriangle2D extends Draw2D
         return this;
     }
     
-    public FillTriangle2D point2(@NotNull Vector2ic vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public FillTriangle2D point2(@NotNull Vector2fc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public FillTriangle2D point2(@NotNull Vector2dc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
+    @Override
     public FillTriangle2D color(int r, int g, int b, int a)
     {
         this.r0 = this.r1 = this.r2 = r;
@@ -132,11 +92,7 @@ public class FillTriangle2D extends Draw2D
         return this;
     }
     
-    public FillTriangle2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillTriangle2D color0(int r, int g, int b, int a)
     {
         this.r0 = r;
@@ -146,11 +102,7 @@ public class FillTriangle2D extends Draw2D
         return this;
     }
     
-    public FillTriangle2D color0(@NotNull Colorc color)
-    {
-        return color0(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillTriangle2D color1(int r, int g, int b, int a)
     {
         this.r1 = r;
@@ -160,11 +112,7 @@ public class FillTriangle2D extends Draw2D
         return this;
     }
     
-    public FillTriangle2D color1(@NotNull Colorc color)
-    {
-        return color1(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillTriangle2D color2(int r, int g, int b, int a)
     {
         this.r2 = r;
@@ -172,10 +120,5 @@ public class FillTriangle2D extends Draw2D
         this.b2 = b;
         this.a2 = a;
         return this;
-    }
-    
-    public FillTriangle2D color2(@NotNull Colorc color)
-    {
-        return color2(color.r(), color.g(), color.b(), color.a());
     }
 }

@@ -1,15 +1,14 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 
 import java.util.Arrays;
 
-public class DrawTriangle2D extends Draw2D
+public class DrawTriangle2D extends Draw2D implements Point0<DrawTriangle2D>,
+                                                      Point1<DrawTriangle2D>,
+                                                      Point2<DrawTriangle2D>,
+                                                      Thickness<DrawTriangle2D>,
+                                                      Color<DrawTriangle2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -82,7 +81,7 @@ public class DrawTriangle2D extends Draw2D
                   this.r, this.g, this.b, this.a);
     }
     
-    
+    @Override
     public DrawTriangle2D point0(double x, double y)
     {
         this.x0        = x;
@@ -91,21 +90,7 @@ public class DrawTriangle2D extends Draw2D
         return this;
     }
     
-    public DrawTriangle2D point0(@NotNull Vector2ic vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawTriangle2D point0(@NotNull Vector2fc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawTriangle2D point0(@NotNull Vector2dc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTriangle2D point1(double x, double y)
     {
         this.x1        = x;
@@ -114,21 +99,7 @@ public class DrawTriangle2D extends Draw2D
         return this;
     }
     
-    public DrawTriangle2D point1(@NotNull Vector2ic vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawTriangle2D point1(@NotNull Vector2fc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawTriangle2D point1(@NotNull Vector2dc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTriangle2D point2(double x, double y)
     {
         this.x2        = x;
@@ -137,21 +108,7 @@ public class DrawTriangle2D extends Draw2D
         return this;
     }
     
-    public DrawTriangle2D point2(@NotNull Vector2ic vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public DrawTriangle2D point2(@NotNull Vector2fc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
-    public DrawTriangle2D point2(@NotNull Vector2dc vec)
-    {
-        return point2(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawTriangle2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -159,6 +116,7 @@ public class DrawTriangle2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawTriangle2D color(int r, int g, int b, int a)
     {
         this.r = r;
@@ -166,10 +124,5 @@ public class DrawTriangle2D extends Draw2D
         this.b = b;
         this.a = a;
         return this;
-    }
-    
-    public DrawTriangle2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
     }
 }

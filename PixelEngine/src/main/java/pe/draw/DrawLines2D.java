@@ -1,13 +1,13 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 
-public class DrawLines2D extends Draw2D
+public class DrawLines2D extends Draw2D implements Points<DrawLines2D>,
+                                                   Thickness<DrawLines2D>,
+                                                   Color<DrawLines2D>,
+                                                   Color0<DrawLines2D>,
+                                                   Color1<DrawLines2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -71,54 +71,14 @@ public class DrawLines2D extends Draw2D
         drawLines(points, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
     }
     
-    public DrawLines2D points(double[] points)
+    @Override
+    public DrawLines2D points(double @NotNull ... points)
     {
         this.points = points;
         return this;
     }
     
-    public DrawLines2D points(@NotNull Vector2ic @NotNull [] vec)
-    {
-        double[] points = new double[vec.length << 1];
-        
-        int index = 0;
-        for (Vector2ic point : vec)
-        {
-            points[index++] = point.x();
-            points[index++] = point.y();
-        }
-        
-        return points(points);
-    }
-    
-    public DrawLines2D points(@NotNull Vector2fc @NotNull [] vec)
-    {
-        double[] points = new double[vec.length << 1];
-        
-        int index = 0;
-        for (Vector2fc point : vec)
-        {
-            points[index++] = point.x();
-            points[index++] = point.y();
-        }
-        
-        return points(points);
-    }
-    
-    public DrawLines2D points(@NotNull Vector2dc @NotNull [] vec)
-    {
-        double[] points = new double[vec.length << 1];
-        
-        int index = 0;
-        for (Vector2dc point : vec)
-        {
-            points[index++] = point.x();
-            points[index++] = point.y();
-        }
-        
-        return points(points);
-    }
-    
+    @Override
     public DrawLines2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -126,6 +86,7 @@ public class DrawLines2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawLines2D color(int r, int g, int b, int a)
     {
         this.r0 = this.r1 = r;
@@ -135,11 +96,7 @@ public class DrawLines2D extends Draw2D
         return this;
     }
     
-    public DrawLines2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public DrawLines2D color0(int r, int g, int b, int a)
     {
         this.r0 = r;
@@ -149,11 +106,7 @@ public class DrawLines2D extends Draw2D
         return this;
     }
     
-    public DrawLines2D color0(@NotNull Colorc color)
-    {
-        return color0(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public DrawLines2D color1(int r, int g, int b, int a)
     {
         this.r1 = r;
@@ -161,10 +114,5 @@ public class DrawLines2D extends Draw2D
         this.b1 = b;
         this.a1 = a;
         return this;
-    }
-    
-    public DrawLines2D color1(@NotNull Colorc color)
-    {
-        return color1(color.r(), color.g(), color.b(), color.a());
     }
 }

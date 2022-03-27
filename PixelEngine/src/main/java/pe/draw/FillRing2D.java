@@ -1,14 +1,19 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
 import pe.color.Colorc;
 import rutils.Logger;
 import rutils.Math;
 
-public class FillRing2D extends Draw2D
+public class FillRing2D extends Draw2D implements Point<FillRing2D>,
+                                                  Radius0<FillRing2D>,
+                                                  Radius1<FillRing2D>,
+                                                  StartStop<FillRing2D>,
+                                                  Rotation<FillRing2D>,
+                                                  Segments<FillRing2D>,
+                                                  Color<FillRing2D>,
+                                                  Color0<FillRing2D>,
+                                                  Color1<FillRing2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -76,7 +81,7 @@ public class FillRing2D extends Draw2D
                  this.ri, this.gi, this.bi, this.ai, this.ro, this.go, this.bo, this.ao);
     }
     
-    public FillRing2D center(double x, double y)
+    public FillRing2D point(double x, double y)
     {
         this.x         = x;
         this.y         = y;
@@ -84,22 +89,8 @@ public class FillRing2D extends Draw2D
         return this;
     }
     
-    public FillRing2D center(@NotNull Vector2ic vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public FillRing2D center(@NotNull Vector2fc vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public FillRing2D center(@NotNull Vector2dc vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusInner(double x, double y)
+    @Override
+    public FillRing2D radius0(double x, double y)
     {
         this.rxi      = x;
         this.ryi      = y;
@@ -107,30 +98,8 @@ public class FillRing2D extends Draw2D
         return this;
     }
     
-    public FillRing2D radiusInner(@NotNull Vector2ic vec)
-    {
-        return radiusInner(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusInner(@NotNull Vector2fc vec)
-    {
-        return radiusInner(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusInner(@NotNull Vector2dc vec)
-    {
-        return radiusInner(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusInner(double radius)
-    {
-        this.rxi      = radius;
-        this.ryi      = radius;
-        this.hasSizeI = true;
-        return this;
-    }
-    
-    public FillRing2D radiusOuter(double x, double y)
+    @Override
+    public FillRing2D radius1(double x, double y)
     {
         this.rxo      = x;
         this.ryo      = y;
@@ -138,85 +107,43 @@ public class FillRing2D extends Draw2D
         return this;
     }
     
-    public FillRing2D radiusOuter(@NotNull Vector2ic vec)
-    {
-        return radiusOuter(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusOuter(@NotNull Vector2fc vec)
-    {
-        return radiusOuter(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusOuter(@NotNull Vector2dc vec)
-    {
-        return radiusOuter(vec.x(), vec.y());
-    }
-    
-    public FillRing2D radiusOuter(double radius)
-    {
-        this.rxo      = radius;
-        this.ryo      = radius;
-        this.hasSizeO = true;
-        return this;
-    }
-    
-    public FillRing2D angles(double start, double stop)
+    @Override
+    public FillRing2D startAngle(double start)
     {
         this.start = start;
-        this.stop  = stop;
         return this;
     }
     
-    public FillRing2D angles(@NotNull Vector2ic angles)
+    @Override
+    public FillRing2D stopAngle(double stop)
     {
-        return angles(angles.x(), angles.y());
+        this.stop = stop;
+        return this;
     }
     
-    public FillRing2D angles(@NotNull Vector2fc angles)
-    {
-        return angles(angles.x(), angles.y());
-    }
-    
-    public FillRing2D angles(@NotNull Vector2dc angles)
-    {
-        return angles(angles.x(), angles.y());
-    }
-    
-    public FillRing2D origin(double x, double y)
+    @Override
+    public FillRing2D rotationOrigin(double x, double y)
     {
         this.originX = x;
         this.originY = y;
         return this;
     }
     
-    public FillRing2D origin(@NotNull Vector2ic origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillRing2D origin(@NotNull Vector2fc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillRing2D origin(@NotNull Vector2dc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillRing2D angle(double angle)
+    @Override
+    public FillRing2D rotationAngle(double angle)
     {
         this.angle = angle;
         return this;
     }
     
+    @Override
     public FillRing2D segments(int segments)
     {
         this.segments = segments;
         return this;
     }
     
+    @Override
     public FillRing2D color(int r, int g, int b, int a)
     {
         this.ri = this.ro = r;
@@ -226,12 +153,8 @@ public class FillRing2D extends Draw2D
         return this;
     }
     
-    public FillRing2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
-    public FillRing2D colorInner(int r, int g, int b, int a)
+    @Override
+    public FillRing2D color0(int r, int g, int b, int a)
     {
         this.ri = r;
         this.gi = g;
@@ -240,22 +163,18 @@ public class FillRing2D extends Draw2D
         return this;
     }
     
-    public FillRing2D colorInner(@NotNull Colorc color)
+    public FillRing2D color0(@NotNull Colorc color)
     {
-        return colorInner(color.r(), color.g(), color.b(), color.a());
+        return color0(color.r(), color.g(), color.b(), color.a());
     }
     
-    public FillRing2D colorOuter(int r, int g, int b, int a)
+    @Override
+    public FillRing2D color1(int r, int g, int b, int a)
     {
         this.ro = r;
         this.go = g;
         this.bo = b;
         this.ao = a;
         return this;
-    }
-    
-    public FillRing2D colorOuter(@NotNull Colorc color)
-    {
-        return colorOuter(color.r(), color.g(), color.b(), color.a());
     }
 }

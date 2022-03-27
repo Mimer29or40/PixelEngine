@@ -1,14 +1,19 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
 import pe.color.Colorc;
 import rutils.Logger;
 import rutils.Math;
 
-public class FillRect2D extends Draw2D
+public class FillRect2D extends Draw2D implements Point<FillRect2D>,
+                                                  Size<FillRect2D>,
+                                                  Corners<FillRect2D>,
+                                                  Rotation<FillRect2D>,
+                                                  Color<FillRect2D>,
+                                                  Color0<FillRect2D>,
+                                                  Color1<FillRect2D>,
+                                                  Color2<FillRect2D>,
+                                                  Color3<FillRect2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -118,6 +123,7 @@ public class FillRect2D extends Draw2D
                  this.r3, this.g3, this.b3, this.a3);
     }
     
+    @Override
     public FillRect2D point(double x, double y)
     {
         this.x        = x;
@@ -126,21 +132,7 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D point(@NotNull Vector2ic vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public FillRect2D point(@NotNull Vector2fc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public FillRect2D point(@NotNull Vector2dc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
+    @Override
     public FillRect2D size(double x, double y)
     {
         this.width   = x;
@@ -149,29 +141,7 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D size(@NotNull Vector2ic vec)
-    {
-        return size(vec.x(), vec.y());
-    }
-    
-    public FillRect2D size(@NotNull Vector2fc vec)
-    {
-        return size(vec.x(), vec.y());
-    }
-    
-    public FillRect2D size(@NotNull Vector2dc vec)
-    {
-        return size(vec.x(), vec.y());
-    }
-    
-    public FillRect2D size(double radius)
-    {
-        this.width   = radius;
-        this.height  = radius;
-        this.hasSize = true;
-        return this;
-    }
-    
+    @Override
     public FillRect2D corners(double topLeftX, double topLeftY, double bottomRightX, double bottomRightY)
     {
         this.width  = bottomRightX - topLeftX;
@@ -184,49 +154,22 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D corners(@NotNull Vector2ic topLeft, @NotNull Vector2ic bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public FillRect2D corners(@NotNull Vector2fc topLeft, @NotNull Vector2fc bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public FillRect2D corners(@NotNull Vector2dc topLeft, @NotNull Vector2dc bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public FillRect2D origin(double x, double y)
+    @Override
+    public FillRect2D rotationOrigin(double x, double y)
     {
         this.originX = x;
         this.originY = y;
         return this;
     }
     
-    public FillRect2D origin(@NotNull Vector2ic origin)
+    @Override
+    public FillRect2D rotationAngle(double angleRadians)
     {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillRect2D origin(@NotNull Vector2fc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillRect2D origin(@NotNull Vector2dc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillRect2D angle(double angle)
-    {
-        this.angle = angle;
+        this.angle = angleRadians;
         return this;
     }
     
+    @Override
     public FillRect2D color(int r, int g, int b, int a)
     {
         this.r0 = this.r1 = this.r2 = this.r3 = r;
@@ -236,11 +179,7 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillRect2D color0(int r, int g, int b, int a)
     {
         this.r0 = r;
@@ -250,11 +189,7 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D color0(@NotNull Colorc color)
-    {
-        return color0(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillRect2D color1(int r, int g, int b, int a)
     {
         this.r1 = r;
@@ -264,11 +199,7 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D color1(@NotNull Colorc color)
-    {
-        return color1(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillRect2D color2(int r, int g, int b, int a)
     {
         this.r2 = r;
@@ -278,11 +209,7 @@ public class FillRect2D extends Draw2D
         return this;
     }
     
-    public FillRect2D color2(@NotNull Colorc color)
-    {
-        return color2(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public FillRect2D color3(int r, int g, int b, int a)
     {
         this.r3 = r;
@@ -290,11 +217,6 @@ public class FillRect2D extends Draw2D
         this.b3 = b;
         this.a3 = a;
         return this;
-    }
-    
-    public FillRect2D color3(@NotNull Colorc color)
-    {
-        return color3(color.r(), color.g(), color.b(), color.a());
     }
     
     public FillRect2D gradientV(int rTop, int gTop, int bTop, int aTop, int rBottom, int gBottom, int bBottom, int aBottom)

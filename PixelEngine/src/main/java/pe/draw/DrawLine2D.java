@@ -1,13 +1,13 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 
-public class DrawLine2D extends Draw2D
+public class DrawLine2D extends Draw2D implements Point0<DrawLine2D>,
+                                                  Point1<DrawLine2D>,
+                                                  Thickness<DrawLine2D>,
+                                                  Color<DrawLine2D>,
+                                                  Color0<DrawLine2D>,
+                                                  Color1<DrawLine2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -56,6 +56,7 @@ public class DrawLine2D extends Draw2D
         drawLine(this.x0, this.y0, this.x1, this.y1, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
     }
     
+    @Override
     public DrawLine2D point0(double x, double y)
     {
         this.x0        = x;
@@ -64,21 +65,7 @@ public class DrawLine2D extends Draw2D
         return this;
     }
     
-    public DrawLine2D point0(@NotNull Vector2ic vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawLine2D point0(@NotNull Vector2fc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
-    public DrawLine2D point0(@NotNull Vector2dc vec)
-    {
-        return point0(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawLine2D point1(double x, double y)
     {
         this.x1        = x;
@@ -87,21 +74,7 @@ public class DrawLine2D extends Draw2D
         return this;
     }
     
-    public DrawLine2D point1(@NotNull Vector2ic vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawLine2D point1(@NotNull Vector2fc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
-    public DrawLine2D point1(@NotNull Vector2dc vec)
-    {
-        return point1(vec.x(), vec.y());
-    }
-    
+    @Override
     public DrawLine2D thickness(double thickness)
     {
         this.thickness    = thickness;
@@ -109,6 +82,7 @@ public class DrawLine2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawLine2D color(int r, int g, int b, int a)
     {
         this.r0 = this.r1 = r;
@@ -118,13 +92,7 @@ public class DrawLine2D extends Draw2D
         return this;
     }
     
-    // TODO - public DrawLine2D color(float r, float g, float b, float a)
-    
-    public DrawLine2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public DrawLine2D color0(int r, int g, int b, int a)
     {
         this.r0 = r;
@@ -134,11 +102,7 @@ public class DrawLine2D extends Draw2D
         return this;
     }
     
-    public DrawLine2D color0(@NotNull Colorc color)
-    {
-        return color0(color.r(), color.g(), color.b(), color.a());
-    }
-    
+    @Override
     public DrawLine2D color1(int r, int g, int b, int a)
     {
         this.r1 = r;
@@ -146,10 +110,5 @@ public class DrawLine2D extends Draw2D
         this.b1 = b;
         this.a1 = a;
         return this;
-    }
-    
-    public DrawLine2D color1(@NotNull Colorc color)
-    {
-        return color1(color.r(), color.g(), color.b(), color.a());
     }
 }

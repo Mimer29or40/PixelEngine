@@ -1,14 +1,17 @@
 package pe.draw;
 
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
-import pe.color.Colorc;
 import rutils.Logger;
 import rutils.Math;
 
-public class FillEllipse2D extends Draw2D
+public class FillEllipse2D extends Draw2D implements Point<FillEllipse2D>,
+                                                     Radius<FillEllipse2D>,
+                                                     Corners<FillEllipse2D>,
+                                                     StartStop<FillEllipse2D>,
+                                                     Rotation<FillEllipse2D>,
+                                                     Segments<FillEllipse2D>,
+                                                     Color<FillEllipse2D>,
+                                                     Color0<FillEllipse2D>,
+                                                     Color1<FillEllipse2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -71,7 +74,8 @@ public class FillEllipse2D extends Draw2D
                     this.ri, this.gi, this.bi, this.ai, this.ro, this.go, this.bo, this.ao);
     }
     
-    public FillEllipse2D center(double x, double y)
+    @Override
+    public FillEllipse2D point(double x, double y)
     {
         this.x         = x;
         this.y         = y;
@@ -79,21 +83,7 @@ public class FillEllipse2D extends Draw2D
         return this;
     }
     
-    public FillEllipse2D center(@NotNull Vector2ic vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public FillEllipse2D center(@NotNull Vector2fc vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
-    public FillEllipse2D center(@NotNull Vector2dc vec)
-    {
-        return center(vec.x(), vec.y());
-    }
-    
+    @Override
     public FillEllipse2D radius(double x, double y)
     {
         this.rx      = x;
@@ -102,29 +92,7 @@ public class FillEllipse2D extends Draw2D
         return this;
     }
     
-    public FillEllipse2D radius(@NotNull Vector2ic vec)
-    {
-        return radius(vec.x(), vec.y());
-    }
-    
-    public FillEllipse2D radius(@NotNull Vector2fc vec)
-    {
-        return radius(vec.x(), vec.y());
-    }
-    
-    public FillEllipse2D radius(@NotNull Vector2dc vec)
-    {
-        return radius(vec.x(), vec.y());
-    }
-    
-    public FillEllipse2D radius(double radius)
-    {
-        this.rx      = radius;
-        this.ry      = radius;
-        this.hasSize = true;
-        return this;
-    }
-    
+    @Override
     public FillEllipse2D corners(double topLeftX, double topLeftY, double bottomRightX, double bottomRightY)
     {
         this.rx = (bottomRightX - topLeftX) * 0.5;
@@ -137,77 +105,43 @@ public class FillEllipse2D extends Draw2D
         return this;
     }
     
-    public FillEllipse2D corners(@NotNull Vector2ic topLeft, @NotNull Vector2ic bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public FillEllipse2D corners(@NotNull Vector2fc topLeft, @NotNull Vector2fc bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public FillEllipse2D corners(@NotNull Vector2dc topLeft, @NotNull Vector2dc bottomRight)
-    {
-        return corners(topLeft.x(), topLeft.y(), bottomRight.x(), bottomRight.y());
-    }
-    
-    public FillEllipse2D angles(double start, double stop)
+    @Override
+    public FillEllipse2D startAngle(double start)
     {
         this.start = start;
-        this.stop  = stop;
         return this;
     }
     
-    public FillEllipse2D angles(@NotNull Vector2ic angles)
+    @Override
+    public FillEllipse2D stopAngle(double stop)
     {
-        return angles(angles.x(), angles.y());
+        this.stop = stop;
+        return this;
     }
     
-    public FillEllipse2D angles(@NotNull Vector2fc angles)
-    {
-        return angles(angles.x(), angles.y());
-    }
-    
-    public FillEllipse2D angles(@NotNull Vector2dc angles)
-    {
-        return angles(angles.x(), angles.y());
-    }
-    
-    public FillEllipse2D origin(double x, double y)
+    @Override
+    public FillEllipse2D rotationOrigin(double x, double y)
     {
         this.originX = x;
         this.originY = y;
         return this;
     }
     
-    public FillEllipse2D origin(@NotNull Vector2ic origin)
+    @Override
+    public FillEllipse2D rotationAngle(double angleRadians)
     {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillEllipse2D origin(@NotNull Vector2fc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillEllipse2D origin(@NotNull Vector2dc origin)
-    {
-        return origin(origin.x(), origin.y());
-    }
-    
-    public FillEllipse2D angle(double angle)
-    {
-        this.angle = angle;
+        this.angle = angleRadians;
         return this;
     }
     
+    @Override
     public FillEllipse2D segments(int segments)
     {
         this.segments = segments;
         return this;
     }
     
+    @Override
     public FillEllipse2D color(int r, int g, int b, int a)
     {
         this.ri = this.ro = r;
@@ -217,12 +151,8 @@ public class FillEllipse2D extends Draw2D
         return this;
     }
     
-    public FillEllipse2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
-    }
-    
-    public FillEllipse2D colorInner(int r, int g, int b, int a)
+    @Override
+    public FillEllipse2D color0(int r, int g, int b, int a)
     {
         this.ri = r;
         this.gi = g;
@@ -231,22 +161,13 @@ public class FillEllipse2D extends Draw2D
         return this;
     }
     
-    public FillEllipse2D colorInner(@NotNull Colorc color)
-    {
-        return colorInner(color.r(), color.g(), color.b(), color.a());
-    }
-    
-    public FillEllipse2D colorOuter(int r, int g, int b, int a)
+    @Override
+    public FillEllipse2D color1(int r, int g, int b, int a)
     {
         this.ro = r;
         this.go = g;
         this.bo = b;
         this.ao = a;
         return this;
-    }
-    
-    public FillEllipse2D colorOuter(@NotNull Colorc color)
-    {
-        return colorOuter(color.r(), color.g(), color.b(), color.a());
     }
 }

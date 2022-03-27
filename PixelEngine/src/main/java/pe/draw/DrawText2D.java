@@ -1,9 +1,6 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
 import pe.color.Colorc;
 import pe.font.*;
 import rutils.Logger;
@@ -12,7 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class DrawText2D extends Draw2D
+public class DrawText2D extends Draw2D implements Point<DrawText2D>,
+                                                  Size<DrawText2D>,
+                                                  Color<DrawText2D>
 {
     private static final Logger LOGGER = new Logger();
     
@@ -190,6 +189,7 @@ public class DrawText2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawText2D point(double x, double y)
     {
         this.x        = x;
@@ -198,41 +198,12 @@ public class DrawText2D extends Draw2D
         return this;
     }
     
-    public DrawText2D point(@NotNull Vector2ic vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawText2D point(@NotNull Vector2fc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawText2D point(@NotNull Vector2dc vec)
-    {
-        return point(vec.x(), vec.y());
-    }
-    
-    public DrawText2D bounds(double width, double height)
+    @Override
+    public DrawText2D size(double width, double height)
     {
         this.w = width;
         this.h = height;
         return this;
-    }
-    
-    public DrawText2D bounds(@NotNull Vector2ic bounds)
-    {
-        return bounds(bounds.x(), bounds.y());
-    }
-    
-    public DrawText2D bounds(@NotNull Vector2fc bounds)
-    {
-        return bounds(bounds.x(), bounds.y());
-    }
-    
-    public DrawText2D bounds(@NotNull Vector2dc bounds)
-    {
-        return bounds(bounds.x(), bounds.y());
     }
     
     public DrawText2D font(@NotNull Font font)
@@ -289,6 +260,7 @@ public class DrawText2D extends Draw2D
         return this;
     }
     
+    @Override
     public DrawText2D color(int r, int g, int b, int a)
     {
         this.textR = r;
@@ -296,11 +268,6 @@ public class DrawText2D extends Draw2D
         this.textB = b;
         this.textA = a;
         return this;
-    }
-    
-    public DrawText2D color(@NotNull Colorc color)
-    {
-        return color(color.r(), color.g(), color.b(), color.a());
     }
     
     public DrawText2D backgroundColor(int r, int g, int b, int a)
