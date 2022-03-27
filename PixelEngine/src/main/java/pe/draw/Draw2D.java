@@ -760,7 +760,7 @@ public abstract class Draw2D
             
             double advance = currChar.advanceWidthUnscaled() * scale;
             
-            if (state.backgroundA != 0)
+            if (state.backA != 0)
             {
                 x0 = x;
                 y0 = y;
@@ -771,16 +771,16 @@ public abstract class Draw2D
                         null,
                         new GLBatch.Vertex()
                                 .pos(x0, y0) // v0
-                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                                .color(state.backR, state.backG, state.backB, state.backA),
                         new GLBatch.Vertex()
                                 .pos(x0, y1) // v1
-                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                                .color(state.backR, state.backG, state.backB, state.backA),
                         new GLBatch.Vertex()
                                 .pos(x1, y1) // v2
-                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA),
+                                .color(state.backR, state.backG, state.backB, state.backA),
                         new GLBatch.Vertex()
                                 .pos(x1, y0) // v3
-                                .color(state.backgroundR, state.backgroundG, state.backgroundB, state.backgroundA)
+                                .color(state.backR, state.backG, state.backB, state.backA)
                 ));
             }
             

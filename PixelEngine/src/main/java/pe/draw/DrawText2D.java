@@ -35,7 +35,11 @@ public class DrawText2D extends Draw2D
     
     private boolean ignoreFormatting;
     
-    private int r, g, b, a;
+    private boolean underline;
+    private boolean strike;
+    
+    private int textR, textG, textB, textA;
+    private int backR, backG, backB, backA;
     
     @Override
     protected void reset()
@@ -59,10 +63,18 @@ public class DrawText2D extends Draw2D
         
         this.ignoreFormatting = false;
         
-        this.r = 255;
-        this.g = 255;
-        this.b = 255;
-        this.a = 255;
+        this.underline = false;
+        this.strike    = false;
+        
+        this.textR = 255;
+        this.textG = 255;
+        this.textB = 255;
+        this.textA = 255;
+        
+        this.backR = 0;
+        this.backG = 0;
+        this.backB = 0;
+        this.backA = 0;
     }
     
     @Override
@@ -82,7 +94,7 @@ public class DrawText2D extends Draw2D
                                  this.text,
                                  this.x, this.y, this.w, this.h,
                                  this.font, this.size, this.align, this.ignoreFormatting,
-                                 this.r, this.g, this.b, this.a);
+                                 this.textR, this.textG, this.textB, this.textA);
         
         List<String> lines;
         if (this.w > 0 && this.h > 0)
@@ -90,10 +102,16 @@ public class DrawText2D extends Draw2D
             lines = new ArrayList<>();
             
             TextState state = new TextState(this.font, this.weight, this.italicized, this.size);
-            state.textR         = this.r;
-            state.textG         = this.g;
-            state.textB         = this.b;
-            state.textA         = this.a;
+            state.underline     = this.underline;
+            state.strike        = this.strike;
+            state.textR         = this.textR;
+            state.textG         = this.textG;
+            state.textB         = this.textB;
+            state.textA         = this.textA;
+            state.backR         = this.backR;
+            state.backG         = this.backG;
+            state.backB         = this.backB;
+            state.backA         = this.backA;
             state.ignoreChanges = this.ignoreFormatting;
             
             TextState lineState       = new TextState(this.font, this.weight, this.italicized, this.size);
@@ -134,10 +152,16 @@ public class DrawText2D extends Draw2D
         }
         
         TextState state = new TextState(this.font, this.weight, this.italicized, this.size);
-        state.textR         = this.r;
-        state.textG         = this.g;
-        state.textB         = this.b;
-        state.textA         = this.a;
+        state.underline     = this.underline;
+        state.strike        = this.strike;
+        state.textR         = this.textR;
+        state.textG         = this.textG;
+        state.textB         = this.textB;
+        state.textA         = this.textA;
+        state.backR         = this.backR;
+        state.backG         = this.backG;
+        state.backB         = this.backB;
+        state.backA         = this.backA;
         state.ignoreChanges = this.ignoreFormatting;
         
         TextState other = new TextState(this.font, this.weight, this.italicized, this.size);
@@ -253,17 +277,43 @@ public class DrawText2D extends Draw2D
         return this;
     }
     
+    public DrawText2D underline(boolean underline)
+    {
+        this.underline = false;
+        return this;
+    }
+    
+    public DrawText2D strike(boolean strike)
+    {
+        this.strike = false;
+        return this;
+    }
+    
     public DrawText2D color(int r, int g, int b, int a)
     {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
+        this.textR = r;
+        this.textG = g;
+        this.textB = b;
+        this.textA = a;
         return this;
     }
     
     public DrawText2D color(@NotNull Colorc color)
     {
         return color(color.r(), color.g(), color.b(), color.a());
+    }
+    
+    public DrawText2D backgroundColor(int r, int g, int b, int a)
+    {
+        this.backR = r;
+        this.backG = g;
+        this.backB = b;
+        this.backA = a;
+        return this;
+    }
+    
+    public DrawText2D backgroundColor(@NotNull Colorc color)
+    {
+        return backgroundColor(color.r(), color.g(), color.b(), color.a());
     }
 }

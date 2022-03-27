@@ -21,10 +21,10 @@ public class TextState
     public int textB = 255;
     public int textA = 255;
     
-    public int backgroundR = 0;
-    public int backgroundG = 0;
-    public int backgroundB = 0;
-    public int backgroundA = 0;
+    public int backR = 0;
+    public int backG = 0;
+    public int backB = 0;
+    public int backA = 0;
     
     public boolean ignoreChanges = false;
     
@@ -64,10 +64,10 @@ public class TextState
         this.textB = state.textB;
         this.textA = state.textA;
         
-        this.backgroundR = state.backgroundR;
-        this.backgroundG = state.backgroundG;
-        this.backgroundB = state.backgroundB;
-        this.backgroundA = state.backgroundA;
+        this.backR = state.backR;
+        this.backG = state.backG;
+        this.backB = state.backB;
+        this.backA = state.backA;
         
         this.ignoreChanges = state.ignoreChanges;
         this.changeFont    = state.changeFont;
@@ -119,10 +119,10 @@ public class TextState
                 this.textB = 255;
                 this.textA = 255;
                 
-                this.backgroundR = 0;
-                this.backgroundG = 0;
-                this.backgroundB = 0;
-                this.backgroundA = 0;
+                this.backR = 0;
+                this.backG = 0;
+                this.backB = 0;
+                this.backA = 0;
             }
             case TextFormat.WEIGHT -> this.weight = Weight.get(mod[1]);
             case TextFormat.ITALICS -> this.italicized = Boolean.parseBoolean(mod[1]);
@@ -140,13 +140,13 @@ public class TextState
             }
             case TextFormat.BACKGROUND -> {
                 int colorNumber = Integer.parseInt(mod[1], 16);
-                this.backgroundR = (colorNumber >> 16) & 0xFF;
-                this.backgroundG = (colorNumber >> 8) & 0xFF;
-                this.backgroundB = colorNumber & 0xFF;
+                this.backR = (colorNumber >> 16) & 0xFF;
+                this.backG = (colorNumber >> 8) & 0xFF;
+                this.backB = colorNumber & 0xFF;
             }
             case TextFormat.BACKGROUND_ALPHA -> {
                 int colorNumber = Integer.parseInt(mod[1], 16);
-                this.backgroundA = colorNumber & 0xFF;
+                this.backA = colorNumber & 0xFF;
             }
         }
         
