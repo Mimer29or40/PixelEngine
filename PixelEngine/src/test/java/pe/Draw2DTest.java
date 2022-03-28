@@ -460,13 +460,32 @@ public class Draw2DTest extends Engine
                 
                 double cornerRadius = Math.map(vValue, 0, 100, 0, 10);
                 
-                Draw.fillRect2D()
-                    .point(cx, cy)
-                    .size(w, h)
-                    .rotationOrigin(ox, oy)
-                    .rotationAngle(rotation)
-                    .gradientH(Color.BLUE, Color.LIGHT_GREEN)
-                    .draw();
+                if (toggle)
+                {
+                    Draw.fillRect2D()
+                        .point(cx, cy)
+                        .size(w, h)
+                        .cornerRadius(cornerRadius)
+                        .rotationOrigin(ox, oy)
+                        .rotationAngle(rotation)
+                        .colorTopLeft(Color.RED)
+                        .colorTopRight(Color.GREEN)
+                        .colorBottomLeft(Color.WHITE)
+                        .colorBottomRight(Color.BLUE)
+                        .draw();
+                }
+                else
+                {
+                    Draw.fillRect2D()
+                        .point(cx, cy)
+                        .size(w, h)
+                        .cornerRadius(cornerRadius)
+                        .rotationOrigin(ox, oy)
+                        .rotationAngle(rotation)
+                        .colorLeft(Color.BLUE)
+                        .colorRight(Color.LIGHT_GREEN)
+                        .draw();
+                }
                 
                 Draw.drawRect2D()
                     .point(cx, cy)
@@ -503,7 +522,8 @@ public class Draw2DTest extends Engine
                         .rotationOrigin(ox, oy)
                         .stopAngle(Math.toRadians(vValue))
                         .rotationAngle(rotation)
-                        .color(Color.CYAN)
+                        .innerColor(Color.GRAY)
+                        .outerColor(Color.YELLOW)
                         .draw();
                 }
                 else
@@ -514,8 +534,8 @@ public class Draw2DTest extends Engine
                         .rotationOrigin(ox, oy)
                         .stopAngle(Math.toRadians(vValue))
                         .rotationAngle(rotation)
-                        .color0(Color.GRAY)
-                        .color1(Color.YELLOW)
+                        .startColor(Color.GRAY)
+                        .startColor(Color.YELLOW)
                         .draw();
                 }
                 
@@ -553,32 +573,33 @@ public class Draw2DTest extends Engine
                 {
                     Draw.fillRing2D()
                         .point(cx, cy)
-                        .radius0(rxi, ryi)
-                        .radius1(rxo, ryo)
+                        .innerRadius(rxi, ryi)
+                        .outerRadius(rxo, ryo)
                         .rotationOrigin(ox, oy)
                         .stopAngle(Math.toRadians(vValue))
                         .rotationAngle(rotation)
-                        .color(Color.DARK_MAGENTA)
+                        .startColor(Color.DARK_RED)
+                        .stopColor(Color.LIGHT_GREEN)
                         .draw();
                 }
                 else
                 {
                     Draw.fillRing2D()
                         .point(cx, cy)
-                        .radius0(rxi, ryi)
-                        .radius1(rxo, ryo)
+                        .innerRadius(rxi, ryi)
+                        .outerRadius(rxo, ryo)
                         .rotationOrigin(ox, oy)
                         .stopAngle(Math.toRadians(vValue))
                         .rotationAngle(rotation)
-                        .color0(Color.DARK_RED)
-                        .color1(Color.LIGHT_GREEN)
+                        .innerColor(Color.DARK_RED)
+                        .outerColor(Color.LIGHT_GREEN)
                         .draw();
                 }
                 
                 Draw.drawRing2D()
                     .point(cx, cy)
-                    .radius0(rxi, ryi)
-                    .radius1(rxo, ryo)
+                    .innerRadius(rxi, ryi)
+                    .outerRadius(rxo, ryo)
                     .thickness(thickness)
                     .rotationOrigin(ox, oy)
                     .stopAngle(Math.toRadians(vValue))

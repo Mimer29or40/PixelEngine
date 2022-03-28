@@ -20,11 +20,11 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
     private double  thickness;
     private boolean hasThickness;
     
-    private double start, stop;
+    private double startAngle, stopAngle;
     
-    private double originX, originY;
+    private double rotationOriginX, rotationOriginY;
     
-    private double angle;
+    private double rotationAngle;
     
     private int segments;
     
@@ -37,9 +37,9 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
                "center=(" + this.x + ", " + this.y + ')' + ' ' +
                "radius=(" + this.rx + ", " + this.ry + ')' + ' ' +
                "thickness=" + this.thickness + ' ' +
-               "angles=(" + this.start + ", " + this.stop + ')' + ' ' +
-               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
-               "rotationAngle=" + this.angle + ' ' +
+               "angles=(" + this.startAngle + ", " + this.stopAngle + ')' + ' ' +
+               "rotationOrigin=(" + this.rotationOriginX + ", " + this.rotationOriginY + ')' + ' ' +
+               "rotationAngle=" + this.rotationAngle + ' ' +
                "segments=" + this.segments + ' ' +
                "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
                '}';
@@ -51,14 +51,14 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
         this.hasCenter    = false;
         this.hasSize      = false;
         this.hasThickness = false;
+    
+        this.startAngle = 0;
+        this.stopAngle  = Math.PI2;
         
-        this.start = 0;
-        this.stop  = Math.PI2;
+        this.rotationOriginX = 0.0;
+        this.rotationOriginY = 0.0;
         
-        this.originX = 0.0;
-        this.originY = 0.0;
-        
-        this.angle = 0.0;
+        this.rotationAngle = 0.0;
         
         this.segments = 0;
         
@@ -79,8 +79,8 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
     @Override
     protected void drawImpl()
     {
-        drawEllipse(this.x, this.y, this.rx, this.ry, this.thickness, this.start, this.stop,
-                    this.originX, this.originY, this.angle, this.segments,
+        drawEllipse(this.x, this.y, this.rx, this.ry, this.thickness, this.startAngle, this.stopAngle,
+                    this.rotationOriginX, this.rotationOriginY, this.rotationAngle, this.segments,
                     this.r, this.g, this.b, this.a);
     }
     
@@ -126,29 +126,29 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
     @Override
     public DrawEllipse2D startAngle(double start)
     {
-        this.start = start;
+        this.startAngle = start;
         return this;
     }
     
     @Override
     public DrawEllipse2D stopAngle(double stop)
     {
-        this.stop = stop;
+        this.stopAngle = stop;
         return this;
     }
     
     @Override
     public DrawEllipse2D rotationOrigin(double x, double y)
     {
-        this.originX = x;
-        this.originY = y;
+        this.rotationOriginX = x;
+        this.rotationOriginY = y;
         return this;
     }
     
     @Override
     public DrawEllipse2D rotationAngle(double angleRadians)
     {
-        this.angle = angleRadians;
+        this.rotationAngle = angleRadians;
         return this;
     }
     
