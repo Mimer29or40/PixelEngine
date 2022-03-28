@@ -67,7 +67,10 @@ public class DrawRect2D extends Draw2D implements Point<DrawRect2D>,
     @Override
     protected void drawImpl()
     {
-        drawRect(this.x, this.y, this.width, this.height, this.thickness, this.cornerRadius,
+        drawRect(this.x, this.y,
+                 this.width, this.height,
+                 this.thickness,
+                 this.cornerRadius,
                  this.originX, this.originY, this.angle,
                  this.r, this.g, this.b, this.a);
     }

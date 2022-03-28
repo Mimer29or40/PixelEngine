@@ -3,53 +3,49 @@ package pe.draw;
 import rutils.Math;
 
 public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
-                                                  Radius0<DrawRing2D>,
-                                                  Radius1<DrawRing2D>,
+                                                  RadiusInner<DrawRing2D>,
+                                                  RadiusOuter<DrawRing2D>,
                                                   Thickness<DrawRing2D>,
                                                   StartStop<DrawRing2D>,
                                                   Rotation<DrawRing2D>,
                                                   Segments<DrawRing2D>,
-                                                  Color<DrawRing2D>,
-                                                  Color0<DrawRing2D>,
-                                                  Color1<DrawRing2D>
+                                                  Color<DrawRing2D>
 {
     private double x, y;
     private boolean hasCenter;
     
-    private double rxi, ryi;
-    private boolean hasSizeI;
+    private double innerRX, innerRY;
+    private boolean hasInner;
     
-    private double rxo, ryo;
-    private boolean hasSizeO;
+    private double outerRX, outerRY;
+    private boolean hasOuter;
     
     private double  thickness;
     private boolean hasThickness;
     
-    private double start, stop;
+    private double startAngle, stopAngle;
     
-    private double originX, originY;
+    private double rotationOriginX, rotationOriginY;
     
-    private double angle;
+    private double rotationAngle;
     
     private int segments;
     
-    private int ri, gi, bi, ai;
-    private int ro, go, bo, ao;
+    private int r, g, b, a;
     
     @Override
     public String toString()
     {
         return "DrawRing2D{" +
                "center=(" + this.x + ", " + this.y + ')' + ' ' +
-               "radius0=(" + this.rxi + ", " + this.ryi + ')' + ' ' +
-               "radius1=(" + this.rxo + ", " + this.ryo + ')' + ' ' +
+               "radius0=(" + this.innerRX + ", " + this.innerRY + ')' + ' ' +
+               "radius1=(" + this.outerRX + ", " + this.outerRY + ')' + ' ' +
                "thickness=" + this.thickness + ' ' +
-               "angles=(" + this.start + ", " + this.stop + ')' + ' ' +
-               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
-               "rotationAngle=" + this.angle + ' ' +
+               "angles=(" + this.startAngle + ", " + this.stopAngle + ')' + ' ' +
+               "rotationOrigin=(" + this.rotationOriginX + ", " + this.rotationOriginY + ')' + ' ' +
+               "rotationAngle=" + this.rotationAngle + ' ' +
                "segments=" + this.segments + ' ' +
-               "color0=(" + this.ri + ", " + this.gi + ", " + this.bi + ", " + this.ai + ')' + ' ' +
-               "color1=(" + this.ro + ", " + this.go + ", " + this.bo + ", " + this.ao + ')' +
+               "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
                '}';
     }
     
@@ -57,45 +53,53 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
     protected void reset()
     {
         this.hasCenter    = false;
-        this.hasSizeI     = false;
-        this.hasSizeO     = false;
+        this.hasInner     = false;
+        this.hasOuter     = false;
         this.hasThickness = false;
         
-        this.start = 0;
-        this.stop  = Math.PI2;
+        this.startAngle = 0;
+        this.stopAngle  = Math.PI2;
         
-        this.originX = 0.0;
-        this.originY = 0.0;
+        this.rotationOriginX = 0.0;
+        this.rotationOriginY = 0.0;
         
-        this.angle = 0.0;
+        this.rotationAngle = 0.0;
         
         this.segments = 0;
         
-        this.ri = this.ro = 255;
-        this.gi = this.go = 255;
-        this.bi = this.bo = 255;
-        this.ai = this.ao = 255;
+        this.r = 255;
+        this.g = 255;
+        this.b = 255;
+        this.a = 255;
     }
     
     @Override
     protected void check()
     {
         if (!this.hasCenter) throw new IllegalStateException("Must provide center");
-        if (!this.hasSizeI) throw new IllegalStateException("Must provide inner size");
-        if (!this.hasSizeO) throw new IllegalStateException("Must provide outer size");
+        if (!this.hasInner) throw new IllegalStateException("Must provide inner size");
+        if (!this.hasOuter) throw new IllegalStateException("Must provide outer size");
         if (!this.hasThickness) throw new IllegalStateException("Must provide thickness");
     }
     
     @Override
     protected void drawImpl()
     {
-        drawEllipse(this.x, this.y, this.rxi, this.ryi, this.thickness, this.start, this.stop,
-                    this.originX, this.originY, this.angle, this.segments,
-                    this.ri, this.gi, this.bi, this.ai);
+        drawEllipse(this.x, this.y,
+                    this.innerRX, this.innerRY,
+                    this.thickness,
+                    this.startAngle, this.stopAngle,
+                    this.rotationOriginX, this.rotationOriginY, this.rotationAngle,
+                    this.segments,
+                    this.r, this.g, this.b, this.a);
         
-        drawEllipse(this.x, this.y, this.rxo, this.ryo, this.thickness, this.start, this.stop,
-                    this.originX, this.originY, this.angle, this.segments,
-                    this.ro, this.go, this.bo, this.ao);
+        drawEllipse(this.x, this.y,
+                    this.outerRX, this.outerRY,
+                    this.thickness,
+                    this.startAngle, this.stopAngle,
+                    this.rotationOriginX, this.rotationOriginY, this.rotationAngle,
+                    this.segments,
+                    this.r, this.g, this.b, this.a);
     }
     
     @Override
@@ -108,20 +112,20 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
     }
     
     @Override
-    public DrawRing2D radius0(double x, double y)
+    public DrawRing2D innerRadius(double x, double y)
     {
-        this.rxi      = x;
-        this.ryi      = y;
-        this.hasSizeI = true;
+        this.innerRX  = x;
+        this.innerRY  = y;
+        this.hasInner = true;
         return this;
     }
     
     @Override
-    public DrawRing2D radius1(double x, double y)
+    public DrawRing2D outerRadius(double x, double y)
     {
-        this.rxo      = x;
-        this.ryo      = y;
-        this.hasSizeO = true;
+        this.outerRX  = x;
+        this.outerRY  = y;
+        this.hasOuter = true;
         return this;
     }
     
@@ -136,29 +140,29 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
     @Override
     public DrawRing2D startAngle(double start)
     {
-        this.start = start;
+        this.startAngle = start;
         return this;
     }
     
     @Override
     public DrawRing2D stopAngle(double stop)
     {
-        this.stop = stop;
+        this.stopAngle = stop;
         return this;
     }
     
     @Override
     public DrawRing2D rotationOrigin(double x, double y)
     {
-        this.originX = x;
-        this.originY = y;
+        this.rotationOriginX = x;
+        this.rotationOriginY = y;
         return this;
     }
     
     @Override
     public DrawRing2D rotationAngle(double angle)
     {
-        this.angle = angle;
+        this.rotationAngle = angle;
         return this;
     }
     
@@ -172,30 +176,10 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
     @Override
     public DrawRing2D color(int r, int g, int b, int a)
     {
-        this.ri = this.ro = r;
-        this.gi = this.go = g;
-        this.bi = this.bo = b;
-        this.ai = this.ao = a;
-        return this;
-    }
-    
-    @Override
-    public DrawRing2D color0(int r, int g, int b, int a)
-    {
-        this.ri = r;
-        this.gi = g;
-        this.bi = b;
-        this.ai = a;
-        return this;
-    }
-    
-    @Override
-    public DrawRing2D color1(int r, int g, int b, int a)
-    {
-        this.ro = r;
-        this.go = g;
-        this.bo = b;
-        this.ao = a;
+        this.r = r;
+        this.g = g;
+        this.b = b;
+        this.a = a;
         return this;
     }
 }
