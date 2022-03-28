@@ -1,7 +1,5 @@
 package pe.draw;
 
-import rutils.Logger;
-
 public class FillQuad2D extends Draw2D implements Point0<FillQuad2D>,
                                                   Point1<FillQuad2D>,
                                                   Point2<FillQuad2D>,
@@ -12,8 +10,6 @@ public class FillQuad2D extends Draw2D implements Point0<FillQuad2D>,
                                                   Color2<FillQuad2D>,
                                                   Color3<FillQuad2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x0, y0;
     private boolean hasPoint0;
     
@@ -30,6 +26,21 @@ public class FillQuad2D extends Draw2D implements Point0<FillQuad2D>,
     private int r1, g1, b1, a1;
     private int r2, g2, b2, a2;
     private int r3, g3, b3, a3;
+    
+    @Override
+    public String toString()
+    {
+        return "FillQuad2D{" +
+               "point0=(" + this.x0 + ", " + this.y0 + ')' + ' ' +
+               "point1=(" + this.x1 + ", " + this.y1 + ')' + ' ' +
+               "point2=(" + this.x2 + ", " + this.y2 + ')' + ' ' +
+               "point3=(" + this.x3 + ", " + this.y3 + ')' + ' ' +
+               "color0=(" + this.r0 + ", " + this.g0 + ", " + this.b0 + ", " + this.a0 + ')' + ' ' +
+               "color1=(" + this.r1 + ", " + this.g1 + ", " + this.b1 + ", " + this.a1 + ')' + ' ' +
+               "color2=(" + this.r2 + ", " + this.g2 + ", " + this.b2 + ", " + this.a2 + ')' + ' ' +
+               "color3=(" + this.r3 + ", " + this.g3 + ", " + this.b3 + ", " + this.a3 + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -57,14 +68,10 @@ public class FillQuad2D extends Draw2D implements Point0<FillQuad2D>,
     @Override
     protected void drawImpl()
     {
-        FillQuad2D.LOGGER.finest("Drawing point0=(%s, %s) point1=(%s, %s) point2=(%s, %s) point3=(%s, %s) color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s) color2=(%s, %s, %s, %s) color3=(%s, %s, %s, %s)",
-                                 this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.x3, this.y3,
-                                 this.r0, this.g0, this.b0, this.a0,
-                                 this.r1, this.g1, this.b1, this.a1,
-                                 this.r2, this.g2, this.b2, this.a2,
-                                 this.r3, this.g3, this.b3, this.a3);
-        
-        fillQuad(this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.x3, this.y3,
+        fillQuad(this.x0, this.y0,
+                 this.x1, this.y1,
+                 this.x2, this.y2,
+                 this.x3, this.y3,
                  this.r0, this.g0, this.b0, this.a0,
                  this.r1, this.g1, this.b1, this.a1,
                  this.r2, this.g2, this.b2, this.a2,

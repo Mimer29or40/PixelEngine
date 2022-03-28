@@ -1,7 +1,6 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import rutils.Logger;
 
 public class DrawTexture2D extends Draw2D implements Texture<DrawTexture2D>,
                                                      Src<DrawTexture2D>,
@@ -9,8 +8,6 @@ public class DrawTexture2D extends Draw2D implements Texture<DrawTexture2D>,
                                                      Rotation<DrawTexture2D>,
                                                      Color<DrawTexture2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private pe.texture.Texture texture;
     
     private double srcX, srcY, srcW, srcH;
@@ -23,6 +20,19 @@ public class DrawTexture2D extends Draw2D implements Texture<DrawTexture2D>,
     private double angle;
     
     private int r, g, b, a;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawTexture2D{" +
+               "texture=" + this.texture + ' ' +
+               "src=(" + this.srcX + ", " + this.srcY + ", " + this.srcW + ", " + this.srcH + ')' + ' ' +
+               "dst=(" + this.dstX + ", " + this.dstY + ", " + this.dstW + ", " + this.dstH + ')' + ' ' +
+               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
+               "rotationAngle=" + this.angle + ' ' +
+               "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -55,13 +65,6 @@ public class DrawTexture2D extends Draw2D implements Texture<DrawTexture2D>,
     @Override
     protected void drawImpl()
     {
-        DrawTexture2D.LOGGER.finest("Drawing texture=%s src=(%s, %s, %s, %s) dst=(%s, %s, %s, %s) origin=(%s, %s) rotation=%s tint=(%s, %s, %s, %s)",
-                                    this.texture,
-                                    this.srcX, this.srcY, this.srcW, this.srcH,
-                                    this.dstX, this.dstY, this.dstW, this.dstH,
-                                    this.originX, this.originY, this.angle,
-                                    this.r, this.g, this.b, this.a);
-        
         drawTexture(this.texture,
                     this.srcX, this.srcY, this.srcW, this.srcH,
                     this.dstX, this.dstY, this.dstW, this.dstH,

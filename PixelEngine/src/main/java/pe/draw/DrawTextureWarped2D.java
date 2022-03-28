@@ -1,7 +1,6 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import rutils.Logger;
 
 public class DrawTextureWarped2D extends Draw2D implements Texture<DrawTextureWarped2D>,
                                                            Point0<DrawTextureWarped2D>,
@@ -14,8 +13,6 @@ public class DrawTextureWarped2D extends Draw2D implements Texture<DrawTextureWa
                                                            UV3<DrawTextureWarped2D>,
                                                            Color<DrawTextureWarped2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private pe.texture.Texture texture;
     
     private double x0, y0, x1, y1, x2, y2, x3, y3;
@@ -24,6 +21,23 @@ public class DrawTextureWarped2D extends Draw2D implements Texture<DrawTextureWa
     private double u0, v0, u1, v1, u2, v2, u3, v3;
     
     private int r, g, b, a;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawTextureWarped2D{" +
+               "texture=" + this.texture + ' ' +
+               "point0=(" + this.x0 + ", " + this.y0 + ')' + ' ' +
+               "point1=(" + this.x1 + ", " + this.y1 + ')' + ' ' +
+               "point2=(" + this.x2 + ", " + this.y2 + ')' + ' ' +
+               "point3=(" + this.x3 + ", " + this.y3 + ')' + ' ' +
+               "uv0=(" + this.u0 + ", " + this.v0 + ')' + ' ' +
+               "uv1=(" + this.u1 + ", " + this.v1 + ')' + ' ' +
+               "uv2=(" + this.u2 + ", " + this.v2 + ')' + ' ' +
+               "uv3=(" + this.u3 + ", " + this.v3 + ')' + ' ' +
+               "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -66,12 +80,6 @@ public class DrawTextureWarped2D extends Draw2D implements Texture<DrawTextureWa
     @Override
     protected void drawImpl()
     {
-        DrawTextureWarped2D.LOGGER.finest("Drawing texture=%s p0=(%s, %s) p1=(%s, %s) p2=(%s, %s) p3=(%s, %s) uv0=(%s, %s) uv1=(%s, %s) uv2=(%s, %s) uv3=(%s, %s) tint=(%s, %s, %s, %s)",
-                                          this.texture,
-                                          this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.x3, this.y3,
-                                          this.u0, this.v0, this.u1, this.v1, this.u2, this.v2, this.u3, this.v3,
-                                          this.r, this.g, this.b, this.a);
-        
         drawTexture(this.texture,
                     this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.x3, this.y3,
                     this.u0, this.v0, this.u1, this.v1, this.u2, this.v2, this.u3, this.v3,

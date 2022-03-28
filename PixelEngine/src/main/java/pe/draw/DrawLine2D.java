@@ -1,7 +1,5 @@
 package pe.draw;
 
-import rutils.Logger;
-
 public class DrawLine2D extends Draw2D implements Point0<DrawLine2D>,
                                                   Point1<DrawLine2D>,
                                                   Thickness<DrawLine2D>,
@@ -9,8 +7,6 @@ public class DrawLine2D extends Draw2D implements Point0<DrawLine2D>,
                                                   Color0<DrawLine2D>,
                                                   Color1<DrawLine2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x0, y0;
     private boolean hasPoint0;
     
@@ -22,6 +18,18 @@ public class DrawLine2D extends Draw2D implements Point0<DrawLine2D>,
     
     private int r0, g0, b0, a0;
     private int r1, g1, b1, a1;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawLine2D{" +
+               "point0=(" + this.x0 + ", " + this.y0 + ')' + ' ' +
+               "point1=(" + this.x1 + ", " + this.y1 + ')' + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "color0=(" + this.r0 + ", " + this.g0 + ", " + this.b0 + ", " + this.a0 + ')' + ' ' +
+               "color1=(" + this.r1 + ", " + this.g1 + ", " + this.b1 + ", " + this.a1 + ')' +
+               '}';
+    }
     
     @Override
     public void reset()
@@ -48,9 +56,6 @@ public class DrawLine2D extends Draw2D implements Point0<DrawLine2D>,
     @Override
     public void drawImpl()
     {
-        DrawLine2D.LOGGER.finest("Drawing point0=(%s, %s) point1=(%s, %s) thickness=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s)",
-                                 this.x0, this.y0, this.x1, this.y1, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
-        
         if (this.thickness <= 0) return;
         
         drawLine(this.x0, this.y0, this.x1, this.y1, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);

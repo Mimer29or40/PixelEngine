@@ -1,7 +1,5 @@
 package pe.draw;
 
-import rutils.Logger;
-
 public class FillTriangle2D extends Draw2D implements Point0<FillTriangle2D>,
                                                       Point1<FillTriangle2D>,
                                                       Point2<FillTriangle2D>,
@@ -10,8 +8,6 @@ public class FillTriangle2D extends Draw2D implements Point0<FillTriangle2D>,
                                                       Color1<FillTriangle2D>,
                                                       Color2<FillTriangle2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x0, y0;
     private boolean hasPoint0;
     
@@ -24,6 +20,19 @@ public class FillTriangle2D extends Draw2D implements Point0<FillTriangle2D>,
     private int r0, g0, b0, a0;
     private int r1, g1, b1, a1;
     private int r2, g2, b2, a2;
+    
+    @Override
+    public String toString()
+    {
+        return "FillTriangle2D{" +
+               "point0=(" + this.x0 + ", " + this.y0 + ')' + ' ' +
+               "point1=(" + this.x1 + ", " + this.y1 + ')' + ' ' +
+               "point2=(" + this.x2 + ", " + this.y2 + ')' + ' ' +
+               "color0=(" + this.r0 + ", " + this.g0 + ", " + this.b0 + ", " + this.a0 + ')' + ' ' +
+               "color1=(" + this.r1 + ", " + this.g1 + ", " + this.b1 + ", " + this.a1 + ')' + ' ' +
+               "color2=(" + this.r2 + ", " + this.g2 + ", " + this.b2 + ", " + this.a2 + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -49,10 +58,12 @@ public class FillTriangle2D extends Draw2D implements Point0<FillTriangle2D>,
     @Override
     protected void drawImpl()
     {
-        FillTriangle2D.LOGGER.finest("Drawing point0=(%s, %s) point1=(%s, %s) point2=(%s, %s) color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s) color2=(%s, %s, %s, %s)",
-                                     this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1, this.r2, this.g2, this.b2, this.a2);
-        
-        fillTriangle(this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1, this.r2, this.g2, this.b2, this.a2);
+        fillTriangle(this.x0, this.y0,
+                     this.x1, this.y1,
+                     this.x2, this.y2,
+                     this.r0, this.g0, this.b0, this.a0,
+                     this.r1, this.g1, this.b1, this.a1,
+                     this.r2, this.g2, this.b2, this.a2);
     }
     
     @Override

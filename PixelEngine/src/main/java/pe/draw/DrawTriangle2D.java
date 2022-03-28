@@ -1,7 +1,5 @@
 package pe.draw;
 
-import rutils.Logger;
-
 import java.util.Arrays;
 
 public class DrawTriangle2D extends Draw2D implements Point0<DrawTriangle2D>,
@@ -10,8 +8,6 @@ public class DrawTriangle2D extends Draw2D implements Point0<DrawTriangle2D>,
                                                       Thickness<DrawTriangle2D>,
                                                       Color<DrawTriangle2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x0, y0;
     private boolean hasPoint0;
     
@@ -27,6 +23,18 @@ public class DrawTriangle2D extends Draw2D implements Point0<DrawTriangle2D>,
     private int r, g, b, a;
     
     private double[] points;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawTriangle2D{" +
+               "point0=(" + this.x0 + ", " + this.y0 + ')' + ' ' +
+               "point1=(" + this.x1 + ", " + this.y1 + ')' + ' ' +
+               "point2=(" + this.x2 + ", " + this.y2 + ')' + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -58,9 +66,6 @@ public class DrawTriangle2D extends Draw2D implements Point0<DrawTriangle2D>,
     @Override
     protected void drawImpl()
     {
-        DrawTriangle2D.LOGGER.finest("Drawing point0=(%s, %s) point1=(%s, %s) point2=(%s, %s) thickness=%s color=(%s, %s, %s, %s)",
-                                     this.x0, this.y0, this.x1, this.y1, this.x2, this.y2, this.thickness, this.r, this.g, this.b, this.a);
-        
         if (this.thickness <= 0) return;
         
         this.points[0]  = this.x2;

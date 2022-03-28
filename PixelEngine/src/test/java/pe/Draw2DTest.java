@@ -458,6 +458,8 @@ public class Draw2DTest extends Engine
                 
                 double rotation = Math.atan2(draggableRect[2].y - draggableRect[1].y, draggableRect[2].x - draggableRect[1].x);
                 
+                double cornerRadius = Math.map(vValue, 0, 100, 0, 10);
+                
                 Draw.fillRect2D()
                     .point(cx, cy)
                     .size(w, h)
@@ -470,6 +472,7 @@ public class Draw2DTest extends Engine
                     .point(cx, cy)
                     .size(w, h)
                     .thickness(thickness)
+                    .cornerRadius(cornerRadius)
                     .rotationOrigin(ox, oy)
                     .rotationAngle(rotation)
                     .color(Color.DARKER_RED)

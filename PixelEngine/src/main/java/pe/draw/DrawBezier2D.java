@@ -1,8 +1,9 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import rutils.Logger;
 import rutils.Math;
+
+import java.util.Arrays;
 
 public class DrawBezier2D extends Draw2D implements Points<DrawBezier2D>,
                                                     Thickness<DrawBezier2D>,
@@ -10,8 +11,6 @@ public class DrawBezier2D extends Draw2D implements Points<DrawBezier2D>,
                                                     Color0<DrawBezier2D>,
                                                     Color1<DrawBezier2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private static final int LINE_DIVISIONS = 24; // Bezier line divisions
     
     private static long binomial(int n, int k)
@@ -29,6 +28,17 @@ public class DrawBezier2D extends Draw2D implements Points<DrawBezier2D>,
     
     private int r0, g0, b0, a0;
     private int r1, g1, b1, a1;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawBezier2D{" +
+               "points=" + Arrays.toString(this.points) + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "color0=(" + this.r0 + ", " + this.g0 + ", " + this.b0 + ", " + this.a0 + ')' + ' ' +
+               "color1=(" + this.r1 + ", " + this.g1 + ", " + this.b1 + ", " + this.a1 + ')' +
+               '}';
+    }
     
     @Override
     public void reset()
@@ -54,9 +64,6 @@ public class DrawBezier2D extends Draw2D implements Points<DrawBezier2D>,
     @Override
     public void drawImpl()
     {
-        DrawBezier2D.LOGGER.finest("Drawing points=%s point1=(%s, %s) thickness=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s)",
-                                   this.points, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
-        
         if (this.thickness <= 0.0) return;
         
         int count = points.length >> 1;

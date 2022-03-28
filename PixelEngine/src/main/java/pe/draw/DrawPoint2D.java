@@ -1,13 +1,9 @@
 package pe.draw;
 
-import rutils.Logger;
-
 public class DrawPoint2D extends Draw2D implements Point<DrawPoint2D>,
                                                    Thickness<DrawPoint2D>,
                                                    Color<DrawPoint2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x, y;
     private boolean hasPoint;
     
@@ -15,6 +11,16 @@ public class DrawPoint2D extends Draw2D implements Point<DrawPoint2D>,
     private boolean hasThickness;
     
     private int r, g, b, a;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawPoint2D{" +
+               "point=(" + this.x + ", " + this.y + ')' + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
+               '}';
+    }
     
     @Override
     public void reset()
@@ -39,9 +45,6 @@ public class DrawPoint2D extends Draw2D implements Point<DrawPoint2D>,
     @Override
     protected void drawImpl()
     {
-        DrawPoint2D.LOGGER.finest("Drawing point=(%s, %s) thickness=%s color=(%s, %s, %s, %s)",
-                                  this.x, this.y, this.thickness, this.r, this.g, this.b, this.a);
-        
         if (this.thickness <= 0) return;
         
         drawPoint(this.x, this.y, this.thickness, this.r, this.g, this.b, this.a);

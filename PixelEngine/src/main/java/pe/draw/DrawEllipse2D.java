@@ -1,6 +1,5 @@
 package pe.draw;
 
-import rutils.Logger;
 import rutils.Math;
 
 public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
@@ -12,8 +11,6 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
                                                      Segments<DrawEllipse2D>,
                                                      Color<DrawEllipse2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x, y;
     private boolean hasCenter;
     
@@ -32,6 +29,21 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
     private int segments;
     
     private int r, g, b, a;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawEllipse2D{" +
+               "center=(" + this.x + ", " + this.y + ')' + ' ' +
+               "radius=(" + this.rx + ", " + this.ry + ')' + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "angles=(" + this.start + ", " + this.stop + ')' + ' ' +
+               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
+               "rotationAngle=" + this.angle + ' ' +
+               "segments=" + this.segments + ' ' +
+               "color=(" + this.r + ", " + this.g + ", " + this.b + ", " + this.a + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -67,11 +79,6 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
     @Override
     protected void drawImpl()
     {
-        DrawEllipse2D.LOGGER.finest("Drawing center=(%s, %s) size=(%s, %s) thickness=%s angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s color=(%s, %s, %s, %s)",
-                                    this.x, this.y, this.rx, this.ry, this.thickness, this.start, this.stop,
-                                    this.originX, this.originY, this.angle, this.segments,
-                                    this.r, this.g, this.b, this.a);
-        
         drawEllipse(this.x, this.y, this.rx, this.ry, this.thickness, this.start, this.stop,
                     this.originX, this.originY, this.angle, this.segments,
                     this.r, this.g, this.b, this.a);

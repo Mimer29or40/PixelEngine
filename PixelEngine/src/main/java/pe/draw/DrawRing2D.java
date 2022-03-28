@@ -1,6 +1,5 @@
 package pe.draw;
 
-import rutils.Logger;
 import rutils.Math;
 
 public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
@@ -14,8 +13,6 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
                                                   Color0<DrawRing2D>,
                                                   Color1<DrawRing2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x, y;
     private boolean hasCenter;
     
@@ -38,6 +35,23 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
     
     private int ri, gi, bi, ai;
     private int ro, go, bo, ao;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawRing2D{" +
+               "center=(" + this.x + ", " + this.y + ')' + ' ' +
+               "radius0=(" + this.rxi + ", " + this.ryi + ')' + ' ' +
+               "radius1=(" + this.rxo + ", " + this.ryo + ')' + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "angles=(" + this.start + ", " + this.stop + ')' + ' ' +
+               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
+               "rotationAngle=" + this.angle + ' ' +
+               "segments=" + this.segments + ' ' +
+               "color0=(" + this.ri + ", " + this.gi + ", " + this.bi + ", " + this.ai + ')' + ' ' +
+               "color1=(" + this.ro + ", " + this.go + ", " + this.bo + ", " + this.ao + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -75,11 +89,6 @@ public class DrawRing2D extends Draw2D implements Point<DrawRing2D>,
     @Override
     protected void drawImpl()
     {
-        DrawRing2D.LOGGER.finest("Drawing center=(%s, %s) inner=(%s, %s) outer=(%s, %s) thickness=%s angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s colorInner=(%s, %s, %s, %s) colorOuter=(%s, %s, %s, %s)",
-                                 this.x, this.y, this.rxi, this.ryi, this.rxo, this.ryo, this.thickness, this.start, this.stop,
-                                 this.originX, this.originY, this.angle, this.segments,
-                                 this.ri, this.gi, this.bi, this.ai, this.ro, this.go, this.bo, this.ao);
-        
         drawEllipse(this.x, this.y, this.rxi, this.ryi, this.thickness, this.start, this.stop,
                     this.originX, this.originY, this.angle, this.segments,
                     this.ri, this.gi, this.bi, this.ai);

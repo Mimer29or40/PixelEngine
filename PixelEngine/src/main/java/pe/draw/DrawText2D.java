@@ -3,7 +3,6 @@ package pe.draw;
 import org.jetbrains.annotations.NotNull;
 import pe.color.Colorc;
 import pe.font.*;
-import rutils.Logger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,8 +12,6 @@ public class DrawText2D extends Draw2D implements Point<DrawText2D>,
                                                   Size<DrawText2D>,
                                                   Color<DrawText2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private String text;
     
     private double x, y;
@@ -32,13 +29,33 @@ public class DrawText2D extends Draw2D implements Point<DrawText2D>,
     
     private TextAlign align;
     
-    private boolean ignoreFormatting;
-    
     private boolean underline;
     private boolean strike;
     
     private int textR, textG, textB, textA;
     private int backR, backG, backB, backA;
+    
+    private boolean ignoreFormatting;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawText2D{" +
+               "point=(" + this.x + ", " + this.y + ')' + ' ' +
+               "bounds=(" + this.w + ", " + this.h + ')' + ' ' +
+               "font=" + this.font + ' ' +
+               "name=" + this.name + ' ' +
+               "weight=" + this.weight + ' ' +
+               "italicized=" + this.italicized + ' ' +
+               "size=" + this.size + ' ' +
+               "align=" + this.align + ' ' +
+               "underline=" + this.underline + ' ' +
+               "strike=" + this.strike + ' ' +
+               "color=(" + this.textR + ", " + this.textG + ", " + this.textB + ", " + this.textA + ')' + ' ' +
+               "backgroundColor=(" + this.backR + ", " + this.backG + ", " + this.backB + ", " + this.backA + ')' + ' ' +
+               "ignoreFormatting=" + this.ignoreFormatting +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -89,12 +106,6 @@ public class DrawText2D extends Draw2D implements Point<DrawText2D>,
     @Override
     protected void drawImpl()
     {
-        DrawText2D.LOGGER.finest("Drawing text=\"%s\" anchor=(%s, %s) bounds=(%s, %s) font=%s size=%s align=%s ignoreFormatting=%s color=(%s, %s, %s, %s)",
-                                 this.text,
-                                 this.x, this.y, this.w, this.h,
-                                 this.font, this.size, this.align, this.ignoreFormatting,
-                                 this.textR, this.textG, this.textB, this.textA);
-        
         List<String> lines;
         if (this.w > 0 && this.h > 0)
         {
@@ -242,12 +253,6 @@ public class DrawText2D extends Draw2D implements Point<DrawText2D>,
         return this;
     }
     
-    public DrawText2D ignoreFormatting(boolean ignoreFormatting)
-    {
-        this.ignoreFormatting = ignoreFormatting;
-        return this;
-    }
-    
     public DrawText2D underline(boolean underline)
     {
         this.underline = false;
@@ -282,5 +287,11 @@ public class DrawText2D extends Draw2D implements Point<DrawText2D>,
     public DrawText2D backgroundColor(@NotNull Colorc color)
     {
         return backgroundColor(color.r(), color.g(), color.b(), color.a());
+    }
+    
+    public DrawText2D ignoreFormatting(boolean ignoreFormatting)
+    {
+        this.ignoreFormatting = ignoreFormatting;
+        return this;
     }
 }

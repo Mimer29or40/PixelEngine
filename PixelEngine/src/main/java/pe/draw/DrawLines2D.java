@@ -1,7 +1,8 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import rutils.Logger;
+
+import java.util.Arrays;
 
 public class DrawLines2D extends Draw2D implements Points<DrawLines2D>,
                                                    Thickness<DrawLines2D>,
@@ -9,8 +10,6 @@ public class DrawLines2D extends Draw2D implements Points<DrawLines2D>,
                                                    Color0<DrawLines2D>,
                                                    Color1<DrawLines2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double[] points;
     
     private double  thickness;
@@ -18,6 +17,17 @@ public class DrawLines2D extends Draw2D implements Points<DrawLines2D>,
     
     private int r0, g0, b0, a0;
     private int r1, g1, b1, a1;
+    
+    @Override
+    public String toString()
+    {
+        return "DrawLines2D{" +
+               "points=" + Arrays.toString(this.points) + ' ' +
+               "thickness=" + this.thickness + ' ' +
+               "color0=(" + this.r0 + ", " + this.g0 + ", " + this.b0 + ", " + this.a0 + ')' + ' ' +
+               "color1=(" + this.r1 + ", " + this.g1 + ", " + this.b1 + ", " + this.a1 + ')' +
+               '}';
+    }
     
     @Override
     public void reset()
@@ -43,9 +53,6 @@ public class DrawLines2D extends Draw2D implements Points<DrawLines2D>,
     @Override
     public void drawImpl()
     {
-        DrawLines2D.LOGGER.finest("Drawing points=%s thickness=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s)",
-                                  this.points, this.thickness, this.r0, this.g0, this.b0, this.a0, this.r1, this.g1, this.b1, this.a1);
-        
         if (this.thickness <= 0) return;
         
         int pointsCount = this.points.length >> 1;

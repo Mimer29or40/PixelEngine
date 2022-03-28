@@ -2,7 +2,6 @@ package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
 import pe.color.Colorc;
-import rutils.Logger;
 import rutils.Math;
 
 public class FillRing2D extends Draw2D implements Point<FillRing2D>,
@@ -15,8 +14,6 @@ public class FillRing2D extends Draw2D implements Point<FillRing2D>,
                                                   Color0<FillRing2D>,
                                                   Color1<FillRing2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x, y;
     private boolean hasCenter;
     
@@ -36,6 +33,22 @@ public class FillRing2D extends Draw2D implements Point<FillRing2D>,
     
     private int ri, gi, bi, ai;
     private int ro, go, bo, ao;
+    
+    @Override
+    public String toString()
+    {
+        return "FillRing2D{" +
+               "center=(" + this.x + ", " + this.y + ')' + ' ' +
+               "radius0=(" + this.rxi + ", " + this.ryi + ')' + ' ' +
+               "radius1=(" + this.rxo + ", " + this.ryo + ')' + ' ' +
+               "angles=(" + this.start + ", " + this.stop + ')' + ' ' +
+               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
+               "rotationAngle=" + this.angle + ' ' +
+               "segments=" + this.segments + ' ' +
+               "color0=(" + this.ri + ", " + this.gi + ", " + this.bi + ", " + this.ai + ')' + ' ' +
+               "color1=(" + this.ro + ", " + this.go + ", " + this.bo + ", " + this.ao + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -71,11 +84,6 @@ public class FillRing2D extends Draw2D implements Point<FillRing2D>,
     @Override
     protected void drawImpl()
     {
-        FillRing2D.LOGGER.finest("Drawing center=(%s, %s) inner=(%s, %s) outer=(%s, %s) angles=(%s, %s) origin=(%s, %s) rotation=%s segments=%s colorInner=(%s, %s, %s, %s) colorOuter=(%s, %s, %s, %s)",
-                                 this.x, this.y, this.rxi, this.ryi, this.rxo, this.ryo, this.start, this.stop,
-                                 this.originX, this.originY, this.angle, this.segments,
-                                 this.ri, this.gi, this.bi, this.ai, this.ro, this.go, this.bo, this.ao);
-        
         fillRing(this.x, this.y, this.rxi, this.ryi, this.rxo, this.ryo, this.start, this.stop,
                  this.originX, this.originY, this.angle, this.segments,
                  this.ri, this.gi, this.bi, this.ai, this.ro, this.go, this.bo, this.ao);

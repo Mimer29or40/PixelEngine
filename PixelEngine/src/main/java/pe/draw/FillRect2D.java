@@ -2,7 +2,6 @@ package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
 import pe.color.Colorc;
-import rutils.Logger;
 import rutils.Math;
 
 public class FillRect2D extends Draw2D implements Point<FillRect2D>,
@@ -15,8 +14,6 @@ public class FillRect2D extends Draw2D implements Point<FillRect2D>,
                                                   Color2<FillRect2D>,
                                                   Color3<FillRect2D>
 {
-    private static final Logger LOGGER = new Logger();
-    
     private double x, y;
     private boolean hasPoint;
     
@@ -31,6 +28,21 @@ public class FillRect2D extends Draw2D implements Point<FillRect2D>,
     private int r1, g1, b1, a1;
     private int r2, g2, b2, a2;
     private int r3, g3, b3, a3;
+    
+    @Override
+    public String toString()
+    {
+        return "FillRect2D{" +
+               "center=(" + this.x + ", " + this.y + ')' + ' ' +
+               "size=(" + this.width + ", " + this.height + ')' + ' ' +
+               "rotationOrigin=(" + this.originX + ", " + this.originY + ')' + ' ' +
+               "rotationAngle=" + this.angle + ' ' +
+               "color0=(" + this.r0 + ", " + this.g0 + ", " + this.b0 + ", " + this.a0 + ')' + ' ' +
+               "color1=(" + this.r1 + ", " + this.g1 + ", " + this.b1 + ", " + this.a1 + ')' + ' ' +
+               "color2=(" + this.r2 + ", " + this.g2 + ", " + this.b2 + ", " + this.a2 + ')' + ' ' +
+               "color3=(" + this.r3 + ", " + this.g3 + ", " + this.b3 + ", " + this.a3 + ')' +
+               '}';
+    }
     
     @Override
     protected void reset()
@@ -59,14 +71,6 @@ public class FillRect2D extends Draw2D implements Point<FillRect2D>,
     @Override
     protected void drawImpl()
     {
-        FillRect2D.LOGGER.finest("Drawing center=(%s, %s) size=(%s, %s) origin=(%s, %s) rotation=%s color0=(%s, %s, %s, %s) color1=(%s, %s, %s, %s) color2=(%s, %s, %s, %s) color3=(%s, %s, %s, %s)",
-                                 this.x, this.y, this.width, this.height,
-                                 this.originX, this.originY, this.angle,
-                                 this.r0, this.g0, this.b0, this.a0,
-                                 this.r1, this.g1, this.b1, this.a1,
-                                 this.r2, this.g2, this.b2, this.a2,
-                                 this.r3, this.g3, this.b3, this.a3);
-        
         // if (this.width <= 0.0 || this.height <= 0.0) return;
         
         double halfW = this.width * 0.5;

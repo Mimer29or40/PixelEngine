@@ -25,7 +25,7 @@ public abstract class Draw2D
     
     static
     {
-        texture = null;
+        texture = GL.defaultTexture();
         
         u0 = 0.0;
         v0 = 0.0;
@@ -121,9 +121,9 @@ public abstract class Draw2D
     
     protected static void drawLines(double[] points, double thickness, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1)
     {
-        int pointsCount = points.length >> 1;
+        int pointsCount = (points.length >> 1) - 2;
         
-        if (pointsCount < 4)
+        if (pointsCount < 2)
         {
             Draw2D.LOGGER.warning("DrawLines: Invalid points array:", points);
             return;
@@ -137,21 +137,21 @@ public abstract class Draw2D
         
         if (thickness <= 1)
         {
-            GLBatch.checkBuffer((pointsCount - 2) * 2);
+            GLBatch.checkBuffer(pointsCount * 2);
             
             GLBatch.begin(DrawMode.LINES);
             
-            for (int i = 1; i < pointsCount - 2; i++)
+            for (int i = 1; i < pointsCount; i++)
             {
                 int p0 = i << 1;
                 int p1 = (i + 1) << 1;
                 
-                double lerp = (double) i / (pointsCount - 3);
+                double lerp = (double) i / (pointsCount - 1);
                 
-                _r1 = Math.lerp(r0, r1, lerp);
-                _g1 = Math.lerp(g0, g1, lerp);
-                _b1 = Math.lerp(b0, b1, lerp);
-                _a1 = Math.lerp(a0, a1, lerp);
+                _r1 = r0 != r1 ? Math.lerp(r0, r1, lerp) : r1;
+                _g1 = g0 != g1 ? Math.lerp(g0, g1, lerp) : g1;
+                _b1 = b0 != b1 ? Math.lerp(b0, b1, lerp) : b1;
+                _a1 = a0 != a1 ? Math.lerp(a0, a1, lerp) : a1;
                 
                 GLBatch.vertex(Draw2D.VERTEX0.clear().pos(points[p0], points[p0 + 1]).color(_r0, _g0, _b0, _a0));
                 GLBatch.vertex(Draw2D.VERTEX1.clear().pos(points[p1], points[p1 + 1]).color(_r1, _g1, _b1, _a1));
@@ -164,9 +164,11 @@ public abstract class Draw2D
         }
         else
         {
+            // TODO - Rounded, Mitered, Sharp
+            
             thickness *= 0.5;
             
-            GLBatch.checkBuffer((pointsCount - 2) * 9);
+            GLBatch.checkBuffer(pointsCount * 9);
             
             GLBatch.setTexture(Draw2D.texture);
             
@@ -180,19 +182,19 @@ public abstract class Draw2D
             double  o0x, o0y, o1x, o1y, o2x, o2y, o3x, o3y, o4x, o4y;
             double  lerp, temp;
             boolean buttStart, buttEnd, drawBevel;
-            for (int i = 1; i < pointsCount - 2; i++)
+            for (int i = 1; i < pointsCount; i++)
             {
                 p0 = (i - 1) << 1;
                 p1 = i << 1;
                 p2 = (i + 1) << 1;
                 p3 = (i + 2) << 1;
                 
-                lerp = (double) i / (pointsCount - 3);
+                lerp = (double) i / (pointsCount - 1);
                 
-                _r1 = Math.lerp(r0, r1, lerp);
-                _g1 = Math.lerp(g0, g1, lerp);
-                _b1 = Math.lerp(b0, b1, lerp);
-                _a1 = Math.lerp(a0, a1, lerp);
+                _r1 = r0 != r1 ? Math.lerp(r0, r1, lerp) : r1;
+                _g1 = g0 != g1 ? Math.lerp(g0, g1, lerp) : g1;
+                _b1 = b0 != b1 ? Math.lerp(b0, b1, lerp) : b1;
+                _a1 = a0 != a1 ? Math.lerp(a0, a1, lerp) : a1;
                 
                 p1x = points[p1];
                 p1y = points[p1 + 1];
@@ -392,6 +394,144 @@ public abstract class Draw2D
         GLBatch.end();
     }
     
+    protected static void drawRect(double x, double y, double w, double h, double thickness, double radius, double originX, double originY, double angle, int r, int g, int b, int a)
+    {
+        double halfW = w * 0.5;
+        double halfH = h * 0.5;
+        
+        if (Double.compare(radius, 0.0) <= 0)
+        {
+            double x0, y0, x1, y1, x2, y2, x3, y3;
+            
+            // Only calculate rotation if needed
+            if (Math.equals(angle, 0.0, 1e-6))
+            {
+                x0 = x - halfW;
+                y0 = y - halfH;
+                
+                x1 = x - halfW;
+                y1 = y + halfH;
+                
+                x2 = x + halfW;
+                y2 = y + halfH;
+                
+                x3 = x + halfW;
+                y3 = y - halfH;
+            }
+            else
+            {
+                double s = Math.sin(angle);
+                double c = Math.cos(angle);
+                
+                double minCX = (-halfW - originX) * c;
+                double maxCX = (halfW - originX) * c;
+                double minSX = (-halfW - originX) * s;
+                double maxSX = (halfW - originX) * s;
+                double minCY = (-halfH - originY) * c;
+                double maxCY = (halfH - originY) * c;
+                double minSY = (-halfH - originY) * s;
+                double maxSY = (halfH - originY) * s;
+                
+                x0 = x + originX + minCX - minSY;
+                y0 = y + originY + minSX + minCY;
+                
+                x1 = x + originX + minCX - maxSY;
+                y1 = y + originY + minSX + maxCY;
+                
+                x2 = x + originX + maxCX - maxSY;
+                y2 = y + originY + maxSX + maxCY;
+                
+                x3 = x + originX + maxCX - minSY;
+                y3 = y + originY + maxSX + minCY;
+            }
+            
+            double[] points = {
+                    x3, y3,
+                    x0, y0,
+                    x1, y1,
+                    x2, y2,
+                    x3, y3,
+                    x0, y0,
+                    x1, y1
+            };
+            drawLines(points, thickness, r, g, b, a, r, g, b, a);
+        }
+        else
+        {
+            if (Math.equals(angle, 0.0, 1e-6))
+            {
+                // double x0, y0, x1, y1;
+                //
+                // // Left Edge
+                // x0 = x - halfW;
+                // y0 = y - halfH + radius;
+                // x1 = x - halfW;
+                // y1 = y + halfH - radius;
+                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
+                //
+                // // Bottom Edge
+                // x0 = x - halfW + radius;
+                // y0 = y + halfH;
+                // x1 = x + halfW - radius;
+                // y1 = y + halfH;
+                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
+                //
+                // // Right Edge
+                // x0 = x + halfW;
+                // y0 = y + halfH - radius;
+                // x1 = x + halfW;
+                // y1 = y - halfH + radius;
+                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
+                //
+                // // Top Edge
+                // x0 = x + halfW - radius;
+                // y0 = y - halfH;
+                // x1 = x - halfW + radius;
+                // y1 = y - halfH;
+                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
+                //
+                // int    segments = segments(radius, radius, 0, Math.PI_2);
+                // double start, stop;
+                //
+                // // Top-Left Corner
+                // x0    = x - halfW + radius;
+                // y0    = y - halfH + radius;
+                // start = Math.PI;
+                // stop  = 3 * Math.PI_2;
+                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
+                //
+                // // Bottom-Left Corner
+                // x0    = x - halfW + radius;
+                // y0    = y + halfH - radius;
+                // start = Math.PI_2;
+                // stop  = Math.PI;
+                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
+                //
+                // // Bottom-Right Corner
+                // x0    = x + halfW - radius;
+                // y0    = y + halfH - radius;
+                // start = 0;
+                // stop  = Math.PI_2;
+                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
+                //
+                // // Top-Left Corner
+                // x0    = x + halfW - radius;
+                // y0    = y - halfH + radius;
+                // start = 3 * Math.PI_2;
+                // stop  = Math.PI2;
+                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
+                
+                // int segments = segments(radius, radius, 0, Math.PI_2);
+                int segments = 4;
+                
+            }
+            else
+            {
+            
+            }
+        }
+    }
+    
     protected static void drawEllipse(double x, double y, double rx, double ry, double thickness, double start, double stop, double originX, double originY, double angle, int segments, int r, int g, int b, int a)
     {
         while (start > Math.PI2 + 1e-6) start -= Math.PI2;
@@ -411,9 +551,8 @@ public abstract class Draw2D
         
         if (segments < 3) segments = segments(rx, ry, start, stop);
         
-        double[] points = new double[(segments + 1 + 2) << 1];
+        double[] points = new double[(segments + 2 + 1) << 1];
         
-        double inc = (stop - start) / segments;
         double theta;
         
         boolean shouldRotate = !Math.equals(angle, 0.0, 1e-6);
@@ -425,9 +564,10 @@ public abstract class Draw2D
         double px, py;
         
         // Segments + 2 to make sure that the end segments are beveled
-        for (int i = -1, index = 0; i < segments + 2; i++)
+        for (int i = -1, index = 0; i <= segments + 1; i++)
         {
-            theta = start + i * inc;
+            // theta = start + i * inc;
+            theta = Math.map(i, 0, segments, start, stop);
             
             px = Math.cos(theta) * rx;
             py = Math.sin(theta) * ry;
@@ -445,6 +585,10 @@ public abstract class Draw2D
             points[index++] = px;
             points[index++] = py;
         }
+        // points[0] = points[2];
+        // points[1] = points[3];
+        // points[points.length - 2] = points[points.length - 4];
+        // points[points.length - 1] = points[points.length - 3];
         
         drawLines(points, thickness, r, g, b, a, r, g, b, a);
     }
@@ -963,6 +1107,8 @@ public abstract class Draw2D
     
     public void draw()
     {
+        Draw2D.LOGGER.finest(this);
+        
         check();
         
         drawImpl();
