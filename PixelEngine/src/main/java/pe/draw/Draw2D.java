@@ -691,9 +691,9 @@ public abstract class Draw2D
                 bottomRightY = y + rotationOriginY + maxSX + maxCY;
                 
                 dirHX = (halfW < 0.0 ? -cornerRadius : +cornerRadius) * c;
-                dirHY = (halfH < 0.0 ? -cornerRadius : +cornerRadius) * s;
-                dirVX = -dirHY;
-                dirVY = dirHX;
+                dirHY = (halfW < 0.0 ? -cornerRadius : +cornerRadius) * s;
+                dirVX = (halfH < 0.0 ? -cornerRadius : +cornerRadius) * Math.cos(rotationAngle + Math.PI_2);
+                dirVY = (halfH < 0.0 ? -cornerRadius : +cornerRadius) * Math.sin(rotationAngle + Math.PI_2);
             }
             
             double topLeftCX     = topLeftX + dirHX + dirVX;

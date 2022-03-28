@@ -450,8 +450,8 @@ public class Draw2DTest extends Engine
                 double cx = width * 0.5;
                 double cy = height * 0.5;
                 
-                double w = draggableRect[0].x - cx;
-                double h = draggableRect[0].y - cy;
+                double w = (draggableRect[0].x - cx) * 2;
+                double h = (draggableRect[0].y - cy) * 2;
                 
                 double ox = draggableRect[1].x - cx;
                 double oy = draggableRect[1].y - cy;
