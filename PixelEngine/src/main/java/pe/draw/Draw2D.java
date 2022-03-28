@@ -121,9 +121,9 @@ public abstract class Draw2D
     
     protected static void drawLines(double[] points, double thickness, int r0, int g0, int b0, int a0, int r1, int g1, int b1, int a1)
     {
-        int pointsCount = (points.length >> 1) - 2;
+        int segments = (points.length >> 1) - 3;
         
-        if (pointsCount < 2)
+        if (segments < 1)
         {
             Draw2D.LOGGER.warning("DrawLines: Invalid points array:", points);
             return;
@@ -137,16 +137,18 @@ public abstract class Draw2D
         
         if (thickness <= 1)
         {
-            GLBatch.checkBuffer(pointsCount * 2);
+            GLBatch.checkBuffer(segments * 2);
             
             GLBatch.begin(DrawMode.LINES);
             
-            for (int i = 1; i < pointsCount; i++)
+            int    p0, p1;
+            double lerp;
+            for (int i = 0; i < segments; i++)
             {
-                int p0 = i << 1;
-                int p1 = (i + 1) << 1;
+                p0 = (i + 1) << 1;
+                p1 = (i + 2) << 1;
                 
-                double lerp = (double) i / (pointsCount - 1);
+                lerp = (double) (i + 1) / (double) segments;
                 
                 _r1 = r0 != r1 ? Math.lerp(r0, r1, lerp) : r1;
                 _g1 = g0 != g1 ? Math.lerp(g0, g1, lerp) : g1;
@@ -168,7 +170,7 @@ public abstract class Draw2D
             
             thickness *= 0.5;
             
-            GLBatch.checkBuffer(pointsCount * 9);
+            GLBatch.checkBuffer(segments * 9);
             
             GLBatch.setTexture(Draw2D.texture);
             
@@ -182,14 +184,14 @@ public abstract class Draw2D
             double  o0x, o0y, o1x, o1y, o2x, o2y, o3x, o3y, o4x, o4y;
             double  lerp, temp;
             boolean buttStart, buttEnd, drawBevel;
-            for (int i = 1; i < pointsCount; i++)
+            for (int i = 0; i < segments; i++)
             {
-                p0 = (i - 1) << 1;
-                p1 = i << 1;
-                p2 = (i + 1) << 1;
-                p3 = (i + 2) << 1;
+                p0 = i << 1;
+                p1 = (i + 1) << 1;
+                p2 = (i + 2) << 1;
+                p3 = (i + 3) << 1;
                 
-                lerp = (double) i / (pointsCount - 1);
+                lerp = (double) (i + 1) / (double) segments;
                 
                 _r1 = r0 != r1 ? Math.lerp(r0, r1, lerp) : r1;
                 _g1 = g0 != g1 ? Math.lerp(g0, g1, lerp) : g1;
@@ -401,22 +403,19 @@ public abstract class Draw2D
         
         if (Double.compare(radius, 0.0) <= 0)
         {
-            double x0, y0, x1, y1, x2, y2, x3, y3;
+            double tlX, tlY, trX, trY, brX, brY, blX, blY;
             
             // Only calculate rotation if needed
             if (Math.equals(angle, 0.0, 1e-6))
             {
-                x0 = x - halfW;
-                y0 = y - halfH;
-                
-                x1 = x - halfW;
-                y1 = y + halfH;
-                
-                x2 = x + halfW;
-                y2 = y + halfH;
-                
-                x3 = x + halfW;
-                y3 = y - halfH;
+                tlX = x - halfW;
+                tlY = y - halfH;
+                trX = x + halfW;
+                trY = y - halfH;
+                brX = x + halfW;
+                brY = y + halfH;
+                blX = x - halfW;
+                blY = y + halfH;
             }
             else
             {
@@ -424,111 +423,133 @@ public abstract class Draw2D
                 double c = Math.cos(angle);
                 
                 double minCX = (-halfW - originX) * c;
-                double maxCX = (halfW - originX) * c;
-                double minSX = (-halfW - originX) * s;
-                double maxSX = (halfW - originX) * s;
                 double minCY = (-halfH - originY) * c;
-                double maxCY = (halfH - originY) * c;
+                double minSX = (-halfW - originX) * s;
                 double minSY = (-halfH - originY) * s;
+                double maxCX = (halfW - originX) * c;
+                double maxCY = (halfH - originY) * c;
+                double maxSX = (halfW - originX) * s;
                 double maxSY = (halfH - originY) * s;
                 
-                x0 = x + originX + minCX - minSY;
-                y0 = y + originY + minSX + minCY;
-                
-                x1 = x + originX + minCX - maxSY;
-                y1 = y + originY + minSX + maxCY;
-                
-                x2 = x + originX + maxCX - maxSY;
-                y2 = y + originY + maxSX + maxCY;
-                
-                x3 = x + originX + maxCX - minSY;
-                y3 = y + originY + maxSX + minCY;
+                tlX = x + originX + minCX - minSY;
+                tlY = y + originY + minSX + minCY;
+                trX = x + originX + maxCX - minSY;
+                trY = y + originY + maxSX + minCY;
+                brX = x + originX + maxCX - maxSY;
+                brY = y + originY + maxSX + maxCY;
+                blX = x + originX + minCX - maxSY;
+                blY = y + originY + minSX + maxCY;
             }
             
             double[] points = {
-                    x3, y3,
-                    x0, y0,
-                    x1, y1,
-                    x2, y2,
-                    x3, y3,
-                    x0, y0,
-                    x1, y1
+                    blX, blY,
+                    tlX, tlY,
+                    trX, trY,
+                    brX, brY,
+                    blX, blY,
+                    tlX, tlY,
+                    trX, trY
             };
             drawLines(points, thickness, r, g, b, a, r, g, b, a);
         }
         else
         {
+            double halfAbsW = Math.abs(halfW);
+            double halfAbsH = Math.abs(halfH);
+            
+            int segments = segments(radius, radius, 0, Math.PI_2);
+            
+            int      pointCount = ((segments + 1) * 4 + 3) << 1;
+            double[] points     = new double[pointCount];
+            
+            double tlBX = x - halfAbsW;
+            double tlBY = y - halfAbsH;
+            double trBX = x + halfAbsW;
+            double trBY = y - halfAbsH;
+            double brBX = x + halfAbsW;
+            double brBY = y + halfAbsH;
+            double blBX = x - halfAbsW;
+            double blBY = y + halfAbsH;
+            
+            double tlCX, tlCY, trCX, trCY, brCX, brCY, blCX, blCY;
             if (Math.equals(angle, 0.0, 1e-6))
             {
-                // double x0, y0, x1, y1;
-                //
-                // // Left Edge
-                // x0 = x - halfW;
-                // y0 = y - halfH + radius;
-                // x1 = x - halfW;
-                // y1 = y + halfH - radius;
-                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
-                //
-                // // Bottom Edge
-                // x0 = x - halfW + radius;
-                // y0 = y + halfH;
-                // x1 = x + halfW - radius;
-                // y1 = y + halfH;
-                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
-                //
-                // // Right Edge
-                // x0 = x + halfW;
-                // y0 = y + halfH - radius;
-                // x1 = x + halfW;
-                // y1 = y - halfH + radius;
-                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
-                //
-                // // Top Edge
-                // x0 = x + halfW - radius;
-                // y0 = y - halfH;
-                // x1 = x - halfW + radius;
-                // y1 = y - halfH;
-                // drawLine(x0, y0, x1, y1, thickness, r, g, b, a, r, g, b, a);
-                //
-                // int    segments = segments(radius, radius, 0, Math.PI_2);
-                // double start, stop;
-                //
-                // // Top-Left Corner
-                // x0    = x - halfW + radius;
-                // y0    = y - halfH + radius;
-                // start = Math.PI;
-                // stop  = 3 * Math.PI_2;
-                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
-                //
-                // // Bottom-Left Corner
-                // x0    = x - halfW + radius;
-                // y0    = y + halfH - radius;
-                // start = Math.PI_2;
-                // stop  = Math.PI;
-                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
-                //
-                // // Bottom-Right Corner
-                // x0    = x + halfW - radius;
-                // y0    = y + halfH - radius;
-                // start = 0;
-                // stop  = Math.PI_2;
-                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
-                //
-                // // Top-Left Corner
-                // x0    = x + halfW - radius;
-                // y0    = y - halfH + radius;
-                // start = 3 * Math.PI_2;
-                // stop  = Math.PI2;
-                // drawEllipse(x0, y0, radius, radius, thickness, start, stop, 0, 0, 0, segments, r, g, b, a);
-                
-                // int segments = segments(radius, radius, 0, Math.PI_2);
-                int segments = 4;
-                
+                tlCX = tlBX + radius;
+                tlCY = tlBY + radius;
+                trCX = trBX - radius;
+                trCY = trBY + radius;
+                brCX = brBX - radius;
+                brCY = brBY - radius;
+                blCX = blBX + radius;
+                blCY = blBY - radius;
             }
             else
             {
-            
+                double s = Math.sin(angle);
+                double c = Math.cos(angle);
+                
+                double minCX = (-halfAbsW + radius - originX) * c;
+                double minCY = (-halfAbsH + radius - originY) * c;
+                double minSX = (-halfAbsW + radius - originX) * s;
+                double minSY = (-halfAbsH + radius - originY) * s;
+                double maxCX = (halfAbsW - radius - originX) * c;
+                double maxCY = (halfAbsH - radius - originY) * c;
+                double maxSX = (halfAbsW - radius - originX) * s;
+                double maxSY = (halfAbsH - radius - originY) * s;
+                
+                tlCX = x + originX + minCX - minSY;
+                tlCY = y + originY + minSX + minCY;
+                trCX = x + originX + maxCX - minSY;
+                trCY = y + originY + maxSX + minCY;
+                brCX = x + originX + maxCX - maxSY;
+                brCY = y + originY + maxSX + maxCY;
+                blCX = x + originX + minCX - maxSY;
+                blCY = y + originY + minSX + maxCY;
             }
+            
+            double theta;
+            double tlX, tlY, blX, blY, brX, brY, trX, trY;
+            for (int i = 0, idx, offset = (segments + 1) << 1; i <= segments; i++)
+            {
+                theta = Math.map(i, 0, segments, angle, angle + Math.PI_2);
+                
+                tlX = tlCX + radius * Math.cos(theta + Math.PI);
+                tlY = tlCY + radius * Math.sin(theta + Math.PI);
+                trX = trCX + radius * Math.cos(theta + Math.PI_2 + Math.PI);
+                trY = trCY + radius * Math.sin(theta + Math.PI_2 + Math.PI);
+                brX = brCX + radius * Math.cos(theta);
+                brY = brCY + radius * Math.sin(theta);
+                blX = blCX + radius * Math.cos(theta + Math.PI_2);
+                blY = blCY + radius * Math.sin(theta + Math.PI_2);
+                
+                idx = (i + 1) << 1;
+                
+                points[idx]     = tlX;
+                points[idx + 1] = tlY;
+                
+                idx += offset;
+                
+                points[idx]     = trX;
+                points[idx + 1] = trY;
+                
+                idx += offset;
+                
+                points[idx]     = brX;
+                points[idx + 1] = brY;
+                
+                idx += offset;
+                
+                points[idx]     = blX;
+                points[idx + 1] = blY;
+            }
+            points[0]              = points[pointCount - 6];
+            points[1]              = points[pointCount - 5];
+            points[pointCount - 4] = points[2];
+            points[pointCount - 3] = points[3];
+            points[pointCount - 2] = points[4];
+            points[pointCount - 1] = points[5];
+            
+            drawLines(points, thickness, r, g, b, a, r, g, b, a);
         }
     }
     
@@ -585,10 +606,6 @@ public abstract class Draw2D
             points[index++] = px;
             points[index++] = py;
         }
-        // points[0] = points[2];
-        // points[1] = points[3];
-        // points[points.length - 2] = points[points.length - 4];
-        // points[points.length - 1] = points[points.length - 3];
         
         drawLines(points, thickness, r, g, b, a, r, g, b, a);
     }
@@ -1021,7 +1038,7 @@ public abstract class Draw2D
     
     protected static int segments(double rx, double ry, double start, double stop)
     {
-        return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * (stop - start) / Math.PI2), 8, 48);
+        return Math.clamp((int) (Math.max(Math.abs(rx), Math.abs(ry)) * (stop - start) / Math.PI2), 4, 48);
     }
     
     private static void windTriangle(GLBatch.Vertex v0, GLBatch.Vertex v1, GLBatch.Vertex v2)
