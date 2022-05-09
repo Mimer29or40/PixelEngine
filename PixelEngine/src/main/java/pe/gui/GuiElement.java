@@ -26,4 +26,6 @@ public abstract class GuiElement
     }
     
     public abstract void layout();
+    
+    public abstract void draw();
 }

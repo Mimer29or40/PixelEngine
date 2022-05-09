@@ -13,7 +13,7 @@ public final class GuiStyle
 {
     public static void StyleColorsDark(@Nullable GuiStyle style)
     {
-        if (style == null) style = GUI.GetStyle();
+        if (style == null) style = GUI.style();
         Color.Buffer colors = style.Colors;
         
         colors.put(StyleColor.Text.ordinal(), 1.00, 1.00, 1.00, 1.00);
@@ -72,7 +72,7 @@ public final class GuiStyle
     
     public static void StyleColorsClassic(@Nullable GuiStyle style)
     {
-        if (style == null) style = GUI.GetStyle();
+        if (style == null) style = GUI.style();
         Color.Buffer colors = style.Colors;
         
         colors.put(StyleColor.Text.ordinal(), 0.90, 0.90, 0.90, 1.00);
@@ -131,7 +131,7 @@ public final class GuiStyle
     
     public static void StyleColorsLight(@Nullable GuiStyle style)
     {
-        if (style == null) style = GUI.GetStyle();
+        if (style == null) style = GUI.style();
         Color.Buffer colors = style.Colors;
         
         colors.put(StyleColor.Text.ordinal(), 0.00, 0.00, 0.00, 1.00);
@@ -521,109 +521,5 @@ public final class GuiStyle
         this.DisplaySafeAreaPadding.x  = (int) Math.floor(this.DisplaySafeAreaPadding.x * scale_factor);
         this.DisplaySafeAreaPadding.y  = (int) Math.floor(this.DisplaySafeAreaPadding.y * scale_factor);
         this.MouseCursorScale          = Math.floor(this.MouseCursorScale * scale_factor);
-    }
-    
-    public enum StyleColor
-    {
-        Text,
-        TextDisabled,
-        WindowBg,              // Background of normal windows
-        ChildBg,               // Background of child windows
-        PopupBg,               // Background of popups, menus, tooltips windows
-        Border,
-        BorderShadow,
-        FrameBg,               // Background of checkbox, radio button, plot, slider, text input
-        FrameBgHovered,
-        FrameBgActive,
-        TitleBg,
-        TitleBgActive,
-        TitleBgCollapsed,
-        MenuBarBg,
-        ScrollbarBg,
-        ScrollbarGrab,
-        ScrollbarGrabHovered,
-        ScrollbarGrabActive,
-        CheckMark,
-        SliderGrab,
-        SliderGrabActive,
-        Button,
-        ButtonHovered,
-        ButtonActive,
-        Header,                // Header* colors are used for CollapsingHeader, TreeNode, Selectable, MenuItem
-        HeaderHovered,
-        HeaderActive,
-        Separator,
-        SeparatorHovered,
-        SeparatorActive,
-        ResizeGrip,
-        ResizeGripHovered,
-        ResizeGripActive,
-        Tab,
-        TabHovered,
-        TabActive,
-        TabUnfocused,
-        TabUnfocusedActive,
-        PlotLines,
-        PlotLinesHovered,
-        PlotHistogram,
-        PlotHistogramHovered,
-        TableHeaderBg,         // Table header background
-        TableBorderStrong,     // Table outer and header borders (prefer using Alpha=1.0 here)
-        TableBorderLight,      // Table inner borders (prefer using Alpha=1.0 here)
-        TableRowBg,            // Table row background (even rows)
-        TableRowBgAlt,         // Table row background (odd rows)
-        TextSelectedBg,
-        DragDropTarget,
-        NavHighlight,          // Gamepad/keyboard: current highlighted item
-        NavWindowingHighlight, // Highlight window when using CTRL+TAB
-        NavWindowingDimBg,     // Darken/colorize entire screen behind the CTRL+TAB window list, when active
-        ModalWindowDimBg,      // Darken/colorize entire screen behind a modal window, when one is active
-        ;
-        
-        public static final int COUNT = values().length;
-    }
-    
-    public enum StyleVar
-    {
-        Alpha,
-        DisabledAlpha,
-        WindowPadding,
-        WindowRounding,
-        WindowBorderSize,
-        WindowMinSize,
-        WindowTitleAlign,
-        WindowMenuButtonPosition,
-        ChildRounding,
-        ChildBorderSize,
-        PopupRounding,
-        PopupBorderSize,
-        FramePadding,
-        FrameRounding,
-        FrameBorderSize,
-        ItemSpacing,
-        ItemInnerSpacing,
-        CellPadding,
-        TouchExtraPadding,
-        IndentSpacing,
-        ColumnsMinSpacing,
-        ScrollbarSize,
-        ScrollbarRounding,
-        GrabMinSize,
-        GrabRounding,
-        LogSliderDeadzone,
-        TabRounding,
-        TabBorderSize,
-        TabMinWidthForCloseButton,
-        ColorButtonPosition,
-        ButtonTextAlign,
-        SelectableTextAlign,
-        DisplayWindowPadding,
-        DisplaySafeAreaPadding,
-        MouseCursorScale,
-        AntiAliasedLines,
-        AntiAliasedLinesUseTex,
-        AntiAliasedFill,
-        CurveTessellationTol,
-        CircleTessellationMaxError,
     }
 }

@@ -319,7 +319,7 @@ public abstract class Engine
                                 GUI.handleEvents();
                                 Debug.handleEvents();
                                 // NuklearGUI.handleEvents();
-                                // ImGUI.handleEvents();
+                                ImGUI.handleEvents();
                                 
                                 if (!Time.paused)
                                 {
@@ -362,7 +362,7 @@ public abstract class Engine
                                     GUI.draw();
                                     Debug.draw();
                                     // NuklearGUI.draw();
-                                    // ImGUI.draw();
+                                    ImGUI.draw();
                                     
                                     GLBatch.BatchStats stats = GLBatch.stats();
                                     
@@ -417,7 +417,7 @@ public abstract class Engine
                         GUI.destroy();
                         Debug.destroy();
                         // NuklearGUI.destroy();
-                        // ImGUI.destroy();
+                        ImGUI.destroy();
                         
                         IO.destroy();
                         
@@ -472,7 +472,7 @@ public abstract class Engine
         GUI.setup();
         Debug.setup();
         // NuklearGUI.setup();
-        // ImGUI.setup();
+        ImGUI.setup();
     }
     
     protected static void size(int width, int height)

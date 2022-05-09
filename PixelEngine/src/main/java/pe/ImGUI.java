@@ -22,7 +22,7 @@ public class ImGUI
         // Setup Dear ImGui context
         ImGui.createContext();
         ImGuiIO io = ImGui.getIO();
-        io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
+        // io.addConfigFlags(ImGuiConfigFlags.ViewportsEnable);
         
         // Setup Platform/Renderer bindings
         imGuiGl3  = new ImGuiImplGl3();
@@ -56,6 +56,14 @@ public class ImGUI
         ImGui.begin("Demo window");
         ImGui.button("Hello!");
         ImGui.end();
+        ImGui.showAboutWindow();
+        ImGui.showDemoWindow();
+        // ImGui.showFontSelector("Demo window");
+        // ImGui.showMetricsWindow();
+        // ImGui.showStackToolWindow();
+        // ImGui.showStyleEditor();
+        // ImGui.showStyleSelector("Demo window");
+        ImGui.showUserGuide();
         
         // Render dear imgui into screen
         ImGui.render();

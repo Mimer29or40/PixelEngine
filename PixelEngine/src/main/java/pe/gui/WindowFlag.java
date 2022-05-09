@@ -48,7 +48,7 @@ public enum WindowFlag
     
     /**
      * Disable drawing background color
-     * ({@link GuiStyle.StyleColor#WindowBg WindowBg}, etc.) and outside border.
+     * ({@link StyleColor#WindowBg WindowBg}, etc.) and outside border.
      * Similar as using SetNextWindowBgAlpha(0.0).
      */
     NO_BACKGROUND(1 << 7),
