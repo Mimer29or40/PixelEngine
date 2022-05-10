@@ -1,6 +1,5 @@
 package pe;
 
-import imgui.internal.ImGuiWindow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import pe.color.Color;
@@ -407,9 +406,9 @@ public class GUI
         
         GLBatch.bind(null);
         
-        int r = Window.framebufferWidth() >> 1;
+        int r = pe.Window.framebufferWidth() >> 1;
         int l = -r;
-        int b = Window.framebufferHeight() >> 1;
+        int b = pe.Window.framebufferHeight() >> 1;
         int t = -b;
         
         GLBatch.projection().setOrtho(l, r, b, t, 1.0, -1.0);

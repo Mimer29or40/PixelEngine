@@ -549,7 +549,7 @@ public final class Debug
             if (Debug.currentMenu < 0)
             {
                 String text = "No Menus";
-                int    x    = (Window.framebufferWidth() - Debug.textWidth(text)) / 2;
+                int    x    = (pe.Window.framebufferWidth() - Debug.textWidth(text)) / 2;
                 drawTextWithBackground(x, 0, text, Color.WHITE, null);
             }
             else
@@ -566,7 +566,7 @@ public final class Debug
                 int currWidth = Debug.textWidth(menu.name) + 2;
                 int prevWidth = Debug.textWidth(prev.name) + 2;
                 
-                int currPos = (Window.framebufferWidth() - currWidth) / 2;
+                int currPos = (pe.Window.framebufferWidth() - currWidth) / 2;
                 int prevPos = currPos - spacing - prevWidth;
                 int nextPos = currPos + currWidth + spacing;
                 
@@ -577,42 +577,43 @@ public final class Debug
         }
         if (Debug.notification != null && Time.getNS() - Debug.notificationTime < Debug.notificationDur)
         {
-            int x = (Window.framebufferWidth() - textWidth(Debug.notification)) >> 1;
-            int y = (Window.framebufferHeight() - textHeight(Debug.notification)) >> 1;
+            int x = (pe.Window.framebufferWidth() - textWidth(Debug.notification)) >> 1;
+            int y = (pe.Window.framebufferHeight() - textHeight(Debug.notification)) >> 1;
             
             drawTextWithBackground(x, y, Debug.notification, Color.WHITE, null);
         }
         if (!Debug.renderables.isEmpty())
         {
             GLFramebuffer.bind(null);
-            
+        
             int fbWidth  = GLFramebuffer.currentWidth();
             int fbHeight = GLFramebuffer.currentHeight();
-            
+        
             GLProgram.bind(Debug.program);
             GLProgram.Uniform.mat4("pv", Debug.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
-            
+        
             GL.winding(Winding.CW);
-            
+            GL.depthMode(DepthMode.NONE);
+        
             int quads = 0;
             // int draws = 0; // TODO - Track Draws
-            
+        
             Renderable renderable;
             while ((renderable = Debug.renderables.poll()) != null)
             {
                 if (Debug.vertexBuffer.remaining() < renderable.bytesToAdd())
                 {
                     Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
-                    Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
+                    Debug.vertexArray.drawElements(DrawMode.TRIANGLES, quads * 6);
                     quads = 0;
                     // draws++;
                 }
-                
+            
                 quads += renderable.render();
             }
-            
+        
             Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
-            Debug.vertexArray.draw(DrawMode.TRIANGLES, quads * 6);
+            Debug.vertexArray.drawElements(DrawMode.TRIANGLES, quads * 6);
             // draws++;
         }
     }
@@ -704,7 +705,7 @@ public final class Debug
         Optional<Menu> existing = Debug.menus.stream().filter(m -> menu.name.equals(m.name)).findAny();
         if (existing.isPresent())
         {
-            throw new RuntimeException(String.format("Menu with name \"%s\" already exists", menu.name));
+            throw new RuntimeException(String.format("Window with name \"%s\" already exists", menu.name));
         }
         Debug.menus.add(menu);
         Debug.currentMenu = 0;
@@ -836,8 +837,8 @@ public final class Debug
         
         protected void draw()
         {
-            this.width  = Window.framebufferWidth();
-            this.height = Window.framebufferHeight() - Debug.headerSize;
+            this.width  = pe.Window.framebufferWidth();
+            this.height = pe.Window.framebufferHeight() - Debug.headerSize;
             drawImpl();
         }
         

@@ -316,10 +316,11 @@ public abstract class Engine
                                 
                                 Extension.stage(Extension.Stage.POST_EVENTS);
                                 
-                                GUI.handleEvents();
+                                // GUI.handleEvents(); // TODO
                                 Debug.handleEvents();
-                                // NuklearGUI.handleEvents();
-                                ImGUI.handleEvents();
+                                Debug2.handleEvents();
+                                // NuklearGUI.handleEvents(); // TODO
+                                // ImGUI.handleEvents(); // TODO
                                 
                                 if (!Time.paused)
                                 {
@@ -359,10 +360,11 @@ public abstract class Engine
                                     Extension.stage(Extension.Stage.POST_DRAW);
                                     GLBatch.pop();
                                     
-                                    GUI.draw();
+                                    // GUI.draw(); // TODO
                                     Debug.draw();
-                                    // NuklearGUI.draw();
-                                    ImGUI.draw();
+                                    Debug2.draw();
+                                    // NuklearGUI.draw(); // TODO
+                                    // ImGUI.draw(); // TODO
                                     
                                     GLBatch.BatchStats stats = GLBatch.stats();
                                     
@@ -414,10 +416,11 @@ public abstract class Engine
                     {
                         Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
                         
-                        GUI.destroy();
+                        // GUI.destroy(); // TODO
                         Debug.destroy();
-                        // NuklearGUI.destroy();
-                        ImGUI.destroy();
+                        Debug2.destroy();
+                        // NuklearGUI.destroy(); // TODO
+                        // ImGUI.destroy(); // TODO
                         
                         IO.destroy();
                         
@@ -469,10 +472,11 @@ public abstract class Engine
     {
         IO.setup(width, height, pixelWidth, pixelHeight);
         
-        GUI.setup();
+        // GUI.setup(); // TODO
         Debug.setup();
-        // NuklearGUI.setup();
-        ImGUI.setup();
+        Debug2.setup();
+        // NuklearGUI.setup(); // TODO
+        // ImGUI.setup(); // TODO
     }
     
     protected static void size(int width, int height)

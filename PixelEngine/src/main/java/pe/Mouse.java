@@ -7,6 +7,7 @@ import org.joml.Vector2dc;
 import org.joml.Vector2ic;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.Platform;
 import pe.event.*;
 import rutils.Logger;
@@ -20,7 +21,6 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.system.MemoryUtil.NULL;
 
 public final class Mouse
 {
@@ -309,9 +309,9 @@ public final class Mouse
     {
         Mouse.LOGGER.finest("Setting Shape for %s: %s", Window.primary, shape);
         
-        Engine.Delegator.waitRunTask(() -> {
+        Engine.Delegator.runTask(() -> {
             Mouse.shapes.put(Window.handle, shape);
-            glfwSetCursor(Window.handle, shape != null ? shape.handle : NULL);
+            glfwSetCursor(Window.handle, shape != null ? shape.handle : MemoryUtil.NULL);
         });
     }
     
@@ -516,12 +516,16 @@ public final class Mouse
     
     public static class Shape
     {
-        public static final Shape ARROW_CURSOR     = new Shape("ARROW", GLFW_ARROW_CURSOR);
-        public static final Shape IBEAM_CURSOR     = new Shape("IBEAM", GLFW_IBEAM_CURSOR);
-        public static final Shape CROSSHAIR_CURSOR = new Shape("CROSSHAIR", GLFW_CROSSHAIR_CURSOR);
-        public static final Shape HAND_CURSOR      = new Shape("HAND", GLFW_HAND_CURSOR);
-        public static final Shape HRESIZE_CURSOR   = new Shape("HRESIZE", GLFW_HRESIZE_CURSOR);
-        public static final Shape VRESIZE_CURSOR   = new Shape("VRESIZE", GLFW_VRESIZE_CURSOR);
+        public static final Shape ARROW_CURSOR       = new Shape("ARROW", GLFW_ARROW_CURSOR);
+        public static final Shape IBEAM_CURSOR       = new Shape("IBEAM", GLFW_IBEAM_CURSOR);
+        public static final Shape CROSSHAIR_CURSOR   = new Shape("CROSSHAIR", GLFW_CROSSHAIR_CURSOR);
+        public static final Shape HAND_CURSOR        = new Shape("HAND", GLFW_POINTING_HAND_CURSOR);
+        public static final Shape RESIZE_EW_CURSOR   = new Shape("RESIZE_EW", GLFW_RESIZE_EW_CURSOR);
+        public static final Shape RESIZE_NS_CURSOR   = new Shape("RESIZE_NS", GLFW_RESIZE_NS_CURSOR);
+        public static final Shape RESIZE_NWSE_CURSOR = new Shape("RESIZE_NWSE", GLFW_RESIZE_NWSE_CURSOR);
+        public static final Shape RESIZE_NESW_CURSOR = new Shape("RESIZE_NESW", GLFW_RESIZE_NESW_CURSOR);
+        public static final Shape RESIZE_ALL_CURSOR  = new Shape("RESIZE_ALL", GLFW_RESIZE_ALL_CURSOR);
+        public static final Shape NOT_ALLOWED_CURSOR = new Shape("NOT_ALLOWED", GLFW_NOT_ALLOWED_CURSOR);
         
         private final String name;
         private final long   handle;
