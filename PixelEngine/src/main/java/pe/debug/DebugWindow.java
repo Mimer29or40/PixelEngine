@@ -1,11 +1,14 @@
 package pe.debug;
 
+import org.jetbrains.annotations.NotNull;
 import pe.Debug;
 import pe.Debug2;
+import pe.Mouse;
 import pe.color.Color;
 import pe.color.Color_RGBA;
 import pe.color.Colorc;
 import pe.shape.AABB2i;
+import pe.shape.AABB2ic;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +16,7 @@ import java.util.List;
 public class DebugWindow
 {
     public static final int    BORDER_SIZE            = 4;
+    public static final int    PADDING_SIZE           = 4;
     public static final int    HEADER_SIZE            = Debug.textHeight("TEXT") + 2 * BORDER_SIZE;
     public static final Colorc HEADER_FOCUSED_COLOR   = Color_RGBA.create().set(Color.GRAY);
     public static final Colorc HEADER_UNFOCUSED_COLOR = Color_RGBA.create().set(Color.BLACK);
@@ -48,7 +52,7 @@ public class DebugWindow
         int h = this.rect.height();
         
         int b = DebugWindow.BORDER_SIZE;
-        int b2 = b * 2;
+        int b2 = b << 1;
         
         int textH = Debug2.textHeight(this.name);
         
@@ -59,7 +63,22 @@ public class DebugWindow
         Debug2.drawFilledBox(x + b, y + b, w - b2, textH, headerColor);
         Debug2.drawText(x + b + 1, y + b, this.name, Color.WHITE);
         
-        Debug2.drawFilledBox(x + b, y + b2 + textH, w - b2, h - b - b2 - textH, DebugWindow.BACKGROUND_COLOR);
+        int contentX = x + b;
+        int contentY = y + b2 + textH;
+        int contentW = w - b2;
+        int contentH = h - b - b2 - textH;
+        
+        Debug2.drawFilledBox(contentX, contentY, contentW, contentH, DebugWindow.BACKGROUND_COLOR);
+    
+        contentX += DebugWindow.PADDING_SIZE;
+        contentY += DebugWindow.PADDING_SIZE;
+        contentW -= DebugWindow.PADDING_SIZE << 1;
+        contentH -= DebugWindow.PADDING_SIZE << 1;
+        
+        for (DebugElement element : this.elements)
+        {
+            element.draw(contentX, contentY, contentW, contentH);
+        }
     }
     
     public boolean hovered()
@@ -70,5 +89,79 @@ public class DebugWindow
     public boolean focused()
     {
         return this.focused;
+    }
+    
+    public boolean addElements(DebugElement elements)
+    {
+        return this.elements.add(elements);
+    }
+    
+    public boolean removeElements(DebugElement elements)
+    {
+        return this.elements.remove(elements);
+    }
+    
+    public enum ResizeMode
+    {
+        TOP_LEFT, TOP, TOP_RIGHT,
+        LEFT, NONE, RIGHT,
+        BOTTOM_LEFT, BOTTOM, BOTTOM_RIGHT,
+        ;
+        
+        public static ResizeMode get(int x, int y, @NotNull AABB2ic rect)
+        {
+            int w = rect.width();
+            int h = rect.height();
+            
+            x -= rect.x();
+            y -= rect.y();
+            if (x < 0 || x >= w || y < 0 || y >= h) return NONE;
+            
+            if (x <= DebugWindow.BORDER_SIZE)
+            {
+                if (y <= DebugWindow.BORDER_SIZE)
+                {
+                    return TOP_LEFT;
+                }
+                else if (y >= h - DebugWindow.BORDER_SIZE)
+                {
+                    return BOTTOM_LEFT;
+                }
+                else
+                {
+                    return LEFT;
+                }
+            }
+            else if (x >= w - DebugWindow.BORDER_SIZE)
+            {
+                if (y <= DebugWindow.BORDER_SIZE)
+                {
+                    return TOP_RIGHT;
+                }
+                else if (y >= h - DebugWindow.BORDER_SIZE)
+                {
+                    return BOTTOM_RIGHT;
+                }
+                else
+                {
+                    return RIGHT;
+                }
+            }
+            else
+            {
+                if (y <= DebugWindow.BORDER_SIZE)
+                {
+                    return TOP;
+                }
+                else if (y >= h - DebugWindow.BORDER_SIZE)
+                {
+                    return BOTTOM;
+                }
+                else
+                {
+                    return NONE;
+                }
+            }
+        }
     }
 }

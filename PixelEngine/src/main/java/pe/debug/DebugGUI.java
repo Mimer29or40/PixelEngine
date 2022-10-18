@@ -6,6 +6,7 @@ import pe.Mouse;
 import pe.color.Color;
 import pe.color.Colorc;
 import pe.event.*;
+import pe.shape.AABB2i;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -13,8 +14,11 @@ import java.util.List;
 public class DebugGUI
 {
     private final List<DebugWindow> windows = new LinkedList<>();
+    
     private       DebugWindow       hoveredWindow;
     private       DebugWindow       focusedWindow;
+    
+    private DebugWindow.ResizeMode resizeMode = DebugWindow.ResizeMode.NONE;
     
     public void handleEvents()
     {
@@ -92,6 +96,9 @@ public class DebugGUI
                     this.focusedWindow = this.windows.remove(focusedIndex);
                     this.focusedWindow.focused = true;
                     this.windows.add(0, this.focusedWindow);
+    
+                    this.resizeMode = DebugWindow.ResizeMode.get(x, y, this.hoveredWindow.rect);
+                    
                     mbDown.consume();
                 }
                 else
@@ -107,9 +114,42 @@ public class DebugGUI
             {
                 if (this.focusedWindow != null)
                 {
+                    // TODO - Use mouse position to size and move. Dont use dx/dy
                     int dx = (int) mbDragged.dx();
                     int dy = (int) mbDragged.dy();
-                    this.focusedWindow.rect.pos.add(dx, dy);
+    
+                    AABB2i rect = this.focusedWindow.rect;
+                    
+                    switch (this.resizeMode)
+                    {
+                        case TOP_LEFT -> {
+                            rect.pos.add(dx, dy);
+                            rect.size.add(-dx, -dy);
+                        }
+                        case TOP -> {
+                            rect.pos.add(0, dy);
+                            rect.size.add(0, -dy);
+                        }
+                        case TOP_RIGHT -> {
+                            rect.pos.add(0, dy);
+                            rect.size.add(dx, -dy);
+                        }
+                        case LEFT -> {
+                            rect.pos.add(dx, 0);
+                            rect.size.add(-dx, 0);
+                        }
+                        case NONE -> rect.pos.add(dx, dy);
+                        case RIGHT -> rect.size.add(dx, 0);
+                        case BOTTOM_LEFT -> {
+                            rect.pos.add(dx, 0);
+                            rect.size.add(-dx, dy);
+                        }
+                        case BOTTOM -> rect.size.add(0, dy);
+                        case BOTTOM_RIGHT -> rect.size.add(dx, dy);
+                    }
+                    rect.size.x = Math.max(rect.size.x, 100);
+                    rect.size.y = Math.max(rect.size.y, 100);
+                    
                     mbDragged.consume();
                 }
             }

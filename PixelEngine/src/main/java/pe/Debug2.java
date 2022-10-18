@@ -9,6 +9,7 @@ import pe.color.Color;
 import pe.color.Color_RGBA;
 import pe.color.Colorc;
 import pe.debug.DebugGUI;
+import pe.debug.DebugLabel;
 import pe.debug.DebugWindow;
 import pe.render.*;
 
@@ -85,10 +86,18 @@ public class Debug2
         MemoryUtil.memFree(indices);
         
         Debug2.pv = new Matrix4d();
+    
+        DebugWindow window;
         
-        Debug2.GUI.addWindow(new DebugWindow("Window 1"));
-        Debug2.GUI.addWindow(new DebugWindow("Window 2"));
-        Debug2.GUI.addWindow(new DebugWindow("Window 3"));
+        window = new DebugWindow("Window 1");
+        window.addElements(new DebugLabel("Test"));
+        Debug2.GUI.addWindow(window);
+        
+        window = new DebugWindow("Window 2");
+        Debug2.GUI.addWindow(window);
+        
+        window = new DebugWindow("Window 3");
+        Debug2.GUI.addWindow(window);
     }
     
     static void destroy()
