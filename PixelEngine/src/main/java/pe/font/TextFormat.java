@@ -6,7 +6,7 @@ import rutils.Math;
 @SuppressWarnings("unused")
 public class TextFormat
 {
-    static final char MODIFIER  = '¶';
+    static final char MODIFIER  = 0xB6;  // ¶
     static final char SEPARATOR = '-';
     
     static final        String RESET     = "0";
