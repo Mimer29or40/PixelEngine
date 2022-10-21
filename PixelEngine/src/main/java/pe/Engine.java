@@ -28,7 +28,6 @@ public abstract class Engine
 {
     private static final Logger LOGGER = new Logger();
     
-    static Engine  instance;
     static boolean mainThreadRunning, renderThreadRunning;
     
     static Random random;
@@ -82,7 +81,7 @@ public abstract class Engine
     
     private static final class IO
     {
-        private static void setup(int width, int height, double pixelWidth, double pixelHeight)
+        private static void setup(String name, int width, int height, double pixelWidth, double pixelHeight)
         {
             try (MemoryStack stack = MemoryStack.stackPush())
             {
@@ -111,7 +110,7 @@ public abstract class Engine
             });
             
             Monitor.setup();
-            Window.setup(width, height, pixelWidth, pixelHeight);
+            Window.setup(name, width, height, pixelWidth, pixelHeight);
             Mouse.setup();
             Keyboard.setup();
             Joystick.setup();
@@ -262,210 +261,9 @@ public abstract class Engine
     // -- Engine Functions --
     // ----------------------
     
-    protected static void start(@NotNull Engine instance)
-    {
-        Thread.currentThread().setName("main");
-        Engine.LOGGER.info("Starting");
-        
-        Extension.registerDefaultExtensions();
-        
-        try
-        {
-            if (Engine.instance != null) throw new IllegalStateException("Cannot call 'start' more that once.");
-            
-            Engine.instance            = instance;
-            Engine.mainThreadRunning   = true;
-            Engine.renderThreadRunning = true;
-            Engine.random              = new Random();
-            
-            Time.setup();
-            // Delegator.setup(); // TODO
-            
-            Extension.stage(Extension.Stage.PRE_SETUP);
-            
-            Engine.LOGGER.info("Instance Setup");
-            Engine.instance.setup();
-            
-            Extension.stage(Extension.Stage.POST_SETUP);
-            
-            if (Window.isOpen())
-            {
-                Window.unbindContext();
-                
-                final CountDownLatch latch = new CountDownLatch(1);
-                
-                new Thread(() -> {
-                    try
-                    {
-                        Window.makeCurrent();
-                        
-                        Extension.stage(Extension.Stage.RENDER_SETUP);
-                        
-                        while (Engine.renderThreadRunning)
-                        {
-                            if (Time.startFrame())
-                            {
-                                Extension.stage(Extension.Stage.PRE_FRAME);
-                                
-                                // TODO Profiler Start Frame
-                                
-                                Extension.stage(Extension.Stage.PRE_EVENTS);
-                                
-                                Events.events();
-                                IO.events();
-                                
-                                Extension.stage(Extension.Stage.POST_EVENTS);
-                                
-                                Debug.handleEvents();
-                                
-                                if (!Time.paused)
-                                {
-                                    GLFramebuffer.bind(null);
-                                    GLProgram.bind(null);
-                                    
-                                    GL.defaultState();
-                                    GL.wireframe(Engine.wireframe);
-                                    
-                                    GL.clearScreenBuffers(ScreenBuffer.COLOR);
-                                    
-                                    GLBatch.bind(null);
-                                    
-                                    int r = GLFramebuffer.currentWidth() >> 1;
-                                    int l = -r;
-                                    int b = GLFramebuffer.currentHeight() >> 1;
-                                    int t = -b;
-                                    
-                                    GLBatch.projection().setOrtho(l, r, b, t, 1.0, -1.0);
-                                    GLBatch.view().identity().translate(l, t, 0.0);
-                                    GLBatch.model().identity();
-                                    GLBatch.normal().identity();
-                                    
-                                    GLBatch.diffuse().set(Color.WHITE);
-                                    GLBatch.specular().set(Color.WHITE);
-                                    GLBatch.ambient().set(Color.WHITE);
-                                    
-                                    GLBatch.push();
-                                    Extension.stage(Extension.Stage.PRE_DRAW);
-                                    GLBatch.pop();
-                                    
-                                    GLBatch.push();
-                                    Engine.instance.draw(Time.delta());
-                                    GLBatch.pop();
-                                    
-                                    GLBatch.push();
-                                    Extension.stage(Extension.Stage.POST_DRAW);
-                                    GLBatch.pop();
-                                    
-                                    Debug.draw();
-                                    
-                                    GLBatch.BatchStats stats = GLBatch.stats();
-                                    
-                                    Engine.vertices = stats.vertices();
-                                    Engine.draws    = stats.draws();
-                                }
-                                
-                                Window.swap();
-                                
-                                if (Engine.screenshot != null)
-                                {
-                                    String fileName = Engine.screenshot + (!Engine.screenshot.endsWith(".png") ? ".png" : "");
-                                    
-                                    int w = Window.framebufferWidth();
-                                    int h = Window.framebufferHeight();
-                                    
-                                    Color.Buffer data = GL.readFrontBuffer(0, 0, w, h);
-                                    
-                                    Image image = Image.load(data, w, h, 1, data.format());
-                                    image.export(fileName);
-                                    image.delete();
-                                    
-                                    Engine.screenshot = null;
-                                }
-                                
-                                // TODO Profiler End Frame
-                                
-                                Time.endFrame();
-                                
-                                Extension.stage(Extension.Stage.POST_FRAME);
-                            }
-                            
-                            // TODO
-                            // if (Time.shouldUpdate())
-                            // {
-                            //     Window.primary.title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
-                            //
-                            //     // Debug.update();
-                            // }
-                            
-                            Thread.yield();
-                        }
-                    }
-                    catch (Throwable e)
-                    {
-                        Engine.LOGGER.severe(e);
-                    }
-                    finally
-                    {
-                        Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
-                        
-                        Debug.destroy();
-                        
-                        IO.destroy();
-                        
-                        Engine.mainThreadRunning = false;
-                        
-                        latch.countDown();
-                    }
-                }, "render").start();
-                
-                while (Engine.mainThreadRunning)
-                {
-                    glfwPollEvents();
-                    
-                    Joystick.pollCallbackEmulation();
-                    
-                    Delegator.runTasks();
-                    
-                    Thread.yield();
-                }
-                latch.await();
-            }
-        }
-        catch (Throwable e)
-        {
-            Engine.LOGGER.severe(e);
-        }
-        finally
-        {
-            Extension.stageCatch(Extension.Stage.PRE_DESTROY);
-            
-            Engine.LOGGER.info("Instance Destroy");
-            Engine.instance.destroy();
-            
-            Extension.stageCatch(Extension.Stage.POST_DESTROY);
-            
-            org.lwjgl.opengl.GL.destroy();
-            glfwTerminate();
-        }
-        
-        Engine.LOGGER.info("Finished");
-    }
-    
     public static void stop()
     {
         Engine.renderThreadRunning = false;
-    }
-    
-    protected static void size(int width, int height, double pixelWidth, double pixelHeight)
-    {
-        IO.setup(width, height, pixelWidth, pixelHeight);
-        
-        Debug.setup();
-    }
-    
-    protected static void size(int width, int height)
-    {
-        size(width, height, 4, 4);
     }
     
     public static void takeScreenShot()
@@ -481,7 +279,7 @@ public abstract class Engine
     // ----- Instance -----
     // --------------------
     
-    final String name;
+    public final String name;
     
     public Engine()
     {
@@ -507,10 +305,200 @@ public abstract class Engine
      *
      * @param elapsedTime The time in seconds since the last frame.
      */
-    protected void draw(double elapsedTime) {}
+    protected abstract void draw(double elapsedTime);
     
     /**
      * Called once before the engine is destroyed
      */
-    protected void destroy() {}
+    protected abstract void destroy();
+    
+    protected void start(int width, int height, double pixelWidth, double pixelHeight)
+    {
+        Thread.currentThread().setName("main");
+        Engine.LOGGER.info("Starting");
+    
+        Extension.registerDefaultExtensions();
+    
+        try
+        {
+            Engine.mainThreadRunning   = true;
+            Engine.renderThreadRunning = true;
+            Engine.random              = new Random();
+        
+            Time.setup();
+            // Delegator.setup(); // TODO
+        
+            Extension.stage(Extension.Stage.PRE_SETUP);
+        
+            IO.setup(this.name, width, height, pixelWidth, pixelHeight);
+            Debug.setup();
+        
+            Engine.LOGGER.info("Instance Setup");
+            this.setup();
+        
+            Extension.stage(Extension.Stage.POST_SETUP);
+    
+            Window.unbindContext();
+    
+            final CountDownLatch latch = new CountDownLatch(1);
+    
+            new Thread(() -> {
+                try
+                {
+                    Window.makeCurrent();
+    
+                    Extension.stage(Extension.Stage.RENDER_SETUP);
+            
+                    while (Engine.renderThreadRunning)
+                    {
+                        if (Time.startFrame())
+                        {
+                            Extension.stage(Extension.Stage.PRE_FRAME);
+                    
+                            // TODO Profiler Start Frame
+                    
+                            Extension.stage(Extension.Stage.PRE_EVENTS);
+                    
+                            Events.events();
+                            IO.events();
+                    
+                            Extension.stage(Extension.Stage.POST_EVENTS);
+                    
+                            Debug.handleEvents();
+                    
+                            if (!Time.paused)
+                            {
+                                GLFramebuffer.bind(null);
+                                GLProgram.bind(null);
+                        
+                                GL.defaultState();
+                                GL.wireframe(Engine.wireframe);
+                        
+                                GL.clearScreenBuffers(ScreenBuffer.COLOR);
+                        
+                                GLBatch.bind(null);
+                        
+                                int r = GLFramebuffer.currentWidth() >> 1;
+                                int l = -r;
+                                int b = GLFramebuffer.currentHeight() >> 1;
+                                int t = -b;
+                        
+                                GLBatch.projection().setOrtho(l, r, b, t, 1.0, -1.0);
+                                GLBatch.view().identity().translate(l, t, 0.0);
+                                GLBatch.model().identity();
+                                GLBatch.normal().identity();
+                        
+                                GLBatch.diffuse().set(Color.WHITE);
+                                GLBatch.specular().set(Color.WHITE);
+                                GLBatch.ambient().set(Color.WHITE);
+                        
+                                GLBatch.push();
+                                Extension.stage(Extension.Stage.PRE_DRAW);
+                                GLBatch.pop();
+                        
+                                GLBatch.push();
+                                this.draw(Time.delta());
+                                GLBatch.pop();
+                        
+                                GLBatch.push();
+                                Extension.stage(Extension.Stage.POST_DRAW);
+                                GLBatch.pop();
+                        
+                                Debug.draw();
+                        
+                                GLBatch.BatchStats stats = GLBatch.stats();
+                        
+                                Engine.vertices = stats.vertices();
+                                Engine.draws    = stats.draws();
+                            }
+                    
+                            Window.swap();
+                    
+                            if (Engine.screenshot != null)
+                            {
+                                String fileName = Engine.screenshot + (!Engine.screenshot.endsWith(".png") ? ".png" : "");
+                        
+                                int w = Window.framebufferWidth();
+                                int h = Window.framebufferHeight();
+                        
+                                Color.Buffer data = GL.readFrontBuffer(0, 0, w, h);
+                        
+                                Image image = Image.load(data, w, h, 1, data.format());
+                                image.export(fileName);
+                                image.delete();
+                        
+                                Engine.screenshot = null;
+                            }
+                    
+                            // TODO Profiler End Frame
+                    
+                            Time.endFrame();
+                    
+                            Extension.stage(Extension.Stage.POST_FRAME);
+                        }
+                
+                        // TODO
+                        // if (Time.shouldUpdate())
+                        // {
+                        //     Window.primary.title(String.format("Engine - %s - %s", Engine.instance.name, Time.getTimeString()));
+                        //
+                        //     // Debug.update();
+                        // }
+                
+                        Thread.yield();
+                    }
+                }
+                catch (Throwable e)
+                {
+                    Engine.LOGGER.severe(e);
+                }
+                finally
+                {
+                    Engine.mainThreadRunning = false;
+    
+                    Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
+            
+                    latch.countDown();
+                }
+            }, "render").start();
+    
+            while (Engine.mainThreadRunning)
+            {
+                glfwPollEvents();
+        
+                Joystick.pollCallbackEmulation();
+        
+                Delegator.runTasks();
+        
+                Thread.yield();
+            }
+            latch.await();
+        }
+        catch (Throwable e)
+        {
+            Engine.LOGGER.severe(e);
+        }
+        finally
+        {
+            Extension.stageCatch(Extension.Stage.PRE_DESTROY);
+        
+            Engine.LOGGER.info("Instance Destroy");
+            this.destroy();
+    
+            Debug.destroy();
+            IO.destroy();
+        
+            Extension.stageCatch(Extension.Stage.POST_DESTROY);
+        
+            org.lwjgl.opengl.GL.destroy();
+            glfwTerminate();
+        }
+    
+        Engine.LOGGER.info("Finished");
+    }
+    
+    protected void start(int width, int height)
+    {
+        this.start(width, height, 4, 4);
+    }
 }

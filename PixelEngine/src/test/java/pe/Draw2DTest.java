@@ -71,8 +71,6 @@ public class Draw2DTest extends Engine
     @Override
     protected void setup()
     {
-        size(800, 800, 1, 1);
-        
         int width  = Window.width();
         int height = Window.height();
         
@@ -830,6 +828,6 @@ public class Draw2DTest extends Engine
     {
         // Logger.setLevel(Level.FINEST);
         Logger.setLevel(Level.FINE);
-        start(new Draw2DTest());
+        new Draw2DTest().start(800, 800, 1, 1);
     }
 }

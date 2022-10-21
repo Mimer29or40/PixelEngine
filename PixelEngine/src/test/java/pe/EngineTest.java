@@ -10,7 +10,7 @@ public class EngineTest extends Engine
     @Override
     protected void setup()
     {
-        size(100, 100, 4, 4);
+    
     }
     
     @Override
@@ -56,7 +56,7 @@ public class EngineTest extends Engine
         Logger.setLevel(Level.FINE);
         Logger.addLogFile("out/console.log");
         Extension.register(ExtTest.class);
-        start(new EngineTest());
+        new EngineTest().start(100, 100, 4, 4);
     }
     
     static class ExtTest extends Extension

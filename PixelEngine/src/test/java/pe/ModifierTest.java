@@ -9,7 +9,7 @@ public class ModifierTest extends Engine
     @Override
     protected void setup()
     {
-        size(100, 100, 4, 4);
+    
     }
     
     @Override
@@ -41,6 +41,6 @@ public class ModifierTest extends Engine
     {
         // Logger.setLevel(Level.FINEST);
         Logger.setLevel(Level.FINE);
-        start(new ModifierTest());
+        new ModifierTest().start(100, 100, 4, 4);
     }
 }

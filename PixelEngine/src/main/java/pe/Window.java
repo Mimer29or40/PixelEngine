@@ -35,7 +35,7 @@ public class Window
     
     static Window primary = null;
     
-    static void setup(int width, int height, double pixelWidth, double pixelHeight)
+    static void setup(String name, int width, int height, double pixelWidth, double pixelHeight)
     {
         Window.LOGGER.fine("Setup");
         
@@ -45,7 +45,7 @@ public class Window
         builder.size((int) (width * pixelWidth), (int) (height * pixelHeight));
         builder.minSize(width, height);
         builder.vsync(false);
-        builder.title("Engine - " + Engine.instance.name);
+        builder.title("Engine - " + name);
         builder.resizable(true);
         builder.visible(true);
         
