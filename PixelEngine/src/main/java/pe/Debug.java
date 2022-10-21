@@ -390,7 +390,7 @@ public final class Debug
                     Colorc c = Keyboard.held(key) ? keyActive : keyInactive;
                     
                     drawQuad(kx + l.x, ky + l.y, l.width, l.height, c);
-                    drawText(kx + l.tx, ky + l.ty, l.text, Color.WHITE);
+                    drawText(kx + l.tx, ky + l.ty - 1, l.text, Color.WHITE);
                 }
                 
                 for (Modifier mod : modifierMap.keySet())
@@ -399,7 +399,7 @@ public final class Debug
                     Colorc c = mod.isActive() ? modActive : keyInactive;
                     
                     drawQuad(kx + l.x, ky + l.y, l.width, l.height, c);
-                    drawText(kx + l.tx, ky + l.ty, l.text, Color.WHITE);
+                    drawText(kx + l.tx, ky + l.ty - 1, l.text, Color.WHITE);
                 }
             }
         });

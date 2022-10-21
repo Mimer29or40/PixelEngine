@@ -48,7 +48,7 @@ public final class GL // TODO - Instance GL for multiple contexts
     static GLBatch defaultBatch;
     static GLBatch currentBatch;
     
-    static final ScissorMode scissorModeCustom = new ScissorMode(Integer.MIN_VALUE, Integer.MIN_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    static final ScissorMode scissorModeCustom = new ScissorMode(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
     
     static int stackIndex;
     
@@ -534,8 +534,8 @@ public final class GL // TODO - Instance GL for multiple contexts
     
     /**
      * Defines a scissor rect for all viewports. When set to anything else, if
-     * <code>x &le; frag_x &lt; x) + width)</code> and
-     * <code>y &le; frag_y &lt; y) + height)</code> for the scissor rectangle,
+     * <code>x &le; frag_x &lt; x + width)</code> and
+     * <code>y &le; frag_y &lt; y + height)</code> for the scissor rectangle,
      * then the test passes. Otherwise, the test fails and the fragment is
      * discarded.
      *
