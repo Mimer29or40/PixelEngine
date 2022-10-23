@@ -15,10 +15,10 @@ public class Util
     
     // -------------------- Conversion Objects -------------------- //
     
-    private static final Vector2d windowToLayer       = new Vector2d();
-    private static final Vector2d layerToWindow       = new Vector2d();
-    private static final Vector2d framebufferToLayer  = new Vector2d();
-    private static final Vector2d layerToFramebuffer  = new Vector2d();
+    private static final Vector2d windowToLayer      = new Vector2d();
+    private static final Vector2d layerToWindow      = new Vector2d();
+    private static final Vector2d framebufferToLayer = new Vector2d();
+    private static final Vector2d layerToFramebuffer = new Vector2d();
     
     // -------------------- Conversion Methods -------------------- //
     
@@ -216,11 +216,11 @@ public class Util
             Util.LOGGER.warning(index, "does not exist");
             return out.set(x, y);
         }
-    
+        
         // Framebuffer to Window
         x = x * Window.width() / GLFramebuffer.currentWidth();
         y = y * Window.height() / GLFramebuffer.currentHeight();
-    
+        
         // Window to Layer
         out.x = (x - layer.bounds().x()) / (double) layer.bounds().width() * (double) layer.width();
         out.y = (y - layer.bounds().y()) / (double) layer.bounds().height() * (double) layer.height();
@@ -312,7 +312,7 @@ public class Util
         // Layer to Window
         x = (x * (double) layer.bounds().width() / (double) layer.width()) + layer.bounds().x();
         y = (y * (double) layer.bounds().height() / (double) layer.height()) + layer.bounds().y();
-    
+        
         // Window to Framebuffer
         out.x = x * GLFramebuffer.currentWidth() / Window.width();
         out.y = y * GLFramebuffer.currentHeight() / Window.height();

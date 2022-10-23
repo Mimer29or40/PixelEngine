@@ -213,7 +213,8 @@ public final class Joystick
                 input._state = -1;
                 switch (input.state)
                 {
-                    case GLFW_PRESS -> {
+                    case GLFW_PRESS ->
+                    {
                         boolean inc = time - input.downTime < Input.doublePressedDelayL();
                         
                         input.held      = true;
@@ -222,7 +223,8 @@ public final class Joystick
                         input.downCount = inc ? input.downCount + 1 : 1;
                         Engine.Events.post(EventJoystickButtonDown.create(time, index, button, input.downCount));
                     }
-                    case GLFW_RELEASE -> {
+                    case GLFW_RELEASE ->
+                    {
                         input.held     = false;
                         input.heldTime = Long.MAX_VALUE;
                         Engine.Events.post(EventJoystickButtonUp.create(time, index, button));
@@ -257,12 +259,14 @@ public final class Joystick
     {
         switch (event)
         {
-            case GLFW_CONNECTED -> {
+            case GLFW_CONNECTED ->
+            {
                 Index index = Index.valueOf(jid);
                 Joystick.joysticks.put(index, new Joystick(jid));
                 Engine.Events.post(EventJoystickConnected.create(Time.getNS(), index));
             }
-            case GLFW_DISCONNECTED -> {
+            case GLFW_DISCONNECTED ->
+            {
                 Index index = Index.valueOf(jid);
                 Joystick.joysticks.put(index, null);
                 Engine.Events.post(EventJoystickDisconnected.create(Time.getNS(), index));

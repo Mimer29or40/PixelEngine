@@ -66,7 +66,8 @@ public final class Keyboard
             input._state = -1;
             switch (input.state)
             {
-                case GLFW_PRESS -> {
+                case GLFW_PRESS ->
+                {
                     boolean inc = time - input.downTime < Input.doublePressedDelayL();
                     
                     input.held      = true;
@@ -75,7 +76,8 @@ public final class Keyboard
                     input.downCount = inc ? input.downCount + 1 : 1;
                     Engine.Events.post(EventKeyboardKeyDown.create(time, Keyboard.window, key, input.downCount));
                 }
-                case GLFW_RELEASE -> {
+                case GLFW_RELEASE ->
+                {
                     input.held     = false;
                     input.heldTime = Long.MAX_VALUE;
                     Engine.Events.post(EventKeyboardKeyUp.create(time, Keyboard.window, key));

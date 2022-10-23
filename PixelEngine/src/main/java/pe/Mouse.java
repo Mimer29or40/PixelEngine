@@ -93,7 +93,8 @@ public final class Mouse
             input._state = -1;
             switch (input.state)
             {
-                case GLFW_PRESS -> {
+                case GLFW_PRESS ->
+                {
                     int tolerance = 2;
                     
                     boolean inc = Math.abs(Mouse.pos.x - input.downPos.x) < tolerance &&
@@ -107,7 +108,8 @@ public final class Mouse
                     input.downPos.set(Mouse.pos);
                     Engine.Events.post(EventMouseButtonDown.create(time, Mouse.window, button, Mouse.pos, input.downCount));
                 }
-                case GLFW_RELEASE -> {
+                case GLFW_RELEASE ->
+                {
                     input.held     = false;
                     input.heldTime = Long.MAX_VALUE;
                     Engine.Events.post(EventMouseButtonUp.create(time, Mouse.window, button, Mouse.pos));

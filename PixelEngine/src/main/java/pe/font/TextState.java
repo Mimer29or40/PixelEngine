@@ -107,7 +107,8 @@ public class TextState
         String[] mod = modifierTag.split("" + TextFormat.SEPARATOR);
         switch (mod[0])
         {
-            case TextFormat.RESET -> {
+            case TextFormat.RESET ->
+            {
                 this.weight     = Font.DEFAULT_WEIGHT;
                 this.italicized = Font.DEFAULT_ITALICS;
                 
@@ -128,23 +129,27 @@ public class TextState
             case TextFormat.ITALICS -> this.italicized = Boolean.parseBoolean(mod[1]);
             case TextFormat.UNDERLINE -> this.underline = Boolean.parseBoolean(mod[1]);
             case TextFormat.STRIKE -> this.strike = Boolean.parseBoolean(mod[1]);
-            case TextFormat.COLOR -> {
+            case TextFormat.COLOR ->
+            {
                 int colorNumber = Integer.parseInt(mod[1], 16);
                 this.textR = (colorNumber >> 16) & 0xFF;
                 this.textG = (colorNumber >> 8) & 0xFF;
                 this.textB = colorNumber & 0xFF;
             }
-            case TextFormat.COLOR_ALPHA -> {
+            case TextFormat.COLOR_ALPHA ->
+            {
                 int colorNumber = Integer.parseInt(mod[1], 16);
                 this.textA = colorNumber & 0xFF;
             }
-            case TextFormat.BACKGROUND -> {
+            case TextFormat.BACKGROUND ->
+            {
                 int colorNumber = Integer.parseInt(mod[1], 16);
                 this.backR = (colorNumber >> 16) & 0xFF;
                 this.backG = (colorNumber >> 8) & 0xFF;
                 this.backB = colorNumber & 0xFF;
             }
-            case TextFormat.BACKGROUND_ALPHA -> {
+            case TextFormat.BACKGROUND_ALPHA ->
+            {
                 int colorNumber = Integer.parseInt(mod[1], 16);
                 this.backA = colorNumber & 0xFF;
             }

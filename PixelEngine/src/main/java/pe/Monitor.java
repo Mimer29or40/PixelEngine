@@ -80,12 +80,14 @@ public final class Monitor
     {
         switch (event)
         {
-            case GLFW_CONNECTED -> {
+            case GLFW_CONNECTED ->
+            {
                 loadMonitors();
                 Monitor monitor = Monitor.monitors.get(handle);
                 Engine.Events.post(EventMonitorConnected.create(Time.getNS(), monitor));
             }
-            case GLFW_DISCONNECTED -> {
+            case GLFW_DISCONNECTED ->
+            {
                 Monitor monitor = Monitor.monitors.get(handle);
                 loadMonitors();
                 Engine.Events.post(EventMonitorDisconnected.create(Time.getNS(), monitor));

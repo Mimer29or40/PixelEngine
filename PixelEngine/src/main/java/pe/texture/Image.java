@@ -64,7 +64,8 @@ public class Image
                     ".gif",
                     ".pic",
                     ".psd",
-                    ".pnm" -> {
+                    ".pnm" ->
+            {
                 try (MemoryStack stack = MemoryStack.stackPush())
                 {
                     IntBuffer w = stack.mallocInt(1);
@@ -83,7 +84,8 @@ public class Image
                     mipmaps = 1;
                 }
             }
-            case ".hdr" -> {
+            case ".hdr" ->
+            {
                 try (MemoryStack stack = MemoryStack.stackPush())
                 {
                     IntBuffer w = stack.mallocInt(1);
@@ -108,7 +110,8 @@ public class Image
                     mipmaps = 1;
                 }
             }
-            case ".engine_img" -> {
+            case ".engine_img" ->
+            {
                 width  = fileData.getInt();
                 height = fileData.getInt();
                 
@@ -139,7 +142,8 @@ public class Image
         
         switch (getExtension(fileName))
         {
-            case ".png", "gif" -> {
+            case ".png", "gif" ->
+            {
                 try (MemoryStack stack = MemoryStack.stackPush())
                 {
                     // NOTE: Frames delays are discarded
@@ -161,7 +165,8 @@ public class Image
                     return new Image(Color.wrapSafe(format, colorData), width.get(), height.get(), 1, format);
                 }
             }
-            default -> {
+            default ->
+            {
                 MemoryUtil.memFree(fileData);
                 
                 frameCount[0] = 1;
@@ -717,7 +722,8 @@ public class Image
             case ".jpg" -> success = stbi_write_jpg(fileName, width, height, channels, data, 90); // JPG quality: between 1 and 100
             // case ".ktx" -> SaveKTX(image, fileName);
             case ".raw" -> success = writeToFile(fileName, data);
-            case ".engine_img" -> {
+            case ".engine_img" ->
+            {
                 ByteBuffer newBuffer = MemoryUtil.memAlloc(data.remaining() + Integer.BYTES * 4);
                 newBuffer.putInt(width);
                 newBuffer.putInt(height);

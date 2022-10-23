@@ -51,7 +51,7 @@ public class DrawEllipse2D extends Draw2D implements Point<DrawEllipse2D>,
         this.hasCenter    = false;
         this.hasSize      = false;
         this.hasThickness = false;
-    
+        
         this.startAngle = 0;
         this.stopAngle  = Math.PI2;
         

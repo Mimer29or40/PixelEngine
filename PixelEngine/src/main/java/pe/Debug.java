@@ -297,13 +297,15 @@ public final class Debug
                 {
                     switch (this.lastDirH)
                     {
-                        case 0 -> {
+                        case 0 ->
+                        {
                             String text = "{-";
                             int    x    = (26 - Debug.textWidth(text)) / 2;
                             int    y    = (this.msHeight - Debug.textHeight(text)) / 2;
                             drawTextWithBackground(mx + x, my + y, text, Color.WHITE, null);
                         }
-                        case 1 -> {
+                        case 1 ->
+                        {
                             String text = "-}";
                             int    x    = 90 + (26 - Debug.textWidth(text)) / 2;
                             int    y    = (this.msHeight - Debug.textHeight(text)) / 2;
@@ -331,13 +333,15 @@ public final class Debug
                 {
                     switch (this.lastDirV)
                     {
-                        case 0 -> {
+                        case 0 ->
+                        {
                             String text = "\\/";
                             int    x    = (this.msWidth - Debug.textWidth(text)) / 2;
                             int    y    = 114 + (26 - Debug.textHeight(text)) / 2;
                             drawTextWithBackground(mx + x, my + y, text, Color.WHITE, keyInactive);
                         }
-                        case 1 -> {
+                        case 1 ->
+                        {
                             String text = "/\\";
                             int    x    = (this.msWidth - Debug.textWidth(text)) / 2;
                             int    y    = (26 - Debug.textHeight(text)) / 2;
@@ -365,13 +369,15 @@ public final class Debug
                 {
                     switch (this.lastScroll)
                     {
-                        case 0 -> {
+                        case 0 ->
+                        {
                             String text = "\\/";
                             int    x    = 52 + 2 + (12 - Debug.textWidth(text)) / 2;
                             int    y    = 38 + 2;
                             drawText(mx + x, my + y, text, Color.WHITE);
                         }
-                        case 1 -> {
+                        case 1 ->
+                        {
                             String text = "/\\";
                             int    x    = 52 + 2 + (12 - Debug.textWidth(text)) / 2;
                             int    y    = 26 + 2;
@@ -508,31 +514,36 @@ public final class Debug
             {
                 switch (event.key())
                 {
-                    case F10 -> {
+                    case F10 ->
+                    {
                         Engine.wireframe = !Engine.wireframe;
                         Debug.notification(Engine.wireframe ? "Wireframe Mode: On" : "Wireframe Mode: Off");
                         event.consume();
                     }
-                    case LEFT -> {
+                    case LEFT ->
+                    {
                         if (Debug.currentMenu >= 0)
                         {
                             Debug.currentMenu = Math.index(Debug.currentMenu - 1, Debug.menus.size());
                             event.consume();
                         }
                     }
-                    case RIGHT -> {
+                    case RIGHT ->
+                    {
                         if (Debug.currentMenu >= 0)
                         {
                             Debug.currentMenu = Math.index(Debug.currentMenu + 1, Debug.menus.size());
                             event.consume();
                         }
                     }
-                    case F11 -> {
+                    case F11 ->
+                    {
                         Debug.enabled = !Debug.enabled;
                         Debug.notification(Debug.enabled ? "Debug Mode: On" : "Debug Mode: Off");
                         event.consume();
                     }
-                    case F12 -> {
+                    case F12 ->
+                    {
                         Time.paused = !Time.paused;
                         Debug.notification(Time.paused ? "Engine Paused" : "Engine Unpaused");
                         event.consume();
@@ -585,19 +596,19 @@ public final class Debug
         if (!Debug.renderables.isEmpty())
         {
             GLFramebuffer.bind(null);
-        
+            
             int fbWidth  = GLFramebuffer.currentWidth();
             int fbHeight = GLFramebuffer.currentHeight();
-        
+            
             GLProgram.bind(Debug.program);
             GLProgram.Uniform.mat4("pv", Debug.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
-        
+            
             GL.winding(Winding.CW);
             GL.depthMode(DepthMode.NONE);
-        
+            
             int quads = 0;
             // int draws = 0; // TODO - Track Draws
-        
+            
             Renderable renderable;
             while ((renderable = Debug.renderables.poll()) != null)
             {
@@ -608,10 +619,10 @@ public final class Debug
                     quads = 0;
                     // draws++;
                 }
-            
+                
                 quads += renderable.render();
             }
-        
+            
             Debug.vertexArray.buffer(0).set(0, Debug.vertexBuffer.clear());
             Debug.vertexArray.drawElements(DrawMode.TRIANGLES, quads * 6);
             // draws++;
