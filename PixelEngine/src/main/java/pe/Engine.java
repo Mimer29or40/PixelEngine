@@ -365,6 +365,8 @@ public abstract class Engine
         }
         finally
         {
+            Window.makeCurrent();
+            
             Extension.stageCatch(Extension.Stage.PRE_DESTROY);
             
             Engine.LOGGER.info("Instance Destroy");
@@ -502,6 +504,8 @@ public abstract class Engine
             Engine.mainThreadRunning = false;
             
             Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
+    
+            Window.unbindContext();
             
             this.latch.countDown();
         }
