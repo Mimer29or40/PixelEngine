@@ -11,26 +11,14 @@ public abstract class DebugElement
     protected boolean hovered;
     protected boolean focused;
     
-    public @Nullable DebugElement getHoveredElement(int x, int y)
+    public boolean hovered()
     {
-        if (this.rect.contains(x, y))
-        {
-            this.hovered = true;
-            return this;
-        }
-        this.hovered = false;
-        return null;
+        return this.hovered;
     }
     
-    public @Nullable DebugElement getFocusedElement(int x, int y)
+    public boolean focused()
     {
-        if (this.rect.contains(x, y))
-        {
-            this.focused = true;
-            return this;
-        }
-        this.focused = false;
-        return null;
+        return this.focused;
     }
     
     public void onMouseMoved(EventMouseMoved mMoved)

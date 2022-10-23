@@ -86,45 +86,45 @@ public class DebugWindow extends DebugContainer
         super.onMouseButtonDragged(mbDragged);
         
         // TODO - Use mouse position to size and move. Dont use dx/dy
+        int startX = (int) mbDragged.dragStartX();
+        int startY = (int) mbDragged.dragStartY();
         int dx = (int) mbDragged.dx();
         int dy = (int) mbDragged.dy();
-        
-        AABB2i rect = this.rect;
         
         switch (this.resizeMode)
         {
             case TOP_LEFT ->
             {
-                rect.pos.add(dx, dy);
-                rect.size.add(-dx, -dy);
+                this.rect.pos.add(dx, dy);
+                this.rect.size.add(-dx, -dy);
             }
             case TOP ->
             {
-                rect.pos.add(0, dy);
-                rect.size.add(0, -dy);
+                this.rect.pos.add(0, dy);
+                this.rect.size.add(0, -dy);
             }
             case TOP_RIGHT ->
             {
-                rect.pos.add(0, dy);
-                rect.size.add(dx, -dy);
+                this.rect.pos.add(0, dy);
+                this.rect.size.add(dx, -dy);
             }
             case LEFT ->
             {
-                rect.pos.add(dx, 0);
-                rect.size.add(-dx, 0);
+                this.rect.pos.add(dx, 0);
+                this.rect.size.add(-dx, 0);
             }
-            case NONE -> rect.pos.add(dx, dy);
-            case RIGHT -> rect.size.add(dx, 0);
+            case NONE -> this.rect.pos.add(dx, dy);
+            case RIGHT -> this.rect.size.add(dx, 0);
             case BOTTOM_LEFT ->
             {
-                rect.pos.add(dx, 0);
-                rect.size.add(-dx, dy);
+                this.rect.pos.add(dx, 0);
+                this.rect.size.add(-dx, dy);
             }
-            case BOTTOM -> rect.size.add(0, dy);
-            case BOTTOM_RIGHT -> rect.size.add(dx, dy);
+            case BOTTOM -> this.rect.size.add(0, dy);
+            case BOTTOM_RIGHT -> this.rect.size.add(dx, dy);
         }
-        rect.size.x = Math.max(rect.size.x, 100);
-        rect.size.y = Math.max(rect.size.y, 100);
+        this.rect.size.x = Math.max(rect.size.x, 100);
+        this.rect.size.y = Math.max(rect.size.y, 100);
         
         mbDragged.consume();
     }
@@ -132,8 +132,8 @@ public class DebugWindow extends DebugContainer
     @Override
     public void draw(int contentX, int contentY, int contentW, int contentH)
     {
-        int x = this.rect.x();
-        int y = this.rect.y();
+        int x = contentX + this.rect.x();
+        int y = contentY + this.rect.y();
         int w = this.rect.width();
         int h = this.rect.height();
         
@@ -142,7 +142,6 @@ public class DebugWindow extends DebugContainer
         
         int textH = Debug2.textHeight(this.name);
         
-        Debug2.scissor(ScissorMode.NONE);
         Debug2.drawRect(x, y, w, h, b, DebugWindow.BORDER_COLOR);
         Debug2.drawFilledRect(x + b, y + textH + b, w - b2, b, DebugWindow.BORDER_COLOR);
         
@@ -162,33 +161,7 @@ public class DebugWindow extends DebugContainer
         contentW -= DebugWindow.PADDING_SIZE << 1;
         contentH -= DebugWindow.PADDING_SIZE << 1;
         
-        Debug2.scissor(contentX, contentY, contentW, contentH);
-        
-        for (DebugElement element : this.children)
-        {
-            element.draw(contentX, contentY, contentW, contentH);
-            contentY += element.rect.height() + DebugWindow.ELEMENT_SPACING_SIZE;
-        }
-    }
-    
-    public boolean hovered()
-    {
-        return this.hovered;
-    }
-    
-    public boolean focused()
-    {
-        return this.focused;
-    }
-    
-    public boolean addElements(DebugElement elements)
-    {
-        return this.children.add(elements);
-    }
-    
-    public boolean removeElements(DebugElement elements)
-    {
-        return this.children.remove(elements);
+        super.draw(contentX, contentY, contentW, contentH);
     }
     
     public enum ResizeMode
