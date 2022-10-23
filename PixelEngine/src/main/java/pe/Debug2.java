@@ -12,6 +12,7 @@ import pe.debug.DebugGUI;
 import pe.debug.DebugLabel;
 import pe.debug.DebugWindow;
 import pe.render.*;
+import rutils.Math;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -86,7 +87,7 @@ public class Debug2
         MemoryUtil.memFree(indices);
         
         Debug2.pv = new Matrix4d();
-    
+        
         DebugWindow window;
         
         window = new DebugWindow("Window 1");
@@ -98,7 +99,7 @@ public class Debug2
         
         window = new DebugWindow("Window 2");
         Debug2.GUI.addWindow(window);
-
+        
         window = new DebugWindow("Window 3");
         Debug2.GUI.addWindow(window);
     }
@@ -182,14 +183,9 @@ public class Debug2
         return stb_easy_font_height(text);
     }
     
-    public static void scissor(@NotNull ScissorMode scissorMode)
+    public static void drawLine(int x0, int y0, int x1, int y1, int thickness, @NotNull Colorc color)
     {
-        Debug2.commmands.offer(new Scissor(scissorMode ));
-    }
-    
-    public static void scissor(int x, int y, int width, int height)
-    {
-        Debug2.commmands.offer(new Scissor(x, y, width, height));
+        Debug2.commmands.offer(new Line(x0, y0, x1, y1, thickness, color));
     }
     
     /**
@@ -259,7 +255,17 @@ public class Debug2
         Debug2.commmands.offer(new Text(x + 2, y + 2, text, textColor));
     }
     
-    public static void flushDraw()
+    public static void scissor(@NotNull ScissorMode scissorMode)
+    {
+        Debug2.commmands.offer(new Scissor(scissorMode));
+    }
+    
+    public static void scissor(int x, int y, int width, int height)
+    {
+        Debug2.commmands.offer(new Scissor(x, y, width, height));
+    }
+    
+    public static void flush()
     {
         Debug2.commmands.offer(new Flush());
     }
@@ -271,63 +277,92 @@ public class Debug2
         int buildVertices(ByteBuffer buffer, int fbWidth, int fbHeight);
     }
     
-    private static final class Scissor implements Command
+    private static final class Line implements Command
     {
-        private final ScissorMode scissorMode;
-        private final int x, y, width, height;
+        private final float x0, y0, x1, y1;
+        private final float nx, ny;
+        private final byte r, g, b, a;
         
-        private Scissor(ScissorMode scissorMode)
+        private Line(int x0, int y0, int x1, int y1, int thickness, @NotNull Colorc color)
         {
-            this.scissorMode = scissorMode;
+            this.x0 = x0;
+            this.y0 = y0;
+            this.x1 = x1;
+            this.y1 = y1;
             
-            this.x = 0;
-            this.y = 0;
-            this.width = 0;
-            this.height = 0;
-        }
-        
-        private Scissor(int x, int y, int width, int height)
-        {
-            this.scissorMode = null;
-            
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
+            double dx = x1 - x0;
+            double dy = y1 - y0;
+            if (dx != 0.0 || dy != 0.0)
+            {
+                double l = Math.sqrt(dx * dx + dy * dy);
+                double s = thickness / (2 * l);
+                this.nx = (float) (-dy * s);
+                this.ny = (float) (dx * s);
+            }
+            else
+            {
+                this.nx = 0.0f;
+                this.ny = 0.0f;
+            }
+            this.r = (byte) color.r();
+            this.g = (byte) color.g();
+            this.b = (byte) color.b();
+            this.a = (byte) color.a();
         }
         
         @Override
         public int bytesToAdd()
         {
-            return Integer.MAX_VALUE;
+            return 64; // 64 bytes per quad.
         }
         
         @Override
         public int buildVertices(ByteBuffer buffer, int fbWidth, int fbHeight)
         {
-            if (this.scissorMode != null)
-            {
-                GL.scissorMode(this.scissorMode);
-            }
-            else
-            {
-                GL.scissor(this.x, fbHeight - this.y - this.height, this.width, this.height);
-            }
-            return 0;
+            buffer.putFloat(this.x1 + this.nx);
+            buffer.putFloat(this.y1 + this.ny);
+            buffer.putFloat(0.0F);
+            buffer.put(this.r);
+            buffer.put(this.g);
+            buffer.put(this.b);
+            buffer.put(this.a);
+            buffer.putFloat(this.x0 + this.nx);
+            buffer.putFloat(this.y0 + this.ny);
+            buffer.putFloat(0.0F);
+            buffer.put(this.r);
+            buffer.put(this.g);
+            buffer.put(this.b);
+            buffer.put(this.a);
+            buffer.putFloat(this.x0 - this.nx);
+            buffer.putFloat(this.y0 - this.ny);
+            buffer.putFloat(0.0F);
+            buffer.put(this.r);
+            buffer.put(this.g);
+            buffer.put(this.b);
+            buffer.put(this.a);
+            buffer.putFloat(this.x1 - this.nx);
+            buffer.putFloat(this.y1 - this.ny);
+            buffer.putFloat(0.0F);
+            buffer.put(this.r);
+            buffer.put(this.g);
+            buffer.put(this.b);
+            buffer.put(this.a);
+            
+            return 1;
         }
     }
     
     private static final class Rect implements Command
     {
-        private final float x1, y1, x2, y2;
+        private final float x0, y0, x1, y1;
         private final byte r, g, b, a;
         
         private Rect(int x, int y, int width, int height, @NotNull Colorc color)
         {
-            this.x1 = x;
-            this.y1 = y;
-            this.x2 = x + width;
-            this.y2 = y + height;
+            this.x0 = x;
+            this.y0 = y;
+            this.x1 = x + width;
+            this.y1 = y + height;
             this.r  = (byte) color.r();
             this.g  = (byte) color.g();
             this.b  = (byte) color.b();
@@ -343,6 +378,20 @@ public class Debug2
         @Override
         public int buildVertices(ByteBuffer buffer, int fbWidth, int fbHeight)
         {
+            buffer.putFloat(this.x0);
+            buffer.putFloat(this.y0);
+            buffer.putFloat(0.0F);
+            buffer.put(this.r);
+            buffer.put(this.g);
+            buffer.put(this.b);
+            buffer.put(this.a);
+            buffer.putFloat(this.x1);
+            buffer.putFloat(this.y0);
+            buffer.putFloat(0.0F);
+            buffer.put(this.r);
+            buffer.put(this.g);
+            buffer.put(this.b);
+            buffer.put(this.a);
             buffer.putFloat(this.x1);
             buffer.putFloat(this.y1);
             buffer.putFloat(0.0F);
@@ -350,22 +399,8 @@ public class Debug2
             buffer.put(this.g);
             buffer.put(this.b);
             buffer.put(this.a);
-            buffer.putFloat(this.x2);
+            buffer.putFloat(this.x0);
             buffer.putFloat(this.y1);
-            buffer.putFloat(0.0F);
-            buffer.put(this.r);
-            buffer.put(this.g);
-            buffer.put(this.b);
-            buffer.put(this.a);
-            buffer.putFloat(this.x2);
-            buffer.putFloat(this.y2);
-            buffer.putFloat(0.0F);
-            buffer.put(this.r);
-            buffer.put(this.g);
-            buffer.put(this.b);
-            buffer.put(this.a);
-            buffer.putFloat(this.x1);
-            buffer.putFloat(this.y2);
             buffer.putFloat(0.0F);
             buffer.put(this.r);
             buffer.put(this.g);
@@ -414,6 +449,52 @@ public class Debug2
         }
     }
     
+    private static final class Scissor implements Command
+    {
+        private final ScissorMode scissorMode;
+        private final int         x, y, width, height;
+        
+        private Scissor(ScissorMode scissorMode)
+        {
+            this.scissorMode = scissorMode;
+            
+            this.x      = 0;
+            this.y      = 0;
+            this.width  = 0;
+            this.height = 0;
+        }
+        
+        private Scissor(int x, int y, int width, int height)
+        {
+            this.scissorMode = null;
+            
+            this.x      = x;
+            this.y      = y;
+            this.width  = width;
+            this.height = height;
+        }
+        
+        @Override
+        public int bytesToAdd()
+        {
+            return Integer.MAX_VALUE;
+        }
+        
+        @Override
+        public int buildVertices(ByteBuffer buffer, int fbWidth, int fbHeight)
+        {
+            if (this.scissorMode != null)
+            {
+                GL.scissorMode(this.scissorMode);
+            }
+            else
+            {
+                GL.scissor(this.x, fbHeight - this.y - this.height, this.width, this.height);
+            }
+            return 0;
+        }
+    }
+    
     private static final class Flush implements Command
     {
         @Override
@@ -421,7 +502,7 @@ public class Debug2
         {
             return Integer.MAX_VALUE;
         }
-    
+        
         @Override
         public int buildVertices(ByteBuffer buffer, int fbWidth, int fbHeight)
         {
