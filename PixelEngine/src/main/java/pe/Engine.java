@@ -120,6 +120,7 @@ public abstract class Engine
             Font.setup();
             
             Debug.setup();
+            Debug2.setup();
         }
         
         private static void events()
@@ -135,6 +136,7 @@ public abstract class Engine
         private static void destroy()
         {
             Debug.destroy();
+            Debug2.destroy();
             
             Font.destroy();
             
@@ -412,6 +414,7 @@ public abstract class Engine
                     Extension.stage(Extension.Stage.POST_EVENTS);
                     
                     Debug.handleEvents();
+                    Debug2.handleEvents();
                     
                     if (!Time.paused)
                     {
@@ -452,6 +455,7 @@ public abstract class Engine
                         GLBatch.pop();
                         
                         Debug.draw();
+                        Debug2.draw();
                         
                         GLBatch.BatchStats stats = GLBatch.stats();
                         
