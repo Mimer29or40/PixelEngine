@@ -15,12 +15,6 @@ public class DebugLabel extends DebugElement
     }
     
     @Override
-    public void handleEvents()
-    {
-    
-    }
-    
-    @Override
     public void draw(int contentX, int contentY, int contentW, int contentH)
     {
         if (this.text == null) this.text = "";

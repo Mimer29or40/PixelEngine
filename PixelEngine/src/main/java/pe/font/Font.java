@@ -4,9 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.stb.STBTTFontinfo;
 import org.lwjgl.system.MemoryUtil;
-import pe.render.DrawMode;
-import pe.render.GL;
-import pe.render.GLBatch;
 import rutils.IOUtil;
 import rutils.Logger;
 
@@ -14,7 +11,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 

@@ -34,7 +34,7 @@ public class Debug2
     
     private static final DebugGUI GUI = new DebugGUI();
     
-    private static final Queue<Command> commmands = new LinkedList<>();
+    private static final Queue<Command> commands = new LinkedList<>();
     
     private static final Colorc defaultTextColor       = Color_RGBA.create().set(Color.WHITE);
     private static final Colorc defaultBackgroundColor = Color_RGBA.create().set(Color.GRAY).a(180);
@@ -95,13 +95,13 @@ public class Debug2
         {
             window.addElements(new DebugLabel("Test " + i));
         }
-        Debug2.GUI.addWindow(window);
+        Debug2.GUI.addElement(window);
         
         window = new DebugWindow("Window 2");
-        Debug2.GUI.addWindow(window);
+        Debug2.GUI.addElement(window);
         
         window = new DebugWindow("Window 3");
-        Debug2.GUI.addWindow(window);
+        Debug2.GUI.addElement(window);
     }
     
     static void destroy()
@@ -120,7 +120,7 @@ public class Debug2
     {
         Debug2.GUI.draw();
         
-        if (!Debug2.commmands.isEmpty())
+        if (!Debug2.commands.isEmpty())
         {
             GL.defaultState();
             GLFramebuffer.bind(null);
@@ -138,7 +138,7 @@ public class Debug2
             // int draws = 0; // TODO - Track Draws
             
             Command command;
-            while ((command = Debug2.commmands.poll()) != null)
+            while ((command = Debug2.commands.poll()) != null)
             {
                 if (Debug2.vertexBuffer.remaining() < command.bytesToAdd())
                 {
@@ -185,7 +185,7 @@ public class Debug2
     
     public static void drawLine(int x0, int y0, int x1, int y1, int thickness, @NotNull Colorc color)
     {
-        Debug2.commmands.offer(new Line(x0, y0, x1, y1, thickness, color));
+        Debug2.commands.offer(new Line(x0, y0, x1, y1, thickness, color));
     }
     
     /**
@@ -199,7 +199,7 @@ public class Debug2
      */
     public static void drawFilledRect(int x, int y, int width, int height, @NotNull Colorc color)
     {
-        Debug2.commmands.offer(new Rect(x, y, width, height, color));
+        Debug2.commands.offer(new Rect(x, y, width, height, color));
     }
     
     /**
@@ -214,10 +214,10 @@ public class Debug2
      */
     public static void drawRect(int x, int y, int width, int height, int thickness, @NotNull Colorc color)
     {
-        Debug2.commmands.offer(new Rect(x, y, thickness, height, color));
-        Debug2.commmands.offer(new Rect(x + width - thickness, y, thickness, height, color));
-        Debug2.commmands.offer(new Rect(x + thickness, y, width - (thickness * 2), thickness, color));
-        Debug2.commmands.offer(new Rect(x + thickness, y + height - thickness, width - (thickness * 2), thickness, color));
+        Debug2.commands.offer(new Rect(x, y, thickness, height, color));
+        Debug2.commands.offer(new Rect(x + width - thickness, y, thickness, height, color));
+        Debug2.commands.offer(new Rect(x + thickness, y, width - (thickness * 2), thickness, color));
+        Debug2.commands.offer(new Rect(x + thickness, y + height - thickness, width - (thickness * 2), thickness, color));
     }
     
     /**
@@ -232,7 +232,7 @@ public class Debug2
     {
         if (color == null) color = Debug2.defaultTextColor;
         
-        Debug2.commmands.offer(new Text(x, y + 2, text, color));
+        Debug2.commands.offer(new Text(x, y + 2, text, color));
     }
     
     /**
@@ -251,23 +251,23 @@ public class Debug2
         
         int w = textWidth(text) + 2;
         int h = textHeight(text);
-        Debug2.commmands.offer(new Rect(x, y, w, h, backgroundColor));
-        Debug2.commmands.offer(new Text(x + 2, y + 2, text, textColor));
+        Debug2.commands.offer(new Rect(x, y, w, h, backgroundColor));
+        Debug2.commands.offer(new Text(x + 2, y + 2, text, textColor));
     }
     
     public static void scissor(@NotNull ScissorMode scissorMode)
     {
-        Debug2.commmands.offer(new Scissor(scissorMode));
+        Debug2.commands.offer(new Scissor(scissorMode));
     }
     
     public static void scissor(int x, int y, int width, int height)
     {
-        Debug2.commmands.offer(new Scissor(x, y, width, height));
+        Debug2.commands.offer(new Scissor(x, y, width, height));
     }
     
     public static void flush()
     {
-        Debug2.commmands.offer(new Flush());
+        Debug2.commands.offer(new Flush());
     }
     
     private interface Command

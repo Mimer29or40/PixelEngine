@@ -1,24 +1,17 @@
 package pe.debug;
 
-import pe.Debug2;
 import pe.Engine;
-import pe.Mouse;
-import pe.color.Color;
-import pe.color.Colorc;
 import pe.event.*;
-import pe.shape.AABB2i;
 
 import java.util.LinkedList;
 import java.util.List;
 
 public class DebugGUI
 {
-    private final List<DebugWindow> windows = new LinkedList<>();
+    private final List<DebugElement> elements = new LinkedList<>();
     
-    private       DebugWindow       hoveredWindow;
-    private       DebugWindow       focusedWindow;
-    
-    private DebugWindow.ResizeMode resizeMode = DebugWindow.ResizeMode.NONE;
+    private DebugElement hoveredElement;
+    private DebugElement focusedElement;
     
     public void handleEvents()
     {
@@ -29,164 +22,110 @@ public class DebugGUI
                 int x = (int) mMoved.x();
                 int y = (int) mMoved.y();
                 
-                int hoveredIndex = -1;
-                for (int i = 0; i < this.windows.size(); i++)
+                this.hoveredElement = null;
+                for (DebugElement element : this.elements)
                 {
-                    DebugWindow window = this.windows.get(i);
-                    if (hoveredIndex < 0 && window.rect.contains(x, y)) hoveredIndex = i;
-                    window.hovered = false;
+                    element.unhover();
+                    if (element.rect.contains(x, y))
+                    {
+                        this.hoveredElement = element;
+                        break;
+                    }
                 }
-                if (hoveredIndex >= 0)
+                if (this.hoveredElement != null)
                 {
-                    this.hoveredWindow = this.windows.get(hoveredIndex);
-                    this.hoveredWindow.hovered = true;
-                    
-                    // TODO - Change Cursor
-                    // x -= this.hoveredWindow.rect.x();
-                    // y -= this.hoveredWindow.rect.y();
-                    //
-                    // int w = this.hoveredWindow.rect.width();
-                    // int h = this.hoveredWindow.rect.height();
-                    //
-                    // if (x <= DebugWindow.BORDER_SIZE)
-                    // {
-                    //     if (y <= DebugWindow.BORDER_SIZE)
-                    //     {
-                    //         Mouse.shape(Mouse.Shape.RESIZE_NWSE_CURSOR);
-                    //     }
-                    //     else if (y >= h - DebugWindow.BORDER_SIZE)
-                    //     {
-                    //         Mouse.shape(Mouse.Shape.RESIZE_NESW_CURSOR);
-                    //     }
-                    //     else
-                    //     {
-                    //         Mouse.shape(Mouse.Shape.RESIZE_EW_CURSOR);
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     Mouse.shape(Mouse.Shape.ARROW_CURSOR);
-                    // }
-                    
-                    mMoved.consume();
-                }
-                else
-                {
-                    this.hoveredWindow = null;
+                    if (!mMoved.consumed()) this.hoveredElement.onMouseMoved(mMoved);
                 }
             }
-            else if (event instanceof EventMouseScrolled)
+            else if (event instanceof EventMouseScrolled mScrolled)
             {
-                // NO-OP
+                if (this.hoveredElement != null)
+                {
+                    if (!mScrolled.consumed()) this.hoveredElement.onMouseScrolled(mScrolled);
+                }
             }
             else if (event instanceof EventMouseButtonDown mbDown)
             {
                 int x = (int) mbDown.x();
                 int y = (int) mbDown.y();
                 
-                int focusedIndex = -1;
-                for (int i = 0; i < this.windows.size(); i++)
+                this.focusedElement = null;
+                for (DebugElement element : this.elements)
                 {
-                    DebugWindow window = this.windows.get(i);
-                    if (focusedIndex < 0 && window.rect.contains(x, y)) focusedIndex = i;
-                    window.focused = false;
+                    if (element.rect.contains(x, y))
+                    {
+                        this.focusedElement = element;
+                        break;
+                    }
                 }
-                if (focusedIndex >= 0)
+                if (this.focusedElement != null)
                 {
-                    this.focusedWindow = this.windows.remove(focusedIndex);
-                    this.focusedWindow.focused = true;
-                    this.windows.add(0, this.focusedWindow);
-    
-                    this.resizeMode = DebugWindow.ResizeMode.get(x, y, this.hoveredWindow.rect);
+                    this.elements.remove(this.focusedElement);
+                    this.elements.add(0, this.focusedElement);
                     
-                    mbDown.consume();
-                }
-                else
-                {
-                    this.focusedWindow = null;
+                    if (!mbDown.consumed()) this.focusedElement.onMouseButtonDown(mbDown);
                 }
             }
             else if (event instanceof EventMouseButtonUp mbUp)
             {
-                // NO-OP
+                if (this.focusedElement != null)
+                {
+                    if (!mbUp.consumed()) this.focusedElement.onMouseButtonUp(mbUp);
+                }
             }
             else if (event instanceof EventMouseButtonDragged mbDragged)
             {
-                if (this.focusedWindow != null)
+                if (this.focusedElement != null)
                 {
-                    // TODO - Use mouse position to size and move. Dont use dx/dy
-                    int dx = (int) mbDragged.dx();
-                    int dy = (int) mbDragged.dy();
-    
-                    AABB2i rect = this.focusedWindow.rect;
-                    
-                    switch (this.resizeMode)
-                    {
-                        case TOP_LEFT -> {
-                            rect.pos.add(dx, dy);
-                            rect.size.add(-dx, -dy);
-                        }
-                        case TOP -> {
-                            rect.pos.add(0, dy);
-                            rect.size.add(0, -dy);
-                        }
-                        case TOP_RIGHT -> {
-                            rect.pos.add(0, dy);
-                            rect.size.add(dx, -dy);
-                        }
-                        case LEFT -> {
-                            rect.pos.add(dx, 0);
-                            rect.size.add(-dx, 0);
-                        }
-                        case NONE -> rect.pos.add(dx, dy);
-                        case RIGHT -> rect.size.add(dx, 0);
-                        case BOTTOM_LEFT -> {
-                            rect.pos.add(dx, 0);
-                            rect.size.add(-dx, dy);
-                        }
-                        case BOTTOM -> rect.size.add(0, dy);
-                        case BOTTOM_RIGHT -> rect.size.add(dx, dy);
-                    }
-                    rect.size.x = Math.max(rect.size.x, 100);
-                    rect.size.y = Math.max(rect.size.y, 100);
-                    
-                    mbDragged.consume();
+                    if (!mbDragged.consumed()) this.focusedElement.onMouseButtonDragged(mbDragged);
                 }
             }
             else if (event instanceof EventKeyboardKeyDown kkDown)
             {
-                // NO-OP
+                if (this.focusedElement != null)
+                {
+                    if (!kkDown.consumed()) this.focusedElement.onKeyboardKeyDown(kkDown);
+                }
             }
             else if (event instanceof EventKeyboardKeyUp kkUp)
             {
-                // NO-OP
+                if (this.focusedElement != null)
+                {
+                    if (!kkUp.consumed()) this.focusedElement.onKeyboardKeyUp(kkUp);
+                }
             }
             else if (event instanceof EventKeyboardKeyRepeated kkRepeated)
             {
-                // NO-OP
+                if (this.focusedElement != null)
+                {
+                    if (!kkRepeated.consumed()) this.focusedElement.onKeyboardKeyRepeated(kkRepeated);
+                }
             }
             else if (event instanceof EventKeyboardTyped kTyped)
             {
-                // NO-OP
+                if (this.focusedElement != null)
+                {
+                    if (!kTyped.consumed()) this.focusedElement.onKeyboardTyped(kTyped);
+                }
             }
         }
     }
     
     public void draw()
     {
-        for (int i = this.windows.size() - 1; i >= 0; i--)
+        for (int i = this.elements.size() - 1; i >= 0; i--)
         {
-            this.windows.get(i).draw();
+            this.elements.get(i).draw(0, 0, 0, 0);
         }
     }
     
-    public boolean addWindow(DebugWindow window)
+    public boolean addElement(DebugElement window)
     {
-        return this.windows.add(window);
+        return this.elements.add(window);
     }
     
-    public boolean removeWindow(DebugWindow window)
+    public boolean removeElement(DebugElement window)
     {
-        return this.windows.remove(window);
+        return this.elements.remove(window);
     }
 }

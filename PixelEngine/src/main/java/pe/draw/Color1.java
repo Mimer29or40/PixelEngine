@@ -1,9 +1,6 @@
 package pe.draw;
 
 import org.jetbrains.annotations.NotNull;
-import org.joml.Vector2dc;
-import org.joml.Vector2fc;
-import org.joml.Vector2ic;
 import pe.color.Colorc;
 import rutils.Math;
 

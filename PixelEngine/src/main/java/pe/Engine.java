@@ -508,7 +508,7 @@ public abstract class Engine
             Engine.mainThreadRunning = false;
             
             Extension.stageCatch(Extension.Stage.RENDER_DESTROY);
-    
+            
             Window.unbindContext();
             
             this.latch.countDown();
