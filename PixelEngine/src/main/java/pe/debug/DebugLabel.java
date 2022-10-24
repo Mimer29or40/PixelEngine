@@ -1,13 +1,15 @@
 package pe.debug;
 
 import pe.Debug2;
+import pe.color.Color;
 import pe.color.Colorc;
 
-public class DebugLabel extends DebugElement
+public class DebugLabel extends Element
 {
+    public static final Colorc TEXT_COLOR       = Color.WHITE;
+    public static final Colorc BACKGROUND_COLOR = Color.GRAY;
+    
     public String text;
-    public Colorc textColor;
-    public Colorc backgroundColor;
     
     public DebugLabel(String text)
     {
@@ -15,16 +17,17 @@ public class DebugLabel extends DebugElement
     }
     
     @Override
-    public void draw(int contentX, int contentY, int contentW, int contentH)
+    protected void draw(int contentX, int contentY, int contentW, int contentH)
     {
         if (this.text == null) this.text = "";
         
         int textW = Debug2.textWidth(this.text);
         int textH = Debug2.textHeight(this.text);
         
+        this.rect.pos.set(contentX, contentY);
         if (this.rect.size.x < textW) this.rect.size.x = textW;
         if (this.rect.size.y < textH) this.rect.size.y = textH;
         
-        Debug2.drawTextWithBackground(contentX + this.rect.x(), contentY + this.rect.y(), this.text, this.textColor, this.backgroundColor);
+        Debug2.drawTextWithBackground(this.rect.x(), this.rect.y(), this.text, DebugLabel.TEXT_COLOR, DebugLabel.BACKGROUND_COLOR);
     }
 }

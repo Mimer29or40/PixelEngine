@@ -1,27 +1,22 @@
 package pe.debug;
 
 import org.jetbrains.annotations.NotNull;
-import pe.Debug;
 import pe.Debug2;
 import pe.color.Color;
 import pe.color.Color_RGBA;
 import pe.color.Colorc;
 import pe.event.EventMouseButtonDown;
 import pe.event.EventMouseButtonDragged;
-import pe.event.EventMouseMoved;
 import pe.render.ScissorMode;
-import pe.shape.AABB2i;
 import pe.shape.AABB2ic;
 
-public class DebugWindow extends DebugContainer
+public class DebugWindow extends ElementContainer
 {
     public static final int    BORDER_SIZE            = 4;
     public static final int    PADDING_SIZE           = 4;
-    public static final int    ELEMENT_SPACING_SIZE   = 2;
-    public static final int    HEADER_SIZE            = Debug.textHeight("TEXT") + 2 * BORDER_SIZE;
-    public static final Colorc HEADER_FOCUSED_COLOR   = Color_RGBA.create().set(Color.GRAY);
-    public static final Colorc HEADER_UNFOCUSED_COLOR = Color_RGBA.create().set(Color.BLACK);
-    public static final Colorc BORDER_COLOR           = Color_RGBA.create().set(Color.WHITE);
+    public static final Colorc HEADER_FOCUSED_COLOR   = Color.GRAY;
+    public static final Colorc HEADER_UNFOCUSED_COLOR = Color.BLACK;
+    public static final Colorc BORDER_COLOR           = Color.WHITE;
     public static final Colorc BACKGROUND_COLOR       = Color_RGBA.create().set(Color.BLACK).a(180);
     
     public final String name;
@@ -36,42 +31,8 @@ public class DebugWindow extends DebugContainer
     }
     
     @Override
-    public void onMouseMoved(EventMouseMoved mMoved)
-    {
-        super.onMouseMoved(mMoved);
-        
-        int x = (int) mMoved.x() - this.rect.x();
-        int y = (int) mMoved.y() - this.rect.y();
-        int w = this.rect.width();
-        int h = this.rect.height();
-        
-        // TODO - Change Cursor
-        // if (x <= DebugWindow.BORDER_SIZE)
-        // {
-        //     if (y <= DebugWindow.BORDER_SIZE)
-        //     {
-        //         Mouse.shape(Mouse.Shape.RESIZE_NWSE_CURSOR);
-        //     }
-        //     else if (y >= h - DebugWindow.BORDER_SIZE)
-        //     {
-        //         Mouse.shape(Mouse.Shape.RESIZE_NESW_CURSOR);
-        //     }
-        //     else
-        //     {
-        //         Mouse.shape(Mouse.Shape.RESIZE_EW_CURSOR);
-        //     }
-        // }
-        // else
-        // {
-        //     Mouse.shape(Mouse.Shape.ARROW_CURSOR);
-        // }
-    }
-    
-    @Override
     public void onMouseButtonDown(EventMouseButtonDown mbDown)
     {
-        super.onMouseButtonDown(mbDown);
-        
         int x = (int) mbDown.x();
         int y = (int) mbDown.y();
         
@@ -88,8 +49,8 @@ public class DebugWindow extends DebugContainer
         // TODO - Use mouse position to size and move. Dont use dx/dy
         int startX = (int) mbDragged.dragStartX();
         int startY = (int) mbDragged.dragStartY();
-        int dx = (int) mbDragged.dx();
-        int dy = (int) mbDragged.dy();
+        int dx     = (int) mbDragged.dx();
+        int dy     = (int) mbDragged.dy();
         
         switch (this.resizeMode)
         {
@@ -123,14 +84,14 @@ public class DebugWindow extends DebugContainer
             case BOTTOM -> this.rect.size.add(0, dy);
             case BOTTOM_RIGHT -> this.rect.size.add(dx, dy);
         }
-        this.rect.size.x = Math.max(rect.size.x, 100);
+        this.rect.size.x = java.lang.Math.max(rect.size.x, 100);
         this.rect.size.y = Math.max(rect.size.y, 100);
         
         mbDragged.consume();
     }
     
     @Override
-    public void draw(int contentX, int contentY, int contentW, int contentH)
+    protected void draw(int contentX, int contentY, int contentW, int contentH)
     {
         int x = contentX + this.rect.x();
         int y = contentY + this.rect.y();
@@ -161,7 +122,14 @@ public class DebugWindow extends DebugContainer
         contentW -= DebugWindow.PADDING_SIZE << 1;
         contentH -= DebugWindow.PADDING_SIZE << 1;
         
-        super.draw(contentX, contentY, contentW, contentH);
+        Debug2.scissor(contentX, contentY, contentW, contentH);
+        for (Element child : this.children)
+        {
+            child.draw(contentX, contentY, contentW, contentH);
+            
+            contentY += child.rect.height() + DebugWindow.ELEMENT_SPACING_SIZE;
+        }
+        Debug2.scissor(ScissorMode.NONE);
     }
     
     public enum ResizeMode

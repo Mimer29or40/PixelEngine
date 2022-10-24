@@ -8,23 +8,24 @@ import org.lwjgl.system.MemoryUtil;
 import pe.color.Color;
 import pe.color.Color_RGBA;
 import pe.color.Colorc;
-import pe.debug.DebugElement;
-import pe.debug.DebugLabel;
+import pe.debug.DebugButton;
 import pe.debug.DebugWindow;
-import pe.event.*;
+import pe.debug.DebugGUI;
 import pe.render.*;
+import rutils.Logger;
 import rutils.Math;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 import static org.lwjgl.stb.STBEasyFont.*;
 
 public class Debug2
 {
+    private static final Logger LOGGER = new Logger();
+    
     // TODO - Scaling System for higher density displays
     
     private static boolean enabled;
@@ -38,11 +39,6 @@ public class Debug2
     
     private static final Colorc defaultTextColor       = Color_RGBA.create().set(Color.WHITE);
     private static final Colorc defaultBackgroundColor = Color_RGBA.create().set(Color.GRAY).a(180);
-    
-    private static final List<DebugElement> elements = new LinkedList<>();
-    
-    private static DebugElement hoveredElement;
-    private static DebugElement focusedElement;
     
     static void setup()
     {
@@ -97,16 +93,21 @@ public class Debug2
         window = new DebugWindow("Window 1");
         for (int i = 0; i < 100; i++)
         {
-            window.addElements(new DebugLabel("Test " + i));
+            window.addChild(new DebugButton("Test " + i, i % 2 == 0)
+            {
+            
+            });
         }
-        Debug2.addElement(window);
-        Debug2.addElement(new DebugLabel("Parent Less"));
+        DebugGUI.addChild(window);
+        // Debug2.addElement(new DebugLabel("Parent Less"));
         
         window = new DebugWindow("Window 2");
-        Debug2.addElement(window);
+        DebugGUI.addChild(window);
         
         window = new DebugWindow("Window 3");
-        Debug2.addElement(window);
+        DebugGUI.addChild(window);
+        
+        // DebugGUI.addChild(new DebugLabel("Test"));
     }
     
     static void destroy()
@@ -118,118 +119,21 @@ public class Debug2
     
     static void handleEvents()
     {
-        for (Event event : Engine.Events.get())
-        {
-            if (event instanceof EventMouseMoved mMoved)
-            {
-                int x = (int) mMoved.x();
-                int y = (int) mMoved.y();
-            
-                Debug2.hoveredElement = null;
-                for (DebugElement element : Debug2.elements)
-                {
-                    element.unhover();
-                    if (element.rect.contains(x, y))
-                    {
-                        Debug2.hoveredElement = element;
-                        break;
-                    }
-                }
-                if (Debug2.hoveredElement != null && !mMoved.consumed())
-                {
-                    Debug2.hoveredElement.onMouseMoved(mMoved);
-                }
-            }
-            else if (event instanceof EventMouseScrolled mScrolled)
-            {
-                if (Debug2.hoveredElement != null && !mScrolled.consumed())
-                {
-                    Debug2.hoveredElement.onMouseScrolled(mScrolled);
-                }
-            }
-            else if (event instanceof EventMouseButtonDown mbDown)
-            {
-                int x = (int) mbDown.x();
-                int y = (int) mbDown.y();
-            
-                Debug2.focusedElement = null;
-                for (DebugElement element : Debug2.elements)
-                {
-                    element.unfocus();
-                    if (element.rect.contains(x, y))
-                    {
-                        Debug2.focusedElement = element;
-                        break;
-                    }
-                }
-                if (Debug2.focusedElement != null)
-                {
-                    Debug2.elements.remove(Debug2.focusedElement);
-                    Debug2.elements.add(0, Debug2.focusedElement);
-                
-                    if (!mbDown.consumed()) Debug2.focusedElement.onMouseButtonDown(mbDown);
-                }
-            }
-            else if (event instanceof EventMouseButtonUp mbUp)
-            {
-                if (Debug2.focusedElement != null && !mbUp.consumed())
-                {
-                    Debug2.focusedElement.onMouseButtonUp(mbUp);
-                }
-            }
-            else if (event instanceof EventMouseButtonDragged mbDragged)
-            {
-                if (Debug2.focusedElement != null && !mbDragged.consumed())
-                {
-                    Debug2.focusedElement.onMouseButtonDragged(mbDragged);
-                }
-            }
-            else if (event instanceof EventKeyboardKeyDown kkDown)
-            {
-                if (Debug2.focusedElement != null && kkDown.consumed())
-                {
-                    Debug2.focusedElement.onKeyboardKeyDown(kkDown);
-                }
-            }
-            else if (event instanceof EventKeyboardKeyUp kkUp)
-            {
-                if (Debug2.focusedElement != null && kkUp.consumed())
-                {
-                    Debug2.focusedElement.onKeyboardKeyUp(kkUp);
-                }
-            }
-            else if (event instanceof EventKeyboardKeyRepeated kkRepeated)
-            {
-                if (Debug2.focusedElement != null && kkRepeated.consumed())
-                {
-                    Debug2.focusedElement.onKeyboardKeyRepeated(kkRepeated);
-                }
-            }
-            else if (event instanceof EventKeyboardTyped kTyped)
-            {
-                if (Debug2.focusedElement != null && kTyped.consumed())
-                {
-                    Debug2.focusedElement.onKeyboardTyped(kTyped);
-                }
-            }
-        }
+        DebugGUI.handleEvents();
     }
     
     static void draw()
     {
         GL.defaultState();
         GLFramebuffer.bind(null);
-    
-        int fbWidth  = GLFramebuffer.currentWidth();
-        int fbHeight = GLFramebuffer.currentHeight();
         
-        for (int i = Debug2.elements.size() - 1; i >= 0; i--)
-        {
-            Debug2.elements.get(i).draw(0, 0, fbWidth, fbHeight);
-        }
+        DebugGUI.draw();
         
         if (!Debug2.commands.isEmpty())
         {
+            int fbWidth  = GLFramebuffer.currentWidth();
+            int fbHeight = GLFramebuffer.currentHeight();
+            
             GLProgram.bind(Debug2.program);
             GLProgram.Uniform.mat4("pv", Debug2.pv.setOrtho(0, fbWidth, fbHeight, 0, -1, 1));
             
@@ -370,16 +274,6 @@ public class Debug2
     public static void flush()
     {
         Debug2.commands.offer(new Flush());
-    }
-    
-    public static boolean addElement(DebugElement window)
-    {
-        return Debug2.elements.add(window);
-    }
-    
-    public static boolean removeElement(DebugElement window)
-    {
-        return Debug2.elements.remove(window);
     }
     
     private interface Command
