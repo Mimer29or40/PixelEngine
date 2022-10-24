@@ -17,7 +17,7 @@ public class DebugLabel extends Element
     }
     
     @Override
-    protected void draw(int contentX, int contentY, int contentW, int contentH)
+    protected void layout(int contentX, int contentY, int contentW, int contentH)
     {
         if (this.text == null) this.text = "";
         
@@ -27,7 +27,11 @@ public class DebugLabel extends Element
         this.rect.pos.set(contentX, contentY);
         if (this.rect.size.x < textW) this.rect.size.x = textW;
         if (this.rect.size.y < textH) this.rect.size.y = textH;
-        
+    }
+    
+    @Override
+    protected void draw()
+    {
         Debug2.drawTextWithBackground(this.rect.x(), this.rect.y(), this.text, DebugLabel.TEXT_COLOR, DebugLabel.BACKGROUND_COLOR);
     }
 }

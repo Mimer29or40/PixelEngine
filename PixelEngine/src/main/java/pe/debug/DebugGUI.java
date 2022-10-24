@@ -179,8 +179,11 @@ public class DebugGUI
         int fbWidth  = GLFramebuffer.currentWidth();
         int fbHeight = GLFramebuffer.currentHeight();
         
-        DebugGUI.ROOT.draw(0, 0, fbWidth, fbHeight);
-        DebugGUI.MODAL.draw(0, 0, fbWidth, fbHeight);
+        DebugGUI.ROOT.layout(0, 0, fbWidth, fbHeight);
+        DebugGUI.MODAL.layout(0, 0, fbWidth, fbHeight);
+        
+        DebugGUI.ROOT.draw();
+        DebugGUI.MODAL.draw();
         
         // if (DebugGUI.top != null && DebugGUI.tooltip.isVisible())
         // {
@@ -226,11 +229,20 @@ public class DebugGUI
         }
         
         @Override
-        protected void draw(int contentX, int contentY, int contentW, int contentH)
+        protected void layout(int contentX, int contentY, int contentW, int contentH)
         {
             for (Element child : this.children)
             {
-                child.draw(contentX, contentY, contentW, contentH);
+                child.layout(contentX, contentY, contentW, contentH);
+            }
+        }
+        
+        @Override
+        protected void draw()
+        {
+            for (Element child : this.children)
+            {
+                child.draw();
             }
         }
     }

@@ -44,8 +44,6 @@ public abstract class ElementContainer extends Element
     {
         if (this.rect.contains(x, y))
         {
-            x -= this.rect.x();
-            y -= this.rect.y();
             for (int i = this.children.size() - 1; i >= 0; i--)
             {
                 Element child      = this.children.get(i);
@@ -58,14 +56,13 @@ public abstract class ElementContainer extends Element
     }
     
     @Override
-    protected void draw(int contentX, int contentY, int contentW, int contentH)
+    protected void layout(int contentX, int contentY, int contentW, int contentH)
     {
-        // TODO - Need to have a layout methods in order to properly store element origin
         int childWidth = 0, childHeight = -ElementContainer.ELEMENT_SPACING_SIZE;
-        Debug2.scissor(contentX, contentY, contentW, contentH);
+        this.rect.pos.set(contentX, contentY);
         for (Element child : this.children)
         {
-            child.draw(contentX, contentY, contentW, contentH);
+            child.layout(contentX, contentY, contentW, contentH);
             
             childWidth = Math.max(childWidth, child.rect.width());
             
@@ -75,6 +72,16 @@ public abstract class ElementContainer extends Element
             contentY += inc;
         }
         this.rect.size.set(childWidth, childHeight);
+    }
+    
+    @Override
+    protected void draw()
+    {
+        Debug2.scissor(this.rect.x(), this.rect.y(), this.rect.width(), this.rect.height());
+        for (Element child : this.children)
+        {
+            child.draw();
+        }
         Debug2.scissor(ScissorMode.NONE);
     }
 }

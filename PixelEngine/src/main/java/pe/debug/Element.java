@@ -44,7 +44,13 @@ public abstract class Element
         return this.focused;
     }
     
-    protected abstract void draw(int contentX, int contentY, int contentW, int contentH);
+    protected void layout(int contentX, int contentY, int contentW, int contentH)
+    {
+        this.rect.pos.set(contentX, contentY);
+        this.rect.size.set(contentW, contentH);
+    }
+    
+    protected abstract void draw();
     
     public void onMouseMoved(EventMouseMoved mMoved)
     {

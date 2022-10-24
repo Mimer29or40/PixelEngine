@@ -28,17 +28,21 @@ public class DebugButton extends Element
     }
     
     @Override
-    protected void draw(int contentX, int contentY, int contentW, int contentH)
+    protected void layout(int contentX, int contentY, int contentW, int contentH)
     {
         if (this.text == null) this.text = "";
         
         int textW = Debug2.textWidth(this.text);
         int textH = Debug2.textHeight(this.text);
-    
+        
         this.rect.pos.set(contentX, contentY);
         if (this.rect.size.x < textW) this.rect.size.x = textW;
         if (this.rect.size.y < textH) this.rect.size.y = textH;
-        
+    }
+    
+    @Override
+    protected void draw()
+    {
         Colorc textColor       = DebugButton.TEXT_COLOR;
         Colorc backgroundColor = DebugButton.BACKGROUND_COLOR;
         if (this.mouseDown)

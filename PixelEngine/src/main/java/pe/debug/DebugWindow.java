@@ -91,7 +91,7 @@ public class DebugWindow extends ElementContainer
     }
     
     @Override
-    protected void draw(int contentX, int contentY, int contentW, int contentH)
+    protected void layout(int contentX, int contentY, int contentW, int contentH)
     {
         int x = contentX + this.rect.x();
         int y = contentY + this.rect.y();
@@ -125,9 +125,48 @@ public class DebugWindow extends ElementContainer
         Debug2.scissor(contentX, contentY, contentW, contentH);
         for (Element child : this.children)
         {
-            child.draw(contentX, contentY, contentW, contentH);
+            child.layout(contentX, contentY, contentW, contentH);
             
             contentY += child.rect.height() + DebugWindow.ELEMENT_SPACING_SIZE;
+        }
+    }
+    
+    @Override
+    protected void draw()
+    {
+        int x = this.rect.x();
+        int y = this.rect.y();
+        int w = this.rect.width();
+        int h = this.rect.height();
+        
+        int b  = DebugWindow.BORDER_SIZE;
+        int b2 = b << 1;
+        
+        int textH = Debug2.textHeight(this.name);
+        
+        Debug2.drawRect(x, y, w, h, b, DebugWindow.BORDER_COLOR);
+        Debug2.drawFilledRect(x + b, y + textH + b, w - b2, b, DebugWindow.BORDER_COLOR);
+        
+        Colorc headerColor = this.focused ? DebugWindow.HEADER_FOCUSED_COLOR : DebugWindow.HEADER_UNFOCUSED_COLOR;
+        Debug2.drawFilledRect(x + b, y + b, w - b2, textH, headerColor);
+        Debug2.drawText(x + b + 1, y + b, this.name, Color.WHITE);
+        
+        int contentX = x + b;
+        int contentY = y + b2 + textH;
+        int contentW = w - b2;
+        int contentH = h - b - b2 - textH;
+        
+        Debug2.drawFilledRect(contentX, contentY, contentW, contentH, DebugWindow.BACKGROUND_COLOR);
+        
+        contentX += DebugWindow.PADDING_SIZE;
+        contentY += DebugWindow.PADDING_SIZE;
+        contentW -= DebugWindow.PADDING_SIZE << 1;
+        contentH -= DebugWindow.PADDING_SIZE << 1;
+        
+        Debug2.scissor(contentX, contentY, contentW, contentH);
+        for (Element child : this.children)
+        {
+            child.draw();
         }
         Debug2.scissor(ScissorMode.NONE);
     }
