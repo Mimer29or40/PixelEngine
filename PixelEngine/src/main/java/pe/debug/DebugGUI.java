@@ -60,7 +60,6 @@ public class DebugGUI
                 {
                     if (DebugGUI.hoveredElement != null) DebugGUI.hoveredElement.hovered = false;
                     DebugGUI.hoveredElement = hoveredElement;
-                    LOGGER.fine(hoveredElement);
                     if (DebugGUI.hoveredElement != null) DebugGUI.hoveredElement.hovered = true;
                 }
                 

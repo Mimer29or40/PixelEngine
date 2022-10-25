@@ -3,6 +3,10 @@ package pe.debug;
 import pe.Debug2;
 import pe.color.Color;
 import pe.color.Colorc;
+import pe.event.EventMouseButton;
+import pe.event.EventMouseButtonDown;
+import pe.event.EventMouseButtonDragged;
+import pe.event.EventMouseButtonUp;
 
 public class DebugButton extends Element
 {
@@ -25,6 +29,48 @@ public class DebugButton extends Element
     {
         this.text       = text;
         this.toggleable = toggleable;
+    }
+    
+    @Override
+    public void onMouseButtonDown(EventMouseButtonDown mbDown)
+    {
+        super.onMouseButtonDown(mbDown);
+        
+        this.mouseDown = true;
+    
+        mbDown.consume();
+    }
+    
+    @Override
+    public void onMouseButtonUp(EventMouseButtonUp mbUp)
+    {
+        super.onMouseButtonUp(mbUp);
+        
+        if (getTopElementAt((int) mbUp.x(), (int) mbUp.y()) != null)
+        {
+            if (this.toggleable)
+            {
+                this.toggled = !this.toggled;
+            }
+            onButtonPressed(mbUp);
+        }
+        
+        this.mouseDown = false;
+    
+        mbUp.consume();
+    }
+    
+    @Override
+    public void onMouseButtonDragged(EventMouseButtonDragged mbDragged)
+    {
+        super.onMouseButtonDragged(mbDragged);
+    
+        mbDragged.consume();
+    }
+    
+    public void onButtonPressed(EventMouseButton event)
+    {
+    
     }
     
     @Override
